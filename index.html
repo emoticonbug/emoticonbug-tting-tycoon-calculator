@@ -7995,7 +7995,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
           if(shortPlanV706[crop] > 0) lines.push(`${crop} 씨앗 부족 ${shortPlanV706[crop].toLocaleString('ko-KR')}개`);
         });
         window.farmAddRecentActionV116({
-          type:(window.__farmSeedRecommendModeV706 === 'target' ? '목표 추천 심기' : '심기 반영'),
+          type:(window.__farmTargetRightActiveV706 ? '목표 추천 심기' : '심기 반영'),
           lines:lines.length ? lines : CROPS.filter(crop => plan[crop] !== 0).map(crop => `${crop} 씨앗 -${plan[crop].toLocaleString('ko-KR')}개`)
         });
       }
@@ -13627,18 +13627,21 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function syncRightTarget(){
     ensureSettingsControl();
     window.__farmSeedRecommendModeV706 = getMode();
-    if(getMode() !== 'target') return;
-    const result = calcTargetPlan();
-    if(!result){
-      window.__farmLastPlantPlanV111 = {토마토:0, 양파:0, 마늘:0};
-      window.__farmExpectedYieldPerSeedV706 = {토마토:0, 양파:0, 마늘:0};
-      setText('farmPlantSummary', '목표 수량 입력');
-      setText('farmPlotSummary', '목표 제작 추천 기준');
-      setText('farmHarvestSummary', '계산 대기');
-      setText('farmSkillSummary', '목표 제작 추천을 입력하면 표시');
-      updateApplyStatus(window.__farmLastPlantPlanV111);
+    window.__farmTargetRightActiveV706 = false;
+    if(getMode() !== 'target'){
+      window.__farmExpectedYieldPerSeedV706 = {토마토:expectedYieldPerSeed('토마토'), 양파:expectedYieldPerSeed('양파'), 마늘:expectedYieldPerSeed('마늘')};
+      updateApplyStatus(window.__farmLastPlantPlanV111 || {토마토:0, 양파:0, 마늘:0});
       return;
     }
+    const result = calcTargetPlan();
+    if(!result){
+      // 목표 수량이 비어 있으면 오른쪽 결과 카드는 기존 일반 추천 결과를 그대로 사용.
+      // oldFarmPlanUpdate가 먼저 실행되어 선택 요리 기준의 균일 심기 추천을 이미 표시함.
+      window.__farmExpectedYieldPerSeedV706 = {토마토:expectedYieldPerSeed('토마토'), 양파:expectedYieldPerSeed('양파'), 마늘:expectedYieldPerSeed('마늘')};
+      updateApplyStatus(window.__farmLastPlantPlanV111 || {토마토:0, 양파:0, 마늘:0});
+      return;
+    }
+    window.__farmTargetRightActiveV706 = true;
     const plan = result.plan;
     const used = totalOf(plan);
     const shortTotal = totalOf(result.seedShort);
