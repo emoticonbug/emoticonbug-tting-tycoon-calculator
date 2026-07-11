@@ -7454,7 +7454,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     setText('farmGatherSummary',`${seedLine} / ${baseLine}`);
     setText('farmStaminaSummary',`총 씨앗 채집 ${actualGatherRuns}회 · 사용 체력 ${rd(actualGatherRuns*cost)} / ${useStamina}`);
     setText('farmHarvestSummary',`토마토 ${rd(actualHarvest.토마토)}개 · 양파 ${rd(actualHarvest.양파)}개 · 마늘 ${rd(actualHarvest.마늘)}개`);
-    setText('farmSkillSummary',`불붙은 괭이 ${getSkillLevel('불붙은 괭이')}LV ${rd(hotHoeInfo().chance*100,1)}% +${hotHoeInfo().add}베이스 · ${isRoll?'이번 발동':'기대값'} 적용 · ${sageEngraveApplyText()}`);
+    setText('farmSkillSummary','');
 
     const disp=el('farmGatherPerRunDisplay'); if(disp)disp.value=`${gatherPerRun()}개 / 회`;
 
@@ -9100,10 +9100,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
     // farmPlanUpdate/farmPlanRoll이 갱신하는 원본 ID를 유지해야 다음 계산 때 값이 0으로 떨어지지 않는다.
     // 결과 요약 재배치 후에도 이 카드 ID를 기준으로 직접 갱신한다.
+    const note = data.effect ? `<div class="result-note-v12" id="farmSkillSummary">${data.effect}</div>` : '';
     harvestCard.innerHTML = `
       <h4>예상 수확</h4>
       <div class="result-list-v12" id="farmHarvestSummary">${rows}</div>
-      <div class="result-note-v12" id="farmSkillSummary">${data.effect || '기대값 적용'}</div>
+      ${note}
     `;
   }
 
@@ -13716,6 +13717,438 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   window.addEventListener('load', boot);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkExpired(); });
   setTimeout(boot,0);
+})();
+</script>
+
+
+<style id="farmTargetMultiPendingStyleV711">
+#seedplan .farm-target-base-grid-v711{display:grid;gap:8px;margin-top:8px;}
+#seedplan .farm-target-base-row-v711{display:grid;grid-template-columns:86px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end;border:1px solid rgba(148,163,184,.14);border-radius:12px;background:rgba(15,23,36,.55);padding:8px;}
+#seedplan .farm-target-base-row-v711 b{font-size:13px;color:#eef6ff;line-height:1.25;padding-bottom:9px;}
+#seedplan .farm-target-base-row-v711 label{display:block;font-size:11px;color:#9fb1c9;font-weight:800;}
+#seedplan .farm-target-base-row-v711 input{margin-top:4px;}
+#seedplan .farm-pending-mini-v711{margin-top:8px;border:1px solid rgba(125,211,252,.18);background:rgba(14,165,233,.07);border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.45;color:#dbeafe;font-weight:800;}
+@media(max-width:720px){#seedplan .farm-target-base-row-v711{grid-template-columns:1fr 1fr;}#seedplan .farm-target-base-row-v711 b{grid-column:1 / -1;padding-bottom:0;}}
+</style>
+<script id="farmTargetMultiPendingScriptV711">
+/* 목표 제작 추천 다중 베이스 + 수확 대기 기록 v711 */
+(function(){
+  if(window.__farmTargetMultiPendingV711) return;
+  window.__farmTargetMultiPendingV711 = true;
+
+  const CROPS = ['토마토','양파','마늘'];
+  const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
+  const KO_FROM_EN = {Tomato:'토마토', Onion:'양파', Garlic:'마늘'};
+  const UNIT_SEED = {Large:3456, Small:1728, Stack:64, Single:1};
+  const GIANT_MULT = 7;
+  const BIG_CROP_CHANCE_BY_LEVEL = {0:0,1:0.005,2:0.01,3:0.03,4:0.05};
+  const GOOD_HARVEST = {0:{chance:0,add:0},1:{chance:0.01,add:1},2:{chance:0.02,add:1},3:{chance:0.03,add:1},4:{chance:0.04,add:1},5:{chance:0.05,add:2},6:{chance:0.07,add:2},7:{chance:0.10,add:3}};
+  const BONUS_SEED = {0:{chance:0,add:0},1:{chance:.01,add:1},2:{chance:.02,add:1},3:{chance:.03,add:1},4:{chance:.04,add:1},5:{chance:.05,add:1},6:{chance:.06,add:1},7:{chance:.07,add:1},8:{chance:.10,add:1},9:{chance:.20,add:1},10:{chance:.30,add:1}};
+  const MODE_KEY = 'farmSeedRecommendModeV706';
+  const MULTI_STORE_KEY = 'farmTargetBaseTargetsV711';
+  const PENDING_KEY = 'farmHarvestPendingV711';
+
+  function byId(id){ return document.getElementById(id); }
+  function qa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+  function stateObj(){ try{ return (typeof state !== 'undefined') ? state : (window.state || null); }catch(e){ return window.state || null; } }
+  function dataObj(){ try{ if(typeof DATA !== 'undefined') return DATA || {}; }catch(e){} return window.DATA || {}; }
+  function esc(text){ return String(text ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function readNum(id){ const value = Number(byId(id)?.value || 0); return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0; }
+  function writeNum(id, value){ const el = byId(id); if(!el) return null; const next = String(Math.max(0, Math.trunc(Number(value)||0))); if(el.value === next) return null; el.value = next; return el; }
+  function fmt(total){ const v=Math.max(0, Math.trunc(Number(total)||0)); const s=Math.floor(v/64); const p=v%64; if(s<=0) return `${p}개`; if(p<=0) return `${s}세트`; return `${s}세트 ${p}개`; }
+  function fmtDec(value, digits=2){ const n=Number(value||0); if(!Number.isFinite(n)) return '0'; return n.toFixed(digits).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1'); }
+  function cleanName(text){ return String(text || '').replace(/^[^\-·]+[\-·]\s*/, '').replace(/\s+/g, ' ').trim(); }
+  function selectedDishName(){ const select=byId('farmDishSelect'); if(!select) return ''; const opt=select.options && select.selectedIndex>=0 ? select.options[select.selectedIndex] : null; return cleanName(select.value) || cleanName(opt ? opt.textContent : ''); }
+  function dishByName(name){ const recipes=dataObj().recipes || []; const raw=String(name||'').trim(); const target=cleanName(raw); return recipes.find(d => d.name === target) || recipes.find(d => `${d.grade} · ${d.name}` === raw) || recipes.find(d => `${d.grade} - ${d.name}` === raw) || null; }
+  function addBaseNeed(out, item, qty){ CROPS.forEach(crop => { if(item === `${crop} 베이스`) out[crop] += Number(qty)||0; }); const processed=(dataObj().processed && dataObj().processed[item]) || null; if(processed && Array.isArray(processed.ingredients)) processed.ingredients.forEach(ing => addBaseNeed(out, ing.name, (Number(qty)||0) * (Number(ing.qty)||0))); }
+  function baseNeedPerDish(dish){ const out={토마토:0,양파:0,마늘:0}; if(!dish || !Array.isArray(dish.ingredients)) return out; dish.ingredients.forEach(ing => addBaseNeed(out, ing.name, ing.qty)); return out; }
+  function extraIngredientsPerDish(dish){ const out=[]; if(!dish || !Array.isArray(dish.ingredients)) return out; dish.ingredients.forEach(ing => { if(CROPS.some(c => ing.name === `${c} 베이스`)) return; out.push({name:ing.name, qty:Number(ing.qty||0)}); }); return out; }
+  function settingNum(key){ const st=stateObj(); const saved=Number(st && st.settings ? st.settings[key] : NaN); if(Number.isFinite(saved)) return saved; const el=byId(key); const v=Number(el && el.value); return Number.isFinite(v) ? v : 0; }
+  function yieldMode(){ let mode=byId('farmYieldMode')?.value || 'state'; if(mode === 'state') mode = (stateObj()?.settings && stateObj().settings.yieldMode) || byId('yieldMode')?.value || 'avg'; return ['min','avg','max'].includes(mode) ? mode : 'avg'; }
+  function baseYield(crop){ const table={토마토:{min:1,avg:2,max:3}, 양파:{min:1,avg:1.5,max:2}, 마늘:{min:1,avg:2.5,max:4}}; const row=table[crop] || {min:1,avg:1,max:1}; return row[yieldMode()] || row.avg || 1; }
+  function expectedYieldPerSeed(crop){ const base=baseYield(crop); const kingLv=Math.max(0,Math.min(4,Math.floor(settingNum('skillKing')))); const giant=BIG_CROP_CHANCE_BY_LEVEL[kingLv] || 0; const bigExpected=base*((1-giant)+giant*GIANT_MULT); const harvestLv=Math.max(0,Math.min(7,Math.floor(settingNum('skillHarvest')))); const harvest=GOOD_HARVEST[harvestLv] || GOOD_HARVEST[0]; return Math.max(0.000001, bigExpected + harvest.chance*harvest.add); }
+  function seedBonusInfo(){ const lv=Math.max(0,Math.min(10,Math.floor(settingNum('skillSeedBonus')))); return BONUS_SEED[lv] || BONUS_SEED[0]; }
+  function targetKind(){ return byId('farmTargetKindV703')?.value || 'dish'; }
+  function targetCount(){ return readNum('farmTargetDishStackV400') * 64 + readNum('farmTargetDishSingleV400'); }
+  function cropOwned(crop){ const p=EN[crop]; return readNum(`farmCrop${p}Stack`) * 64 + readNum(`farmCrop${p}Single`); }
+  function baseOwned(crop){ const p=EN[crop]; return readNum(`farmBase${p}Stack`) * 64 + readNum(`farmBase${p}Single`); }
+  function seedOwned(crop){ const p=EN[crop]; return readNum(`farmSeed${p}Large`) * UNIT_SEED.Large + readNum(`farmSeed${p}Small`) * UNIT_SEED.Small + readNum(`farmSeed${p}Stack`) * UNIT_SEED.Stack + readNum(`farmSeed${p}Single`); }
+  function setSeedTotal(crop, total){ const p=EN[crop]; let remain=Math.max(0, Math.trunc(Number(total)||0)); const ids=[`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`]; const large=Math.floor(remain/UNIT_SEED.Large); remain-=large*UNIT_SEED.Large; const small=Math.floor(remain/UNIT_SEED.Small); remain-=small*UNIT_SEED.Small; const stack=Math.floor(remain/UNIT_SEED.Stack); remain-=stack*UNIT_SEED.Stack; return [writeNum(ids[0],large), writeNum(ids[1],small), writeNum(ids[2],stack), writeNum(ids[3],remain)].filter(Boolean); }
+  function totalSeedsSnapshot(){ const out={}; CROPS.forEach(c => { out[c] = seedOwned(c); }); return out; }
+  function totalOf(obj){ return CROPS.reduce((sum,c)=>sum+(Number(obj&&obj[c])||0),0); }
+
+  function getMode(){ const st=stateObj(); const saved=st && st.settings ? st.settings[MODE_KEY] : ''; return saved === 'legacy' ? 'legacy' : 'target'; }
+  function getMultiValues(){ const out={토마토:0,양파:0,마늘:0}; CROPS.forEach(c => { const p=EN[c]; out[c] = readNum(`farmTargetBase${p}StackV711`) * 64 + readNum(`farmTargetBase${p}SingleV711`); }); return out; }
+  function saveMultiValues(){ const values=getMultiValues(); try{ localStorage.setItem(MULTI_STORE_KEY, JSON.stringify(values)); }catch(e){} const st=stateObj(); if(st){ st.farmTargetBaseTargetsV711 = Object.assign({}, values); try{ if(typeof save === 'function') save(false); }catch(e){} } }
+  function restoreMultiValues(){ let values=null; const st=stateObj(); if(st && st.farmTargetBaseTargetsV711 && typeof st.farmTargetBaseTargetsV711 === 'object') values=st.farmTargetBaseTargetsV711; if(!values){ try{ values=JSON.parse(localStorage.getItem(MULTI_STORE_KEY)||'null'); }catch(e){ values=null; } } if(!values) return; CROPS.forEach(c => { const p=EN[c]; const total=Math.max(0,Math.trunc(Number(values[c])||0)); const stack=Math.floor(total/64); const single=total%64; const stackEl=byId(`farmTargetBase${p}StackV711`); const singleEl=byId(`farmTargetBase${p}SingleV711`); if(stackEl) stackEl.value=String(stack); if(singleEl) singleEl.value=String(single); }); }
+
+  function ensureTargetUi(){
+    const select=byId('farmTargetKindV703');
+    const oldGrid=byId('farmTargetInputGridV400');
+    if(!select || !oldGrid) return;
+    if(!Array.from(select.options).some(opt => opt.value === 'bases')){
+      const option=document.createElement('option');
+      option.value='bases';
+      option.textContent='베이스 직접';
+      select.insertBefore(option, select.options[1] || null);
+    }
+    let grid=byId('farmTargetBaseGridV711');
+    if(!grid){
+      grid=document.createElement('div');
+      grid.id='farmTargetBaseGridV711';
+      grid.className='farm-target-base-grid-v711';
+      grid.innerHTML=CROPS.map(c => {
+        const p=EN[c];
+        return `<div class="farm-target-base-row-v711"><b>${c} 베이스</b><label>세트<input id="farmTargetBase${p}StackV711" type="number" min="0" step="1" value="0"></label><label>낱개<input id="farmTargetBase${p}SingleV711" type="number" min="0" step="1" value="0"></label></div>`;
+      }).join('');
+      oldGrid.insertAdjacentElement('afterend', grid);
+      restoreMultiValues();
+    }
+    const isBases = select.value === 'bases';
+    oldGrid.style.display = isBases ? 'none' : '';
+    grid.style.display = isBases ? 'grid' : 'none';
+    qa('input', grid).forEach(input => {
+      if(input.dataset.targetMultiBoundV711 === '1') return;
+      input.dataset.targetMultiBoundV711 = '1';
+      const handler=()=>{ saveMultiValues(); scheduleUpdate(); };
+      input.addEventListener('input', handler);
+      input.addEventListener('change', handler);
+    });
+    if(select.dataset.targetMultiSelectV711 !== '1'){
+      select.dataset.targetMultiSelectV711='1';
+      select.addEventListener('change', function(){ ensureTargetUi(); scheduleUpdate(); });
+    }
+  }
+
+  function targetBaseNeed(){
+    const kind=targetKind();
+    const out={토마토:0,양파:0,마늘:0};
+    let label='', type='';
+    let total=targetCount();
+    let extras=[];
+    if(kind === 'bases'){
+      const values=getMultiValues();
+      CROPS.forEach(c => { out[c]=Math.max(0,Math.trunc(Number(values[c])||0)); });
+      const parts=CROPS.filter(c => out[c]>0).map(c => `${c} ${fmt(out[c])}`);
+      total=totalOf(out);
+      label=parts.length ? parts.join(' · ') : '베이스 직접';
+      type='bases';
+      return total > 0 ? {label,total,type,baseNeed:out,extras:[]} : null;
+    }
+    if(total <= 0) return null;
+    if(kind === 'dish'){
+      const dish=dishByName(selectedDishName());
+      if(!dish) return null;
+      const per=baseNeedPerDish(dish);
+      CROPS.forEach(c => { out[c]=Math.max(0,Math.trunc((Number(per[c])||0)*total)); });
+      extras=extraIngredientsPerDish(dish).map(x => ({name:x.name, qty:x.qty*total}));
+      return {label:dish.name,total,type:'dish',dish,baseNeed:out,extras};
+    }
+    if(CROPS.includes(kind)){
+      out[kind]=total;
+      return {label:`${kind} 베이스`,total,type:'base',crop:kind,baseNeed:out,extras:[]};
+    }
+    return null;
+  }
+
+  function calcTargetPlan(){
+    const target=targetBaseNeed();
+    if(!target) return null;
+    const plan={토마토:0,양파:0,마늘:0};
+    const expected={토마토:0,양파:0,마늘:0};
+    const expectedSeed={토마토:0,양파:0,마늘:0};
+    const yieldMap={토마토:0,양파:0,마늘:0};
+    const seedShort={토마토:0,양파:0,마늘:0};
+    const cropNeed={토마토:0,양파:0,마늘:0};
+    const baseShort={토마토:0,양파:0,마늘:0};
+    const bonus=seedBonusInfo();
+    CROPS.forEach(c => {
+      const needBase=Math.max(0,Math.trunc(Number(target.baseNeed[c])||0));
+      const shortBase=Math.max(0,needBase-baseOwned(c));
+      const needCrop=Math.max(0,shortBase*8-cropOwned(c));
+      const y=expectedYieldPerSeed(c);
+      const needSeed=needCrop>0 ? Math.ceil(needCrop/y) : 0;
+      baseShort[c]=shortBase;
+      cropNeed[c]=needCrop;
+      plan[c]=needSeed;
+      expected[c]=Math.floor(needSeed*y);
+      expectedSeed[c]=Math.floor(needSeed*bonus.chance*bonus.add + 1e-9);
+      yieldMap[c]=y;
+      seedShort[c]=Math.max(0,needSeed-seedOwned(c));
+    });
+    return {target,plan,expected,expectedSeed,yieldMap,seedShort,cropNeed,baseShort};
+  }
+
+  function row(label, value, cls){ return `<div class="target-row-v400 ${cls||''}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`; }
+  function cropCard(crop, info){
+    const ok=info.seedShort<=0 && info.extraCropNeed<=0;
+    return `<div class="target-crop-card-v401 ${ok?'target-ok-card-v401':'target-warn-card-v401'}">
+      <div class="target-crop-head-v401"><span class="target-crop-name-v401">${esc(crop)}</span><span class="target-crop-state-v401">${ok?'부족 없음':'부족'}</span></div>
+      ${row('필요 베이스', fmt(info.needBase))}
+      ${row('보유 베이스', fmt(info.haveBase))}
+      ${row('부족 베이스', info.baseShort>0?fmt(info.baseShort):'없음', info.baseShort>0?'target-lack-row-v401':'target-enough-row-v401')}
+      ${row('추가 필요 작물', info.extraCropNeed>0?fmt(info.extraCropNeed):'없음', info.extraCropNeed>0?'target-lack-row-v401':'target-enough-row-v401')}
+      ${row('추천 심기', info.plantNeed>0?fmt(info.plantNeed):'없음','target-seed-row-v703')}
+      ${row('보유 씨앗', fmt(info.haveSeed))}
+      ${row('부족 씨앗', info.seedShort>0?fmt(info.seedShort):'없음', info.seedShort>0?'target-short-row-v703':'target-enough-row-v401')}
+      ${row('수확량 기준', `${fmtDec(info.yieldPerSeed,2)}개 / 씨앗`)}
+    </div>`;
+  }
+  function extraList(extras){ const filtered=(extras||[]).filter(x => Number(x.qty)>0); if(!filtered.length) return ''; return `<div class="target-section-title-v401">추가 준비 재료</div><div class="target-extra-list-v703">${filtered.map(x => `<span class="target-extra-pill-v703">${esc(x.name)} ${fmt(x.qty)}</span>`).join('')}</div>`; }
+  function renderTarget(){
+    ensureTargetUi();
+    const box=byId('farmTargetResultV400');
+    if(!box) return;
+    const result=calcTargetPlan();
+    window.__farmCurrentTargetPlanV711 = result || null;
+    if(!result){ box.innerHTML=''; syncRight(); return; }
+    const cards=[];
+    let enough=true;
+    CROPS.forEach(c => {
+      const needBase=Math.max(0,Math.trunc(Number(result.target.baseNeed[c])||0));
+      if(needBase<=0) return;
+      const haveBase=baseOwned(c);
+      const haveCrop=cropOwned(c);
+      const haveSeed=seedOwned(c);
+      const baseShort=Math.max(0,needBase-haveBase);
+      const cropNeedForShort=baseShort*8;
+      const extraCropNeed=Math.max(0,cropNeedForShort-haveCrop);
+      const y=expectedYieldPerSeed(c);
+      const plantNeed=extraCropNeed>0 ? Math.ceil(extraCropNeed/y) : 0;
+      const seedShort=Math.max(0,plantNeed-haveSeed);
+      if(extraCropNeed>0 || seedShort>0) enough=false;
+      cards.push(cropCard(c,{needBase,haveBase,baseShort,extraCropNeed,plantNeed,haveSeed,seedShort,yieldPerSeed:y}));
+    });
+    const title=`<div class="farm-target-title-v401"><b>${esc(result.target.label)}</b><span>${result.target.type === 'bases' ? '직접 목표 기준' : fmt(result.target.total)+' 목표 기준'}</span></div>`;
+    if(!cards.length){ box.innerHTML=`${title}<div class="target-empty-v401">베이스 필요 없음</div>${extraList(result.target.extras)}`; syncRight(); return; }
+    const okText=enough ? '<div class="target-all-ok-v401">목표 수량 충족 가능</div>' : '';
+    const note='<div class="target-base-note-v703">보유 작물은 베이스 변환 가능 수량으로 계산.</div>';
+    box.innerHTML=`${title}<div class="target-section-title-v401">심기 추천</div>${cards.join('')}${okText}${extraList(result.target.extras)}${note}`;
+    syncRight();
+  }
+
+  function setHtml(id, html){ const el=byId(id); if(el) el.innerHTML=html; }
+  function setText(id, text){ const el=byId(id); if(el) el.textContent=text; }
+  function updateApplyStatus(plan){ const btn=byId('farmApplyPlantBtnV111'); const status=byId('farmApplyPlantStatusV111'); const total=totalOf(plan); if(btn) btn.disabled=total<=0; if(status) status.textContent = total>0 ? `심기 예정 ${total.toLocaleString('ko-KR')}개` : '심을 씨앗 없음'; }
+  function syncRight(){
+    if(getMode() !== 'target') return;
+    const result=calcTargetPlan();
+    if(!result){
+      window.__farmTargetRightActiveV706=false;
+      window.__farmCurrentTargetPlanV711=null;
+      updatePendingMini();
+      return;
+    }
+    const plan=result.plan;
+    const used=totalOf(plan);
+    const shortTotal=totalOf(result.seedShort);
+    window.__farmTargetRightActiveV706=true;
+    window.__farmLastPlantPlanV111={토마토:plan.토마토||0,양파:plan.양파||0,마늘:plan.마늘||0};
+    window.__farmLastExpectedHarvestV706=result.expected;
+    window.__farmExpectedYieldPerSeedV706=result.yieldMap;
+    window.__farmCurrentTargetPlanV711=result;
+    window.__farmTargetPlanMetaV711={label:result.target.label,type:result.target.type,total:result.target.total,baseNeed:Object.assign({},result.target.baseNeed)};
+    setHtml('farmPlantSummary', CROPS.map(c => `${esc(c)} ${fmt(plan[c])}`).join(' · '));
+    setText('farmPlotSummary', `목표 제작 추천 기준 · 총 ${fmt(used)}${shortTotal>0?' · 부족 씨앗 '+fmt(shortTotal):''}`);
+    setHtml('farmHarvestSummary', CROPS.map(c => `${esc(c)} ${fmt(result.expected[c])}`).join(' · '));
+    const yieldText=CROPS.map(c => `${c} ${fmtDec(result.yieldMap[c],2)}`).join(' · ');
+    setText('farmSkillSummary', `${result.target.label} · 수확량/씨앗 ${yieldText}`);
+    updateApplyStatus(plan);
+    updatePendingMini();
+  }
+
+  function pendingStore(){
+    const st=stateObj();
+    if(st){
+      if(!st[PENDING_KEY] || typeof st[PENDING_KEY] !== 'object') st[PENDING_KEY]={version:1,records:[]};
+      if(!Array.isArray(st[PENDING_KEY].records)) st[PENDING_KEY].records=[];
+      return st[PENDING_KEY];
+    }
+    try{ const obj=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); if(obj && Array.isArray(obj.records)) return obj; }catch(e){}
+    return {version:1,records:[]};
+  }
+  function savePendingStore(store){
+    const st=stateObj();
+    if(st) st[PENDING_KEY]=store;
+    try{ localStorage.setItem(PENDING_KEY, JSON.stringify(store)); }catch(e){}
+    try{ if(typeof save === 'function') save(false); }catch(e){}
+  }
+  function latestPending(){ const store=pendingStore(); const list=store.records.filter(r => r && r.status === 'pending'); list.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); return list[0] || null; }
+  function shortSeedLine(obj){ return CROPS.filter(c => Number(obj&&obj[c])>0).map(c => `${c} ${fmt(obj[c])}`).join(' · ') || '없음'; }
+  function makeHarvestSnapshot(record){
+    if(!record) return null;
+    const values={}; let total=0;
+    CROPS.forEach(c => {
+      const crop=Math.max(0,Math.floor(Number(record.expectedHarvest && record.expectedHarvest[c])||0));
+      const seed=Math.max(0,Math.floor(Number(record.expectedBonusSeed && record.expectedBonusSeed[c])||0));
+      values[c]={crop,seed}; total += crop + seed;
+    });
+    return {values,total,source:'plant-applied',planId:record.id,planLabel:record.targetLabel,createdAt:record.createdAt};
+  }
+  function setHarvestInputsFromSnapshot(snapshot, force){
+    if(!snapshot || !snapshot.values) return;
+    CROPS.forEach(c => {
+      const p=EN[c]; const row=snapshot.values[c] || {crop:0,seed:0};
+      writeStackSingle(`farmHarvestCrop${p}`, row.crop, force);
+      writeStackSingle(`farmHarvestSeed${p}`, row.seed, force);
+    });
+    const status=byId('farmHarvestStatusV113');
+    if(status && snapshot.total>0) status.textContent='수확 대기 기록 기준값 채움 · 수정 가능';
+  }
+  function writeStackSingle(prefix,total,force){ const stackEl=byId(`${prefix}Stack`); const singleEl=byId(`${prefix}Single`); const v=Math.max(0,Math.trunc(Number(total)||0)); const s=Math.floor(v/64), p=v%64; [[stackEl,s],[singleEl,p]].forEach(([el,val])=>{ if(!el) return; if(force || !el.dataset.userEditedV113) el.value=String(val); }); }
+  function restorePendingToHarvest(force){ const rec=latestPending(); if(!rec) return false; const snap=makeHarvestSnapshot(rec); if(!snap || snap.total<=0) return false; window.__farmHarvestDefaultsAfterPlantV114=snap; window.__farmHarvestPlantAppliedV114=true; setHarvestInputsFromSnapshot(snap, !!force); updatePendingMini(); return true; }
+  function updatePendingMini(){
+    const guide=byId('farmApplyPlantGuideV112'); if(!guide) return;
+    const rec=latestPending();
+    const id='farmPendingMiniV711';
+    let box=byId(id);
+    if(!rec){ if(box) box.remove(); return; }
+    const html=`<div class="farm-pending-mini-v711" id="${id}">수확 대기 · ${esc(rec.targetLabel || rec.sourceLabel || '심기 기록')}<br>심은 씨앗 ${esc(shortSeedLine(rec.plantedSeeds))}</div>`;
+    if(box) box.outerHTML=html;
+    else guide.insertAdjacentHTML('afterend', html);
+  }
+  function actualHarvestValues(){ const out={}; CROPS.forEach(c => { const p=EN[c]; out[c]={crop:readNum(`farmHarvestCrop${p}Stack`)*64+readNum(`farmHarvestCrop${p}Single`), seed:readNum(`farmHarvestSeed${p}Stack`)*64+readNum(`farmHarvestSeed${p}Single`)}; }); return out; }
+  function appendPlanNoteToRecent(record){
+    if(!record) return;
+    const st=stateObj(); const fc=st && st.farmCorrection; if(!fc) return;
+    const suffix=`대기 ${record.id} · ${record.targetLabel || record.sourceLabel || '심기 기록'} · 심은 씨앗 ${shortSeedLine(record.plantedSeeds)}`;
+    const now=Date.now();
+    ['recent','pendingRecent'].forEach(key => {
+      const arr=Array.isArray(fc[key]) ? fc[key] : [];
+      arr.forEach(item => {
+        if(!item || item.source !== 'harvest') return;
+        const t=Date.parse(item.createdAt || '') || now;
+        if(now - t > 12000) return;
+        item.note = [item.note || '', suffix].filter(Boolean).join(' · ').slice(0,500);
+      });
+    });
+    try{ if(typeof save === 'function') save(false); }catch(e){}
+  }
+  function completePending(record, actual){
+    if(!record) return;
+    const store=pendingStore();
+    const item=store.records.find(r => r && r.id === record.id);
+    if(item){ item.status='completed'; item.completedAt=new Date().toISOString(); item.actualHarvest=actual; }
+    savePendingStore(store);
+    appendPlanNoteToRecent(item || record);
+    updatePendingMini();
+  }
+
+  let preApply=null;
+  let preHarvestRecord=null;
+  let preHarvestActual=null;
+  function bindApplyCapture(){
+    const btn=byId('farmApplyPlantBtnV111');
+    if(btn && btn.dataset.pendingPlanBoundV711 !== '1'){
+      btn.dataset.pendingPlanBoundV711='1';
+      btn.addEventListener('click', function(){
+        preApply={
+          before:totalSeedsSnapshot(),
+          plan:Object.assign({토마토:0,양파:0,마늘:0}, window.__farmLastPlantPlanV111 || {}),
+          yieldMap:Object.assign({토마토:expectedYieldPerSeed('토마토'),양파:expectedYieldPerSeed('양파'),마늘:expectedYieldPerSeed('마늘')}, window.__farmExpectedYieldPerSeedV706 || {}),
+          target:window.__farmCurrentTargetPlanV711 ? JSON.parse(JSON.stringify(window.__farmCurrentTargetPlanV711.target || {})) : null,
+          meta:window.__farmTargetPlanMetaV711 ? JSON.parse(JSON.stringify(window.__farmTargetPlanMetaV711)) : null,
+          source:window.__farmTargetRightActiveV706 ? 'target-plan' : 'normal-plan'
+        };
+        setTimeout(afterApplyPlant, 180);
+      }, true);
+    }
+    const harvestBtn=byId('farmHarvestApplyBtnV113');
+    if(harvestBtn && harvestBtn.dataset.pendingHarvestBoundV711 !== '1'){
+      harvestBtn.dataset.pendingHarvestBoundV711='1';
+      harvestBtn.addEventListener('click', function(){
+        preHarvestRecord=latestPending();
+        if(preHarvestRecord){
+          const snap=makeHarvestSnapshot(preHarvestRecord);
+          if(snap){ window.__farmHarvestDefaultsAfterPlantV114=snap; window.__farmHarvestPlantAppliedV114=true; }
+        }
+        preHarvestActual=actualHarvestValues();
+        setTimeout(afterApplyHarvest, 180);
+      }, true);
+    }
+  }
+  function afterApplyPlant(){
+    const status=String(byId('farmApplyPlantStatusV111')?.textContent || '');
+    const before=preApply && preApply.before; if(!before || !status.includes('반영 완료')) return;
+    const after=totalSeedsSnapshot();
+    const applied={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c => { applied[c]=Math.max(0, (Number(before[c])||0) - (Number(after[c])||0)); });
+    if(totalOf(applied)<=0) return;
+    const bonus=seedBonusInfo();
+    const expectedHarvest={토마토:0,양파:0,마늘:0};
+    const expectedBonusSeed={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c => {
+      const y=Number(preApply.yieldMap && preApply.yieldMap[c]) || expectedYieldPerSeed(c);
+      expectedHarvest[c]=Math.floor(applied[c]*y);
+      expectedBonusSeed[c]=Math.floor(applied[c]*bonus.chance*bonus.add + 1e-9);
+    });
+    const targetLabel=preApply.meta && preApply.meta.label ? preApply.meta.label : (preApply.source === 'target-plan' ? '목표 제작 추천' : '기존 추천');
+    const record={
+      id:'hp711_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7),
+      version:1,
+      status:'pending',
+      source:preApply.source,
+      sourceLabel:preApply.source === 'target-plan' ? '목표 제작 추천' : '기존 추천',
+      targetLabel,
+      targetType:preApply.meta && preApply.meta.type || '',
+      targetBaseNeed:preApply.meta && preApply.meta.baseNeed || {},
+      plannedSeeds:preApply.plan,
+      plantedSeeds:applied,
+      expectedHarvest,
+      expectedBonusSeed,
+      yieldMap:preApply.yieldMap,
+      createdAt:new Date().toISOString()
+    };
+    const store=pendingStore();
+    store.records.unshift(record);
+    store.records=store.records.slice(0,30);
+    savePendingStore(store);
+    const snap=makeHarvestSnapshot(record);
+    if(snap){ window.__farmHarvestDefaultsAfterPlantV114=snap; window.__farmHarvestPlantAppliedV114=true; setHarvestInputsFromSnapshot(snap, true); }
+    updatePendingMini();
+    try{ if(typeof window.farmAddRecentActionV116 === 'function') window.farmAddRecentActionV116({type:'수확 대기 기록', lines:[`심은 씨앗 ${shortSeedLine(applied)}`, `예상 수확 ${shortSeedLine(expectedHarvest)}`], note:`${targetLabel} · 실제 수확 입력 시 실측 보정으로 연결`}); }catch(e){}
+  }
+  function afterApplyHarvest(){
+    const status=String(byId('farmHarvestStatusV113')?.textContent || '');
+    if(!preHarvestRecord || !status.includes('반영 완료')) return;
+    completePending(preHarvestRecord, preHarvestActual || actualHarvestValues());
+    preHarvestRecord=null;
+  }
+
+  let scheduled=false;
+  function scheduleUpdate(){ if(scheduled) return; scheduled=true; setTimeout(()=>{ scheduled=false; renderTarget(); },0); }
+  function bindAll(){
+    ensureTargetUi();
+    const ids=['farmTargetKindV703','farmTargetDishStackV400','farmTargetDishSingleV400','farmDishSelect','yieldMode','farmYieldMode','skillKing','skillHarvest','skillSeedBonus'];
+    CROPS.forEach(c => { const p=EN[c]; ids.push(`farmCrop${p}Stack`,`farmCrop${p}Single`,`farmBase${p}Stack`,`farmBase${p}Single`,`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`); });
+    ids.forEach(id => { const el=byId(id); if(!el || el.dataset.targetMultiGlobalV711 === '1') return; el.dataset.targetMultiGlobalV711='1'; el.addEventListener('input', scheduleUpdate); el.addEventListener('change', scheduleUpdate); });
+    bindApplyCapture();
+    restorePendingToHarvest(false);
+  }
+
+  const oldTargetUpdate=window.farmTargetPlanUpdateV400;
+  window.farmTargetPlanUpdateV400=function(){
+    try{ if(typeof oldTargetUpdate === 'function') oldTargetUpdate.apply(this, arguments); }catch(e){}
+    renderTarget();
+  };
+  const oldFarmPlanUpdate=window.farmPlanUpdate;
+  window.farmPlanUpdate=function(){
+    const ret=typeof oldFarmPlanUpdate === 'function' ? oldFarmPlanUpdate.apply(this, arguments) : undefined;
+    bindAll();
+    renderTarget();
+    return ret;
+  };
+  const oldOpenTab=window.openTab;
+  if(typeof oldOpenTab === 'function'){
+    window.openTab=function(tabName){
+      const ret=oldOpenTab.apply(this, arguments);
+      if(tabName === 'seedplan' || tabName === 'settings') setTimeout(()=>{ bindAll(); renderTarget(); },0);
+      return ret;
+    };
+  }
+  window.addEventListener('load', function(){ bindAll(); renderTarget(); restorePendingToHarvest(false); });
+  bindAll();
+  renderTarget();
 })();
 </script>
 
