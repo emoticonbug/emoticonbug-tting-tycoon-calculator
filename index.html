@@ -755,39 +755,6 @@ header{position:sticky;top:0;z-index:10;background:rgba(16,19,26,.82);backdrop-f
 }
 
 
-/* 되돌리기 */
-#seedplan .undo-tools{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:wrap;
-  margin:10px 0 14px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:#101826;
-}
-#seedplan .undo-tools button{
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:#151f2d;
-  color:var(--text);
-  padding:8px 12px;
-  font-weight:800;
-  cursor:pointer;
-}
-#seedplan .undo-tools button:hover{
-  border-color:var(--accent);
-}
-#seedplan .undo-tools button:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-}
-#seedplan .undo-tools .undo-status{
-  color:var(--muted);
-  font-size:12px;
-  margin-left:4px;
-}
 
 
 /* 요리 재배 계획 UI 1차 개편 */
@@ -1298,10 +1265,7 @@ main.wrap > section.tabpage.active:not(.hidden){
 #seedplan .farm-zone-a-v21 h2{margin:0 0 10px!important}
 #seedplan .farm-desc-v21{border:1px solid rgba(148,163,184,.22);border-radius:14px;background:#0b121d;padding:11px 12px;color:#dbeafe;line-height:1.45;margin-bottom:10px}
 #seedplan .farm-action-row-v21{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-#seedplan .farm-action-row-v21 button,#seedplan .farm-action-row-v21 .undo-tools button{border:1px solid var(--line);border-radius:12px;background:#151f2d;color:var(--text);padding:8px 11px;font-weight:850;cursor:pointer}
-#seedplan .farm-action-row-v21 button.primary{background:linear-gradient(180deg,#8fe8ff,#7ed0ff);color:#07111d;border-color:rgba(143,232,255,.45)}
-#seedplan .farm-action-row-v21 .undo-tools{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important}
-#seedplan .farm-action-row-v21 .undo-status{color:var(--muted);font-size:12px;white-space:nowrap}
+#seedplan .farm-action-row-v21 button,#seedplan .farm-action-row-v21 button.primary{background:linear-gradient(180deg,#8fe8ff,#7ed0ff);color:#07111d;border-color:rgba(143,232,255,.45)}
 #seedplan .farm-zone-b-v21 .farm-summary-v2{margin:0!important;border:0!important;background:transparent!important;padding:0!important}
 #seedplan .farm-zone-b-v21 .farm-summary-v2 h3{margin:0 0 10px!important}
 #seedplan .farm-zone-b-v21 .farm-summary-grid-v2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -1372,22 +1336,6 @@ main.wrap > section.tabpage.active:not(.hidden){
   flex-wrap:wrap !important;
 }
 #seedplan .farm-action-row-v21 button,
-#seedplan .farm-action-row-v21 .undo-tools button{
-  height:36px !important;
-  padding:0 12px !important;
-  font-size:13px !important;
-  line-height:1 !important;
-  white-space:nowrap !important;
-}
-#seedplan .farm-action-row-v21 .undo-tools{
-  gap:8px !important;
-  align-items:center !important;
-}
-#seedplan .farm-action-row-v21 .undo-status{
-  font-size:12px !important;
-  line-height:36px !important;
-  white-space:nowrap !important;
-}
 #seedplan .farm-zone-b-v21 .farm-summary-v2{
   height:100% !important;
   display:flex !important;
@@ -2842,6 +2790,16 @@ header .title h1.app-logo-title{
 #prices .price-unit-row-v702 input,#prices .price-unit-row-v702 select{min-width:0;width:100%;box-sizing:border-box;}
 #prices .price-unit-row-v702 select{height:39px;padding:0 8px;border-radius:12px;font-size:12px;font-weight:900;}
 #prices .price-unit-hint-v702{margin-top:6px;color:#bcd0f0;font-weight:850;}
+
+#prices .material-owned-block-v712{margin-top:10px;border-top:1px dashed #2b3448;padding-top:9px;display:flex;flex-direction:column;gap:6px;}
+#prices .material-owned-title-v712{font-size:11px;color:var(--muted);font-weight:850;}
+#prices .material-owned-row-v712{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+#prices .material-owned-control-v712{min-width:0;display:flex;flex-direction:column;gap:4px;}
+#prices .material-owned-control-v712 span{font-size:11px;color:#bcd0f0;font-weight:850;}
+#prices .material-owned-control-v712 input{width:100%;min-width:0;box-sizing:border-box;height:39px;}
+.owned-profit-v712.good{color:var(--good)}
+.owned-profit-v712.bad{color:var(--danger)}
+.owned-cost-zero-v712{color:#7dffd9;font-weight:950;}
 #prices .auto-price-hint-v701{margin-top:6px;color:#7dffd9;font-weight:850;}
 #prices .stamina-drink-summary-v501{margin:0 0 10px;background:#0f1724;border:1px solid #2d3850;border-radius:13px;padding:10px 11px;color:#dbe8ff;font-size:12px;line-height:1.45;}
 #prices .stamina-drink-summary-v501 b{color:#7dffd9;font-weight:950;}
@@ -4969,7 +4927,7 @@ body.left-menu-collapsed-v8 header .schedulebar-v8 #farmCorrectionFoldV520 .farm
 <div class="farm-step1-two-v230 farm-target-input-grid-v400" id="farmTargetInputGridV400"><div class="control"><label>세트</label><input id="farmTargetDishStackV400" min="0" oninput="if(typeof farmTargetPlanUpdateV400==='function') farmTargetPlanUpdateV400();" onchange="if(typeof farmTargetPlanUpdateV400==='function') farmTargetPlanUpdateV400();" step="1" type="number" value="0"/></div><div class="control"><label>낱개</label><input id="farmTargetDishSingleV400" min="0" oninput="if(typeof farmTargetPlanUpdateV400==='function') farmTargetPlanUpdateV400();" onchange="if(typeof farmTargetPlanUpdateV400==='function') farmTargetPlanUpdateV400();" step="1" type="number" value="0"/></div></div>
 <div class="farm-target-result-v400" id="farmTargetResultV400"></div>
 </div>
-</details><div class="farm-step1-block-v230" id="farmStep1CriteriaBlockV230"><div class="farm-step1-two-v230" id="farmStep1CriteriaGridV230"><div class="control"><label>사용할 체력</label><input id="farmUseStamina" min="0" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" type="number" value="3000"/></div><div class="control"><label>보유 경작지</label><input id="farmPlots" min="0" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" type="number" value="220"/></div></div></div><div class="farm-step1-block-v230" id="farmUndoBlockV100"><div class="farm-step1-label-v230">입력 기록</div><div class="undo-tools farm-step1-row-v230" id="undoTools"></div></div><div class="farm-step1-block-v230" id="farmResetBlockV100"><div class="farm-step1-label-v230">초기화</div><div class="farm-step1-row-v230" id="farmResetRowV100"><button class="btn danger" id="farmQuickResetOwnedV21" onclick="if(typeof farmPlanResetOwned==='function') farmPlanResetOwned();" type="button">보유량 초기화</button><button class="btn danger" id="farmResetAllV87" onclick="if(typeof farmPlanResetAllV87==='function') farmPlanResetAllV87();" type="button">전체 초기화</button></div></div><div class="farm-save-state-v83" id="farmSaveStateV83">저장 상태 확인 중</div><div class="farm-hidden-config-host-v230" id="farmSeedHiddenConfigV230"><select aria-hidden="true" class="farm-hidden-config-v230" id="farmYieldMode" onchange="farmPlanUpdate()" tabindex="-1"><option value="state">개인 설정 기준</option><option value="min">최소</option><option value="avg">평균</option><option value="max">최대</option></select><input aria-hidden="true" class="farm-hidden-config-v230" id="farmStaminaCost" min="1" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" tabindex="-1" type="hidden" value="5"/></div></div></aside><section class="farm-seed-main-v220 farm-seed-step1-main-v230" id="farmSeedMainV220"><div class="farm-plan-wrap"><details class="farm-correction-fold-v520" id="farmCorrectionFoldV520">
+</details><div class="farm-step1-block-v230" id="farmStep1CriteriaBlockV230"><div class="farm-step1-two-v230" id="farmStep1CriteriaGridV230"><div class="control"><label>사용할 체력</label><input id="farmUseStamina" min="0" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" type="number" value="3000"/></div><div class="control"><label>보유 경작지</label><input id="farmPlots" min="0" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" type="number" value="220"/></div></div></div><div class="farm-step1-block-v230" id="farmResetBlockV100"><div class="farm-step1-label-v230">초기화</div><div class="farm-step1-row-v230" id="farmResetRowV100"><button class="btn danger" id="farmQuickResetOwnedV21" onclick="if(typeof farmPlanResetOwned==='function') farmPlanResetOwned();" type="button">보유량 초기화</button><button class="btn danger" id="farmResetAllV87" onclick="if(typeof farmPlanResetAllV87==='function') farmPlanResetAllV87();" type="button">전체 초기화</button></div></div><div class="farm-save-state-v83" id="farmSaveStateV83">저장 상태 확인 중</div><div class="farm-hidden-config-host-v230" id="farmSeedHiddenConfigV230"><select aria-hidden="true" class="farm-hidden-config-v230" id="farmYieldMode" onchange="farmPlanUpdate()" tabindex="-1"><option value="state">개인 설정 기준</option><option value="min">최소</option><option value="avg">평균</option><option value="max">최대</option></select><input aria-hidden="true" class="farm-hidden-config-v230" id="farmStaminaCost" min="1" onchange="farmPlanUpdate()" oninput="farmPlanUpdate()" step="1" tabindex="-1" type="hidden" value="5"/></div></div></aside><section class="farm-seed-main-v220 farm-seed-step1-main-v230" id="farmSeedMainV220"><div class="farm-plan-wrap"><details class="farm-correction-fold-v520" id="farmCorrectionFoldV520">
 <summary><span class="farm-correction-summary-title-v520"><span aria-hidden="true">📊</span> 실측 보정</span><span class="farm-correction-summary-meta-v520" id="farmCorrectionSummaryMetaV520">누적 0회 · 최근 0/200개</span><span class="farm-correction-summary-arrow-v520" aria-hidden="true">▼</span></summary>
 <div class="farm-correction-body-v520">
 <div class="farm-correction-mini-card-v520">
@@ -4995,7 +4953,7 @@ body.left-menu-collapsed-v8 header .schedulebar-v8 #farmCorrectionFoldV520 .farm
 <div><b>공유됨</b><span>작물 종류 · 채집/수확 결과 · 공식 예상값 · 보정률 · 설정 상태 · 익명 ID</span></div>
 <div><b>공유 안 됨</b><span>닉네임 · 이메일 · 구글 계정 · IP · 개인 메모 · 전체 저장 데이터</span></div>
 </div>
-<div class="row farm-correction-share-row-v520"><button class="btn primary" id="farmCorrectionShareBtnFarmV520" type="button">실측 데이터 공유</button><button class="btn" id="farmCorrectionFetchSharedBtnFarmV545" type="button">공유 보정 새로고침</button></div>
+<div class="row farm-correction-share-row-v520"><button class="btn primary" id="farmCorrectionShareBtnFarmV520" type="button">실측 데이터 공유</button><button class="btn" id="farmCorrectionFetchSharedBtnFarmV545" type="button">공유 보정 새로고침</button><button class="btn danger" id="farmCorrectionClearPendingBtnFarmV720" type="button">공유 대기 삭제</button></div>
 <div class="notice farm-correction-share-status-v500 farm-correction-share-status-farm-v520" id="farmCorrectionShareStatusFarmV520">공유 버튼을 누를 때만 구글 시트로 전송됨.</div>
 <div class="farm-correction-shared-status-v545" id="farmCorrectionSharedStatusFarmV545">공유 보정은 새로고침하거나 사이트를 열 때 불러옵니다.</div>
 </div>
@@ -5095,11 +5053,12 @@ body.left-menu-collapsed-v8 header .schedulebar-v8 #farmCorrectionFoldV520 .farm
 </div>
 </div>
 </div></div><div class="farm-step3-below-v260" id="farmStep3BelowV260"></div><div id="farmDetailResult"></div></div></section></div></section>
-<section class="tabpage hidden" id="calc"><div class="grid"><aside class="panel"><div class="inner"><h2 class="section-title">검색 / 계산 옵션</h2><div class="control"><label>검색</label><input id="search" placeholder="요리명, 재료명 검색"/></div><div class="filters"><div class="control"><label>등급</label><select id="gradeFilter"><option value="all">전체</option><option>커먼</option><option>노멀</option><option>레어</option><option>에픽</option></select></div><div class="control"><label>정렬</label><select id="sortBy"><option value="profit">순이익 높은순</option><option value="self">자급 부담 낮은순</option><option value="sell">판매가 높은순</option><option value="name">이름순</option></select></div></div>
+<section class="tabpage hidden" id="calc"><div class="grid"><aside class="panel"><div class="inner"><h2 class="section-title">검색 / 계산 옵션</h2><div class="control"><label>검색</label><input id="search" placeholder="요리명, 재료명 검색"/></div><div class="filters"><div class="control"><label>등급</label><select id="gradeFilter"><option value="all">전체</option><option>커먼</option><option>노멀</option><option>레어</option><option>에픽</option></select></div><div class="control"><label>정렬</label><select id="sortBy"><option value="profit">순이익 높은순</option><option value="ownedProfit">보유 반영 수익순</option><option value="self">자급 부담 낮은순</option><option value="sell">판매가 높은순</option><option value="name">이름순</option></select></div></div>
 <details class="sort-explain-v67">
 <summary>정렬 기준 설명</summary>
 <div class="sort-explain-body-v67">
 <div><strong>순이익 높은순</strong><span>판매가에서 재료 원가를 뺀 값이 큰 순. 실제로 남는 G 우선.</span></div>
+<div><strong>보유 반영 수익순</strong><span>보유 재료를 먼저 쓰고 부족분만 산다고 가정한 순이익 순.</span></div>
 <div><strong>자급 부담 낮은순</strong><span>직접 준비해야 하는 재료 부담이 낮은 순.</span></div>
 <div><strong>판매가 높은순</strong><span>현재 판매가가 높은 순. 원가나 수급 부담은 제외.</span></div>
 <div><strong>이름순</strong><span>요리 이름 가나다순.</span></div>
@@ -5219,6 +5178,7 @@ body.left-menu-collapsed-v8 header .schedulebar-v8 #farmCorrectionFoldV520 .farm
 <div class="row data-actions" style="margin-top:12px">
 <button class="btn primary" id="farmCorrectionShareBtnV500" type="button">실측 보정 데이터 공유</button>
 <button class="btn" id="farmCorrectionFetchSharedBtnV545" type="button">공유 보정 새로고침</button>
+<button class="btn danger" id="farmCorrectionClearPendingBtnV720" type="button">공유 대기 삭제</button>
 </div>
 <div class="notice farm-correction-share-status-v500" id="farmCorrectionShareStatusV500">개인 보정 데이터는 이 브라우저에 저장됨. 공유 시 익명 ID와 실측 통계만 전송됨.</div>
 <div class="farm-correction-shared-status-v545" id="farmCorrectionSharedStatusV545">공유 보정은 새로고침하거나 사이트를 열 때 불러옵니다.</div>
@@ -5276,7 +5236,7 @@ const DATA = {
   yields:{'토마토':{min:1,avg:2,max:3,seed:'토마토 씨앗'},'마늘':{min:1,avg:2.5,max:4,seed:'마늘 씨앗'},'양파':{min:1,avg:1.5,max:2,seed:'양파 씨앗'}}
 };
 const LS='ddingCookingCalcV01';
-const defaultState={marketPrices:{}, marketPriceUnits:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, settings:{skillSell:0,skillPot:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0}, view:{search:'',gradeFilter:'all',sortBy:'profit',favOnly:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
+const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, settings:{skillSell:0,skillPot:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0}, view:{search:'',gradeFilter:'all',sortBy:'profit',favOnly:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
 const HARD_DIRECT_ITEMS=[];
 const FIXED_SHOP_ITEMS=Object.keys(DATA.fixedPrices);
 const FARM_RAW_ITEMS=new Set(['토마토','양파','마늘','당근','감자','비트','호박','수박','달콤한 열매','사탕수수','밀','파인애플','코코넛']);
@@ -5332,6 +5292,91 @@ function userPrice(name){
   const raw=userInputPriceV702(name);
   if(!(raw>0))return 0;
   return priceInputUnitV702(name)==='set'?raw/64:raw;
+}
+function ownedMaterialRowV712(name){
+  if(!state.ownedMaterials||typeof state.ownedMaterials!=='object')state.ownedMaterials={};
+  const row=state.ownedMaterials[name]||{};
+  const sets=Math.max(0,Math.floor(num(row.sets)||0));
+  const singles=Math.max(0,Math.min(63,Math.floor(num(row.singles)||0)));
+  return {sets,singles,qty:sets*64+singles};
+}
+function ownedMaterialsSnapshotV712(){
+  const out={};
+  const src=state.ownedMaterials&&typeof state.ownedMaterials==='object'?state.ownedMaterials:{};
+  Object.keys(src).forEach(name=>{
+    const row=ownedMaterialRowV712(name);
+    if(row.qty>0)out[name]=row.qty;
+  });
+  return out;
+}
+function addQtyMapV712(target,src){Object.entries(src||{}).forEach(([k,v])=>{if(v>0)target[k]=(target[k]||0)+v;});}
+function consumeOwnedV712(pool,name,qty){
+  const need=Math.max(0,Number(qty)||0);
+  const have=Math.max(0,Number(pool[name])||0);
+  const used=Math.min(have,need);
+  if(used>0){pool[name]=have-used;if(pool[name]<=1e-9)delete pool[name];}
+  return {used,remain:need-used};
+}
+function shortageCostOfItemV712(name,qty,pool,stack=[]){
+  if(stack.includes(name))return {cost:0,missing:[name],used:{},shortage:{[name]:qty}};
+  const used={}, shortage={};
+  const consumed=consumeOwnedV712(pool,name,qty);
+  if(consumed.used>0)used[name]=(used[name]||0)+consumed.used;
+  const remain=consumed.remain;
+  if(!(remain>0))return {cost:0,missing:[],used,shortage:{}};
+  if(isProcessed(name)){
+    const explicit=userPrice(name);
+    const pr=DATA.processed[name];
+    if(pr&&Array.isArray(pr.ingredients)&&pr.outputQty>0){
+      const craftPool={...pool};
+      let craftCost=0, craftMissing=[], craftUsed={}, craftShortage={};
+      pr.ingredients.forEach(ing=>{
+        const r=shortageCostOfItemV712(ing.name,ing.qty/pr.outputQty*remain,craftPool,stack.concat(name));
+        craftCost+=r.cost; craftMissing=craftMissing.concat(r.missing); addQtyMapV712(craftUsed,r.used); addQtyMapV712(craftShortage,r.shortage);
+      });
+      const directCost=explicit>0?explicit*remain:Infinity;
+      if(craftCost<=directCost){
+        Object.keys(pool).forEach(k=>delete pool[k]); Object.assign(pool,craftPool);
+        addQtyMapV712(used,craftUsed); addQtyMapV712(shortage,craftShortage);
+        return {cost:craftCost,missing:[...new Set(craftMissing)],used,shortage};
+      }
+      shortage[name]=(shortage[name]||0)+remain;
+      return {cost:directCost,missing:[],used,shortage};
+    }
+    if(explicit>0){shortage[name]=(shortage[name]||0)+remain;return {cost:explicit*remain,missing:[],used,shortage};}
+  }
+  const bp=basePrice(name);
+  shortage[name]=(shortage[name]||0)+remain;
+  return {cost:bp.cost*remain,missing:bp.missing?[name]:[],used,shortage};
+}
+function calcOwnedPurchaseV712(dish,info,totalSell){
+  const pool=ownedMaterialsSnapshotV712();
+  let cost=0, missing=[], used={}, shortage={};
+  dish.ingredients.forEach(ing=>{
+    const r=shortageCostOfItemV712(ing.name,ing.qty*info.qty,pool,[]);
+    cost+=r.cost; missing=missing.concat(r.missing); addQtyMapV712(used,r.used); addQtyMapV712(shortage,r.shortage);
+  });
+  const totalProfit=totalSell-cost;
+  const perCost=info.qty>0?cost/info.qty:0;
+  const perProfit=info.qty>0?totalProfit/info.qty:0;
+  const roi=cost>0?totalProfit/cost*100:null;
+  return {ownedPurchaseCost:cost,ownedCostPer:perCost,ownedTotalProfit:totalProfit,ownedProfitPer:perProfit,ownedRoi:roi,ownedUsed:used,ownedShortage:shortage,ownedMissing:[...new Set(missing)]};
+}
+function ownedMaterialInputsHTMLV712(name){
+  if(isStaminaDrinkNameV501(name))return '';
+  const row=ownedMaterialRowV712(name);
+  return `<div class="material-owned-block-v712"><div class="material-owned-title-v712">보유 수량</div><div class="material-owned-row-v712"><label class="material-owned-control-v712"><span>세트</span><input data-owned-material-sets="${esc(name)}" type="number" min="0" step="1" value="${row.sets}"></label><label class="material-owned-control-v712"><span>낱개</span><input data-owned-material-singles="${esc(name)}" type="number" min="0" max="63" step="1" value="${row.singles}"></label></div></div>`;
+}
+function ownedQtyTextV712(v){
+  const qty=Math.max(0,Number(v)||0);
+  const sets=Math.floor(qty/64), singles=Math.round((qty-sets*64)*100)/100;
+  if(sets>0&&singles>0)return `${sets}세트 ${round(singles)}개`;
+  if(sets>0)return `${sets}세트`;
+  return `${round(singles)}개`;
+}
+function ownedRowsHTMLV712(map){
+  const rows=Object.entries(map||{}).filter(([,v])=>v>0).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  return rows.map(([k,v])=>`<tr><td>${icon(k)} ${k}</td><td>${ownedQtyTextV712(v)}</td></tr>`).join('');
 }
 function hasPositiveMarketPrice(name){return hasMarketPrice(name) && userPrice(name)>0}
 function autoCropPriceFromSeedV701(name){
@@ -5764,9 +5809,9 @@ function selfSupplyMetrics(rawTotal,seedsTotal,totalProfit){
  const score=burden>0?totalProfit/burden:null;
  return {burden,score,farmBurden,otherBurden,seedNeed,seedGather};
 }
-function calcDish(dish){const force=currentForceMode(); let cost=0, missing=[], raw={}, seeds={}; dish.ingredients.forEach(i=>{const r=costOfItem(i.name,i.qty,force); cost+=r.cost; missing=missing.concat(r.missing); addMap(raw,r.raw); addMap(seeds,r.seeds);}); missing=[...new Set(missing)]; const info=saleInfo(); const sell=dishSellCalc(dish,info); const sellBase=sell.sellBase; const sellBonus=sell.sellBonus; const finalSell=sell.finalSell; const profit=finalSell-cost; const cashCost=cost; const cashRoi=cashCost>0?profit/cashCost*100:null; const roi=cashRoi; const totalSell=finalSell*info.qty; const totalCost=cost*info.qty; const totalProfit=profit*info.qty; const rawTotal={}; Object.entries(raw).forEach(([k,v])=>rawTotal[k]=v*info.qty); const seedsTotal={}; Object.entries(seeds).forEach(([k,v])=>seedsTotal[k]=v*info.qty); const self=selfSupplyMetrics(rawTotal,seedsTotal,totalProfit); return {cost,totalCost,missing,raw,seeds,rawTotal,seedsTotal,sellBase,finalSell,totalSell,profit,totalProfit,roi,cashCost,cashRoi,sellBonus,saleInfo:info,selfBurden:self.burden,selfScore:self.score,selfFarmBurden:self.farmBurden,selfOtherBurden:self.otherBurden,selfSeedNeed:self.seedNeed,selfSeedGather:self.seedGather};}
+function calcDish(dish){const force=currentForceMode(); let cost=0, missing=[], raw={}, seeds={}; dish.ingredients.forEach(i=>{const r=costOfItem(i.name,i.qty,force); cost+=r.cost; missing=missing.concat(r.missing); addMap(raw,r.raw); addMap(seeds,r.seeds);}); missing=[...new Set(missing)]; const info=saleInfo(); const sell=dishSellCalc(dish,info); const sellBase=sell.sellBase; const sellBonus=sell.sellBonus; const finalSell=sell.finalSell; const profit=finalSell-cost; const cashCost=cost; const cashRoi=cashCost>0?profit/cashCost*100:null; const roi=cashRoi; const totalSell=finalSell*info.qty; const totalCost=cost*info.qty; const totalProfit=profit*info.qty; const rawTotal={}; Object.entries(raw).forEach(([k,v])=>rawTotal[k]=v*info.qty); const seedsTotal={}; Object.entries(seeds).forEach(([k,v])=>seedsTotal[k]=v*info.qty); const self=selfSupplyMetrics(rawTotal,seedsTotal,totalProfit); const owned=calcOwnedPurchaseV712(dish,info,totalSell); return {cost,totalCost,missing,raw,seeds,rawTotal,seedsTotal,sellBase,finalSell,totalSell,profit,totalProfit,roi,cashCost,cashRoi,sellBonus,saleInfo:info,selfBurden:self.burden,selfScore:self.score,selfFarmBurden:self.farmBurden,selfOtherBurden:self.otherBurden,selfSeedNeed:self.seedNeed,selfSeedGather:self.seedGather,...owned};}
 function calcBonus(){return sellBonusForSaleInfo(saleInfo())}
-function renderCards(){const q=(state.view.search||'').trim().toLowerCase(); let list=DATA.recipes.filter(d=>{ if(state.view.gradeFilter!=='all'&&d.grade!==state.view.gradeFilter)return false; if(state.view.favOnly&&!state.favorites[d.name])return false; if(!q)return true; return d.name.toLowerCase().includes(q)||d.ingredients.some(i=>i.name.toLowerCase().includes(q));}); list.sort((a,b)=>{const ca=calcDish(a), cb=calcDish(b); const s=['profit','self','sell','name'].includes(state.view.sortBy)?state.view.sortBy:'profit'; if(s==='profit')return cb.profit-ca.profit; if(s==='self')return (ca.selfBurden??Infinity)-(cb.selfBurden??Infinity); if(s==='sell')return cb.finalSell-ca.finalSell; return a.name.localeCompare(b.name,'ko');});  const rows=list.map(d=>({dish:d,calc:calcDish(d)})); const scale={roiMax:0,selfMax:0,selfBurdenMax:0}; rows.forEach(r=>{const c=r.calc; if(!c.missing.length){ if(c.roi!=null&&isFinite(c.roi)&&c.roi>scale.roiMax)scale.roiMax=c.roi; if(c.selfScore!=null&&isFinite(c.selfScore)&&c.selfScore>scale.selfMax)scale.selfMax=c.selfScore; if(c.selfBurden!=null&&isFinite(c.selfBurden)&&c.selfBurden>scale.selfBurdenMax)scale.selfBurdenMax=c.selfBurden; }}); document.getElementById('cards').innerHTML=rows.map(r=>cardHTML(r.dish,r.calc,scale)).join('') || '<div class="notice">검색 결과 없음</div>'; const favBtn=document.getElementById('showFavOnly'); if(favBtn){favBtn.textContent=state.view.favOnly?'★ 즐겨찾기만':'☆ 즐겨찾기만'; favBtn.classList.add('favorite-accent-v23');} }
+function renderCards(){const q=(state.view.search||'').trim().toLowerCase(); let list=DATA.recipes.filter(d=>{ if(state.view.gradeFilter!=='all'&&d.grade!==state.view.gradeFilter)return false; if(state.view.favOnly&&!state.favorites[d.name])return false; if(!q)return true; return d.name.toLowerCase().includes(q)||d.ingredients.some(i=>i.name.toLowerCase().includes(q));}); list.sort((a,b)=>{const ca=calcDish(a), cb=calcDish(b); const s=['profit','ownedProfit','self','sell','name'].includes(state.view.sortBy)?state.view.sortBy:'profit'; if(s==='profit')return cb.profit-ca.profit; if(s==='ownedProfit')return cb.ownedTotalProfit-ca.ownedTotalProfit; if(s==='self')return (ca.selfBurden??Infinity)-(cb.selfBurden??Infinity); if(s==='sell')return cb.finalSell-ca.finalSell; return a.name.localeCompare(b.name,'ko');});  const rows=list.map(d=>({dish:d,calc:calcDish(d)})); const scale={roiMax:0,selfMax:0,selfBurdenMax:0}; rows.forEach(r=>{const c=r.calc; if(!c.missing.length){ if(c.roi!=null&&isFinite(c.roi)&&c.roi>scale.roiMax)scale.roiMax=c.roi; if(c.selfScore!=null&&isFinite(c.selfScore)&&c.selfScore>scale.selfMax)scale.selfMax=c.selfScore; if(c.selfBurden!=null&&isFinite(c.selfBurden)&&c.selfBurden>scale.selfBurdenMax)scale.selfBurdenMax=c.selfBurden; }}); document.getElementById('cards').innerHTML=rows.map(r=>cardHTML(r.dish,r.calc,scale)).join('') || '<div class="notice">검색 결과 없음</div>'; const favBtn=document.getElementById('showFavOnly'); if(favBtn){favBtn.textContent=state.view.favOnly?'★ 즐겨찾기만':'☆ 즐겨찾기만'; favBtn.classList.add('favorite-accent-v23');} }
 function craftRows(d,c){
   const qty=c.saleInfo.qty;
   return d.ingredients.map(i=>{
@@ -5846,6 +5891,9 @@ function cardHTML(d,c,scale={}){
     const gathers=per?` / 채집 약 ${round(v/per)}회`:''
     return `<tr><td>${icon(k)} ${k}</td><td>${round(v)}개${gathers}</td></tr>`
   }).join('')
+  const ownedUsedRows=ownedRowsHTMLV712(c.ownedUsed)
+  const ownedShortageRows=ownedRowsHTMLV712(c.ownedShortage)
+  const ownedRoiText=c.ownedPurchaseCost>0?`${round(c.ownedRoi)}%`:'추가비용 0'
 
   return `<article class="card calc-card collapsed${linkedClass}" data-calc-dish="${esc(d.name)}">
     <div class="card-tab-head" onclick="toggleCalcCardBody(this)">
@@ -5876,6 +5924,9 @@ function cardHTML(d,c,scale={}){
         <div>총 원가<b>${c.missing.length?'<span class="missing">미완성</span>':fmt(c.totalCost)}</b></div>
         <div>총 순이익<b class="profit ${c.totalProfit>=0?'good':'bad'}">${c.missing.length?'-':fmt(c.totalProfit)}</b></div>
         <div>1개 순이익<b class="profit ${c.profit>=0?'good':'bad'}">${c.missing.length?'-':fmt(c.profit)}</b></div>
+        <div>추가 구매 비용<b>${c.missing.length?'-':fmt(c.ownedPurchaseCost)}</b></div>
+        <div>보유 반영 순이익<b class="owned-profit-v712 ${c.ownedTotalProfit>=0?'good':'bad'}">${c.missing.length?'-':fmt(c.ownedTotalProfit)}</b></div>
+        <div>보유 반영 효율<b class="${c.ownedPurchaseCost>0?'':'owned-cost-zero-v712'}">${c.missing.length?'-':ownedRoiText}</b></div>
         ${burdenGaugeHTML('자급 부담', c.missing.length?null:c.selfBurden, scale.selfBurdenMax||0, c.missing.length?'-':'직접수급 없음')}
         <div>원가 기준<b>${modeName()}</b></div>
       </div>
@@ -5895,6 +5946,9 @@ function cardHTML(d,c,scale={}){
           <tbody>${rawRows}</tbody>
         </table>
         ${seedRows?`<table class="mini-table"><thead><tr><th>씨앗 환산</th><th>예상 총수량</th></tr></thead><tbody>${seedRows}</tbody></table>`:'<p class="muted">씨앗 환산 대상 없음</p>'}
+        ${ownedUsedRows?`<table class="mini-table"><thead><tr><th>보유 사용</th><th>차감 가정</th></tr></thead><tbody>${ownedUsedRows}</tbody></table>`:''}
+        ${ownedShortageRows?`<table class="mini-table"><thead><tr><th>추가 구매 필요</th><th>부족 수량</th></tr></thead><tbody>${ownedShortageRows}</tbody></table>`:''}
+        <p class="muted">보유 반영 수익은 보유 재료를 먼저 쓰고 부족분만 구매한다고 가정. 실제 보유 수량은 계산용으로만 쓰며 자동 차감하지 않음.</p>
         <p class="muted">자급 부담은 직접 준비해야 하는 재료 부담을 판매가와 비교한 값. 낮을수록 만들기 쉬움.</p>
       </details>
     </div>
@@ -5923,7 +5977,7 @@ function priceCardHTML(n, fixed=false){
  const value=fixed?DATA.fixedPrices[n]:(state.marketPrices[n]||'');
  const isDrink=isStaminaDrinkNameV501(n);
  if(fixed){
-  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div></div>`;
+  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div>${ownedMaterialInputsHTMLV712(n)}</div>`;
  }
  const hint=isDrink?'0원/빈값이면 제외':'시세 입력';
  const placeholder=isDrink?'0원/빈값이면 제외':'비워두면 자동 환산';
@@ -5932,7 +5986,7 @@ function priceCardHTML(n, fixed=false){
  const drinkUnit=isDrink?`<div class="tiny stamina-drink-unit-v501" data-stamina-drink-unit="${esc(n)}"></div>`:'';
  const autoHint=isAutoPriceTargetV701(n)?`<div class="tiny auto-price-hint-v701" data-auto-price-hint-v701="${esc(n)}"></div>`:'';
  const unitHint=`<div class="tiny price-unit-hint-v702" data-price-unit-hint-v702="${esc(n)}"></div>`;
- return `<div class="price-item ${isDrink?'stamina-drink-price-v501':''}" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">${hint}</div><div class="control"><label>가격</label><div class="price-unit-row-v702"><input data-price="${esc(n)}" type="number" step="0.1" placeholder="${placeholder}" value="${value}">${unitSelect}</div></div>${unitHint}${drinkUnit}${autoHint}</div>`;
+ return `<div class="price-item ${isDrink?'stamina-drink-price-v501':''}" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">${hint}</div><div class="control"><label>가격</label><div class="price-unit-row-v702"><input data-price="${esc(n)}" type="number" step="0.1" placeholder="${placeholder}" value="${value}">${unitSelect}</div></div>${unitHint}${drinkUnit}${autoHint}${ownedMaterialInputsHTMLV712(n)}</div>`;
 }
 function priceGroupCardHTML(g,index){
  const open=index<3?' open':'';
@@ -5964,6 +6018,16 @@ function renderPrices(){
   const key=e.target.dataset.priceUnit;
   if(!state.marketPriceUnits)state.marketPriceUnits={};
   state.marketPriceUnits[key]=e.target.value==='set'?'set':'each';
+  save();
+  refreshPriceViews();
+ }));
+ document.querySelectorAll('[data-owned-material-sets],[data-owned-material-singles]').forEach(el=>el.addEventListener('input',e=>{
+  const key=e.target.dataset.ownedMaterialSets || e.target.dataset.ownedMaterialSingles;
+  if(!state.ownedMaterials)state.ownedMaterials={};
+  const cur=state.ownedMaterials[key]||{sets:0,singles:0};
+  if(e.target.dataset.ownedMaterialSets!=null)cur.sets=Math.max(0,Math.floor(num(e.target.value)||0));
+  if(e.target.dataset.ownedMaterialSingles!=null)cur.singles=Math.max(0,Math.min(63,Math.floor(num(e.target.value)||0)));
+  if((cur.sets||0)>0||(cur.singles||0)>0)state.ownedMaterials[key]=cur; else delete state.ownedMaterials[key];
   save();
   refreshPriceViews();
  }));
@@ -6020,7 +6084,7 @@ function bindSettings(){
    el.addEventListener('change',saveSettingInput);
  });
 }
-function bindView(){['search','gradeFilter','sortBy'].forEach(id=>{const el=document.getElementById(id); if(id==='sortBy'&&!['profit','self','sell','name'].includes(state.view[id]))state.view[id]='profit'; el.value=state.view[id]||defaultState.view[id]; el.addEventListener('input',e=>{state.view[id]=e.target.value;save();renderCards();});}); const sale=document.getElementById('saleSets'); sale.value=state.settings.saleSets??1; sale.addEventListener('input',e=>{state.settings.saleSets=Math.max(0,Math.floor(num(e.target.value)||0));save();renderCards()}); const singles=document.getElementById('saleSingles'); singles.value=state.settings.saleSingles??0; singles.addEventListener('input',e=>{let v=Math.max(0,Math.floor(num(e.target.value)||0)); if(v>63)v=63; state.settings.saleSingles=v; singles.value=v; save();renderCards()}); document.getElementById('resetView').onclick=()=>{state.view=clone(defaultState.view);save();bindView();renderCards()}; document.getElementById('showFavOnly').onclick=()=>{state.view.favOnly=!state.view.favOnly;save();renderCards();};}
+function bindView(){['search','gradeFilter','sortBy'].forEach(id=>{const el=document.getElementById(id); if(id==='sortBy'&&!['profit','ownedProfit','self','sell','name'].includes(state.view[id]))state.view[id]='profit'; el.value=state.view[id]||defaultState.view[id]; el.addEventListener('input',e=>{state.view[id]=e.target.value;save();renderCards();});}); const sale=document.getElementById('saleSets'); sale.value=state.settings.saleSets??1; sale.addEventListener('input',e=>{state.settings.saleSets=Math.max(0,Math.floor(num(e.target.value)||0));save();renderCards()}); const singles=document.getElementById('saleSingles'); singles.value=state.settings.saleSingles??0; singles.addEventListener('input',e=>{let v=Math.max(0,Math.floor(num(e.target.value)||0)); if(v>63)v=63; state.settings.saleSingles=v; singles.value=v; save();renderCards()}); document.getElementById('resetView').onclick=()=>{state.view=clone(defaultState.view);save();bindView();renderCards()}; document.getElementById('showFavOnly').onclick=()=>{state.view.favOnly=!state.view.favOnly;save();renderCards();};}
 function openTab(tabName){
  const btn=document.querySelector('.tab[data-tab="'+tabName+'"]');
  if(!btn) return;
@@ -6300,7 +6364,7 @@ function dataSyncFarmPlanForBackup(){
   }
 
   // 복구가 끝난 상태라면 현재 화면 값을 먼저 저장. 복구 전이면 0값 덮어쓰기 방지.
-  try{if(typeof window.farmSaveInputsV77==='function' && (!window.farmPlanRestoreReadyV77 || window.farmPlanRestoreReadyV77())) window.farmSaveInputsV77({force:true})}catch(e){}
+  try{if(typeof window.farmSaveInputsV77==='function' && (!window.farmPlanRestoreReadyV77 || window.farmPlanRestoreReadyV77())) window.farmSaveInputsV77({force:true, intent:'apply'})}catch(e){}
 
   const values={};
   dataFields('#seedplan').forEach(el=>{
@@ -6857,6 +6921,25 @@ async function dataFetchSharedCorrectionV545(manual=false){
   }
 }
 
+function dataClearPendingShareV720(){
+  const fc=dataEnsureFarmCorrection();
+  const correctionCount=dataFarmCorrectionPendingCount();
+  const chestCount=(typeof window.farmIslandChestPendingCountV690==='function')?window.farmIslandChestPendingCountV690():0;
+  if(!correctionCount && !chestCount){
+    try{toast('삭제할 공유 대기 없음')}catch(e){}
+    return;
+  }
+  if(!confirm(`공유 대기 데이터를 삭제할까?\n실측 ${correctionCount.toLocaleString('ko-KR')}회 · 상자 ${chestCount.toLocaleString('ko-KR')}건\n이미 전송된 시트 행은 삭제되지 않음.`)) return;
+  fc.pendingStats={};
+  fc.pendingRecent=[];
+  fc.pendingCount=0;
+  let clearedChest=0;
+  try{ if(typeof window.farmIslandChestClearPendingV690==='function') clearedChest=window.farmIslandChestClearPendingV690(); }catch(e){}
+  try{save(false)}catch(e){}
+  try{dataRenderFarmCorrectionStatus()}catch(e){}
+  dataAddCorrectionShareRecentLogV533('공유 대기 삭제', [`실측 ${correctionCount.toLocaleString('ko-KR')}회 삭제`, `상자 ${clearedChest.toLocaleString('ko-KR')}건 삭제`], '구글 시트 전송 전 대기 데이터만 삭제');
+  try{toast('공유 대기 삭제됨')}catch(e){}
+}
 function renderDataStatus(){const raw=localStorage.getItem(LS)||''; const size=new Blob([raw]).size; const set=(id,text)=>{const el=document.getElementById(id); if(el)el.textContent=text}; set('dataLastSavedAt',dataDateText(state.meta&&state.meta.lastSavedAt)); set('dataStorageSize',dataByteText(size)); const kinds=[]; if(dataObjectCount(state.dishPrices))kinds.push(`요리 판매가 ${dataObjectCount(state.dishPrices)}개`); if(dataObjectCount(state.marketPrices))kinds.push(`재료 가격 ${dataObjectCount(state.marketPrices)}개`); if(dataObjectCount(state.supplyModes))kinds.push(`수급 방식 ${dataObjectCount(state.supplyModes)}개`); if(dataObjectCount(state.favorites))kinds.push(`즐겨찾기 ${dataObjectCount(state.favorites)}개`); if(state.settings)kinds.push('개인 설정'); const farmPlanCount=Math.max(dataObjectCount(state.farmPlanInputs&&state.farmPlanInputs.values),dataObjectCount(state.farmPlanSavedValues)); if(farmPlanCount)kinds.push(`재배 계획 ${farmPlanCount}개`); const correctionTotal=(typeof dataFarmCorrectionTotalCount==='function')?dataFarmCorrectionTotalCount():0; if(correctionTotal)kinds.push(`실측 보정 ${correctionTotal}회`); if(state.view)kinds.push('보기 설정'); set('dataStorageKinds',kinds.length?kinds.join(' · '):'저장 데이터 없음'); const notice=document.getElementById('dataStorageNotice'); if(notice)notice.textContent='브라우저 localStorage에 저장됨. 전체 백업에는 개인 설정, 요리 재배 계획 입력값, 실측 보정 데이터, 최근 반영 내역도 포함됨. 전체 복구 전에는 현재 데이터를 자동 백업 파일로 한 번 더 내려받음.'; try{dataRenderFarmCorrectionStatus()}catch(e){} dataRenderDishPriceApplyMeta();}
 window.renderDataStatus=renderDataStatus;
 function bindData(){
@@ -6867,6 +6950,8 @@ function bindData(){
   on('farmCorrectionShareBtnFarmV520','click',()=>dataShareFarmCorrection());
   on('farmCorrectionFetchSharedBtnV545','click',()=>dataFetchSharedCorrectionV545(true));
   on('farmCorrectionFetchSharedBtnFarmV545','click',()=>dataFetchSharedCorrectionV545(true));
+  on('farmCorrectionClearPendingBtnV720','click',()=>dataClearPendingShareV720());
+  on('farmCorrectionClearPendingBtnFarmV720','click',()=>dataClearPendingShareV720());
   // 재료 가격 탭은 공급 방식 일괄 전환 버튼 사용 안 함.
   on('exportBtn','click',()=>{dataDownloadJson(`meoriga_tting_backup_${dataStamp()}.json`,dataCurrentText()); toast('전체 백업 생성됨 · 재배 계획 포함')});
   on('importFile','change',e=>{const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{try{const parsed=JSON.parse(r.result); if(!parsed||typeof parsed!=='object')throw new Error('객체 아님'); if(!confirm('전체 복구를 진행할까? 현재 저장 데이터는 복구 전 백업 파일로 먼저 내려받음.'))return; dataDownloadJson(`meoriga_tting_before_restore_${dataStamp()}.json`,dataCurrentText()); const normalized=dataNormalizeFullBackup(parsed); state=merge(clone(defaultState),normalized); dataRestoreRecentActionsFromBackupV116(normalized); save(); location.reload()}catch(err){alert('JSON을 읽을 수 없음'); console.error(err)}finally{e.target.value=''}}; r.readAsText(f)});
@@ -7970,8 +8055,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     changed.forEach(el => el.dispatchEvent(new Event('change', {bubbles:true})));
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -8238,251 +8323,19 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 })();
 </script>
 <script>
+/* 입력 되돌리기/재실행 제거 v720
+   이전 전역 입력 스냅샷 방식은 재배 보유량을 0으로 덮어쓸 수 있어 폐기한다. */
 (function(){
-  const MAX_HISTORY = 50;
-  let undoStack = [];
-  let redoStack = [];
-  let beforeEditSnapshot = null;
-  let locked = false;
-  let keyCounter = 0;
-
-  function controls(){
-    return [...document.querySelectorAll('input, select, textarea')]
-      .filter(el => {
-        if(el.closest('#undoTools')) return false;
-        if(el.type === 'button' || el.type === 'submit' || el.type === 'reset') return false;
-        return true;
-      });
-  }
-
-  function keyOf(el){
-    if(el.id) return 'id:' + el.id;
-    if(el.name) return 'name:' + el.name;
-    if(!el.dataset.undoKey){
-      el.dataset.undoKey = 'undo-auto-' + (++keyCounter);
-    }
-    return 'auto:' + el.dataset.undoKey;
-  }
-
-  function snapshot(){
-    const data = {};
-    controls().forEach(el => {
-      const key = keyOf(el);
-      data[key] = {
-        tag: el.tagName,
-        type: el.type || '',
-        value: el.value,
-        checked: !!el.checked
-      };
-    });
-    return data;
-  }
-
-  function same(a,b){
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
-
-  function updateButtons(){
-    const undoBtn = document.getElementById('undoInputBtn');
-    const redoBtn = document.getElementById('redoInputBtn');
-    const status = document.getElementById('undoInputStatus');
-
-    if(undoBtn) undoBtn.disabled = undoStack.length === 0;
-    if(redoBtn) redoBtn.disabled = redoStack.length === 0;
-    if(status) status.textContent = `기록 ${undoStack.length}개`;
-  }
-
-  function pushUndo(snap){
-    if(!snap) return;
-    const last = undoStack[undoStack.length - 1];
-    if(last && same(last, snap)) return;
-
-    undoStack.push(snap);
-    if(undoStack.length > MAX_HISTORY) undoStack.shift();
-    redoStack = [];
-    updateButtons();
-  }
-
-  function restore(snap){
-    if(!snap) return;
-    locked = true;
-
-    controls().forEach(el => {
-      const data = snap[keyOf(el)];
-      if(!data) return;
-
-      if(el.type === 'checkbox' || el.type === 'radio'){
-        el.checked = !!data.checked;
-      }else{
-        el.value = data.value;
-      }
-
-      el.dispatchEvent(new Event('input', {bubbles:true}));
-      el.dispatchEvent(new Event('change', {bubbles:true}));
-    });
-
-    locked = false;
-
-    setTimeout(() => {
-      try{
-      const st = (typeof state !== 'undefined') ? state : null;
-      if(st){
-        if(!st.farmPlanInputs) st.farmPlanInputs={values:{},updatedAt:''};
-        if(!st.farmPlanInputs.values) st.farmPlanInputs.values={};
-        if(!st.farmPlanSavedValues) st.farmPlanSavedValues={};
-        OWNED_IDS.forEach(id=>{
-          st.farmPlanInputs.values[id]='0';
-          st.farmPlanSavedValues[id]='0';
-        });
-        if(typeof save==='function') save();
-      }
-    }catch(e){}
-    try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
-      try{ if(typeof renderCards === 'function') renderCards(); }catch(e){}
-      try{ if(typeof updatePriceTimer === 'function') updatePriceTimer(); }catch(e){}
-    }, 0);
-
-    updateButtons();
-  }
-
-  function undo(){
-    if(!undoStack.length) return;
-    const current = snapshot();
-    const prev = undoStack.pop();
-    redoStack.push(current);
-    restore(prev);
-  }
-
-  function redo(){
-    if(!redoStack.length) return;
-    const current = snapshot();
-    const next = redoStack.pop();
-    undoStack.push(current);
-    restore(next);
-  }
-
-  function bindInputHistory(){
-    controls().forEach(el => {
-      if(el.dataset.undoBound === '1') return;
-      el.dataset.undoBound = '1';
-
-      el.addEventListener('focusin', () => {
-        if(locked) return;
-        beforeEditSnapshot = snapshot();
-      });
-
-      el.addEventListener('pointerdown', () => {
-        if(locked) return;
-        beforeEditSnapshot = snapshot();
-      });
-
-      el.addEventListener('keydown', e => {
-        if(locked) return;
-        if(!beforeEditSnapshot) beforeEditSnapshot = snapshot();
-
-        if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){
-          e.preventDefault();
-          undo();
-        }
-        if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){
-          e.preventDefault();
-          redo();
-        }
-      });
-
-      const changed = () => {
-        if(locked) return;
-        if(!beforeEditSnapshot) return;
-
-        const now = snapshot();
-        if(!same(beforeEditSnapshot, now)){
-          pushUndo(beforeEditSnapshot);
-          beforeEditSnapshot = null;
-        }
-      };
-
-      el.addEventListener('input', changed);
-      el.addEventListener('change', changed);
-    });
-  }
-
-
-    function clearHistory(showToast=true){
-    undoStack = [];
-    redoStack = [];
-    beforeEditSnapshot = null;
-    updateButtons();
-    if(showToast && typeof window.toast === 'function'){
-      try{ window.toast('기록삭제됨'); }catch(e){}
-    }
-  }
-
-  window.__farmInputHistoryClearV32 = clearHistory;
-
-
-  function captureProgrammaticChange(){
-    if(locked) return;
-    const snap = snapshot();
-    pushUndo(snap);
-    beforeEditSnapshot = null;
-  }
-
-  window.__farmInputHistoryCaptureV420 = captureProgrammaticChange;
-
-  function insertUndoTools(){
-    const root = document.getElementById('seedplan');
-    if(!root) return;
-
-    const anchor =
-      root.querySelector('.farm-plan-wrap') ||
-      root.querySelector('.inner') ||
-      root;
-
-    // 입력 기록 도구는 전용 묶음에서 재사용하고 버튼 이벤트를 다시 연결한다.
-    const allTools = Array.from(document.querySelectorAll('#undoTools'));
-    let box = allTools[0] || null;
-    allTools.slice(1).forEach(el => el.remove());
-
-    if(!box){
-      box = document.createElement('div');
-      box.id = 'undoTools';
-      box.className = 'undo-tools';
-    }
-
-    box.innerHTML = `
-      <button type="button" id="undoInputBtn">되돌리기</button>
-      <button type="button" id="redoInputBtn">재실행</button>
-      <button type="button" class="btn danger" id="clearUndoInputBtn">기록삭제</button>
-    `;
-
-    const undoHost = document.getElementById('farmUndoBlockV100');
-    if(undoHost && box.parentNode !== undoHost) undoHost.appendChild(box);
-    else if(!undoHost && box.parentNode !== anchor) anchor.insertBefore(box, anchor.firstChild);
-
-    const undoBtn = box.querySelector('#undoInputBtn');
-    const redoBtn = box.querySelector('#redoInputBtn');
-    const clearBtn = box.querySelector('#clearUndoInputBtn');
-
-    if(undoBtn) undoBtn.onclick = undo;
-    if(redoBtn) redoBtn.onclick = redo;
-    if(clearBtn) clearBtn.onclick = () => clearHistory(true);
-
-    updateButtons();
-  }
-
-  function initUndo(){
-    insertUndoTools();
-    bindInputHistory();
-    updateButtons();
-  }
-
+  function removeUndoTools(){ document.querySelectorAll('#undoTools').forEach(el => el.remove()); }
+  window.__farmInputHistoryClearV32 = function(){ removeUndoTools(); };
+  window.__farmInputHistoryCaptureV420 = function(){ return false; };
+  window.addEventListener('load', removeUndoTools);
   const oldOpen = window.openTab;
-  window.openTab = function(tabName){
-    if(typeof oldOpen === 'function') oldOpen.apply(this, arguments);
-    initUndo();
-  };
-
-  window.addEventListener('load', initUndo);
+  if(typeof oldOpen === 'function' && !oldOpen.__safeNoUndoV720){
+    const wrapped = function(){ const ret = oldOpen.apply(this, arguments); removeUndoTools(); return ret; };
+    wrapped.__safeNoUndoV720 = true;
+    window.openTab = wrapped;
+  }
 })();
 </script>
 <script>
@@ -9661,6 +9514,28 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     return values;
   }
+  const FARM_SAFE_GROUPS_V720 = {
+    seed:['farmSeedTomatoLarge','farmSeedTomatoSmall','farmSeedTomatoStack','farmSeedTomatoSingle','farmSeedOnionLarge','farmSeedOnionSmall','farmSeedOnionStack','farmSeedOnionSingle','farmSeedGarlicLarge','farmSeedGarlicSmall','farmSeedGarlicStack','farmSeedGarlicSingle'],
+    crop:['farmCropTomatoStack','farmCropTomatoSingle','farmCropOnionStack','farmCropOnionSingle','farmCropGarlicStack','farmCropGarlicSingle'],
+    base:['farmBaseTomatoStack','farmBaseTomatoSingle','farmBaseOnionStack','farmBaseOnionSingle','farmBaseGarlicStack','farmBaseGarlicSingle']
+  };
+  function numericValue(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+  function groupUsefulCount(obj, ids){ return ids.reduce((sum,id)=>sum + (Math.abs(numericValue(obj && obj[id])) > 0 ? 1 : 0), 0); }
+  function groupPresentCount(obj, ids){ return ids.reduce((sum,id)=>sum + (obj && Object.prototype.hasOwnProperty.call(obj,id) ? 1 : 0), 0); }
+  function trustedFarmSaveIntent(options){
+    const intent = String(options && options.intent || '');
+    return ['manual','reset-owned','apply','convert','chest','shelflife','backup'].includes(intent);
+  }
+  function suspiciousFarmOverwrite(st, values, options){
+    if(trustedFarmSaveIntent(options)) return false;
+    const previous = Object.assign({}, st.farmPlanSavedValues || {}, (st.farmPlanInputs && st.farmPlanInputs.values) || {});
+    return Object.values(FARM_SAFE_GROUPS_V720).some(ids => {
+      const oldUseful = groupUsefulCount(previous, ids);
+      const newUseful = groupUsefulCount(values, ids);
+      const present = groupPresentCount(values, ids);
+      return oldUseful > 0 && present >= ids.length && newUseful === 0;
+    });
+  }
   function allowSave(){
     if(restoring || initializing) return false;
     // 페이지 로드 초기에 기존 farmPlanInit이 먼저 돌면서 0값을 저장하는 것을 차단.
@@ -9668,6 +9543,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return true;
   }
   function saveFarmInputs(options={}){
+    if(restoring || initializing) return false;
     if(window.__farmApplyBatchSuppressV221 && !options.force) return false;
     if(!options.force && !allowSave()) return false;
 
@@ -9676,6 +9552,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
     const values = collectFarmValues();
     if(!Object.keys(values).length) return false;
+    if(suspiciousFarmOverwrite(st, values, options)){
+      console.warn('farm autosave blocked: suspicious zero overwrite', values);
+      try{ if(typeof toast === 'function') toast('보유량 0 덮어쓰기 차단됨'); }catch(e){}
+      return false;
+    }
 
     st.farmPlanInputs.values = values;
     st.farmPlanInputs.updatedAt = new Date().toISOString();
@@ -9760,7 +9641,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       farmBtn.dataset.farmManualSaveV78='1';
       farmBtn.addEventListener('click',()=>{
         restoredOnce = true;
-        const ok=saveFarmInputs({force:true});
+        const ok=saveFarmInputs({force:true, intent:'manual'});
         const status=document.getElementById('farmManualSaveStatusV74');
         if(status) status.textContent=ok ? `요리 재배 계획 저장됨 ${nowText()}` : '저장 실패';
         try{ if(typeof toast==='function') toast(ok ? '요리 재배 계획 저장됨' : '저장 실패'); }catch(e){}
@@ -9794,7 +9675,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(typeof oldUpdate === 'function'){
         try{ oldUpdate(); }catch(e){ console.error('farm restore recalculation failed', e); }
       }
-      saveFarmInputs({force:true});
+      // 초기 복구 직후에는 화면값을 다시 저장하지 않는다.
     };
   }
 
@@ -9803,7 +9684,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     window.farmPlanResetOwned = function(){
       const result = oldResetOwned.apply(this, arguments);
       restoredOnce = true;
-      saveFarmInputs({force:true});
+      saveFarmInputs({force:true, intent:'reset-owned'});
       return result;
     };
   }
@@ -9819,7 +9700,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         if(typeof oldUpdate === 'function'){
           try{ oldUpdate(); }catch(e){}
         }
-        saveFarmInputs({force:true});
+        // 탭 진입은 복구/계산만 하고 저장값을 덮어쓰지 않는다.
       }
       return result;
     };
@@ -9835,13 +9716,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(typeof oldUpdate === 'function'){
       try{ oldUpdate(); }catch(e){ console.error('farm autosave boot recalculation failed', e); }
     }
-    saveFarmInputs({force:true});
+    // 부팅 시 0값으로 저장을 덮지 않기 위해 자동 저장은 하지 않는다.
   }
 
   window.farmRestoreInputsV78 = restoreFarmInputs;
   window.farmSaveInputsV78 = saveFarmInputs;
   window.manualSaveSettingsV78 = saveSettingsOnly;
-  window.manualSaveFarmPlanV78 = () => saveFarmInputs({force:true});
+  window.manualSaveFarmPlanV78 = () => saveFarmInputs({force:true, intent:'manual'});
   window.farmPlanRestoreReadyV78 = () => restoredOnce;
   window.farmPlanStoredCountV78 = () => {
     const st = ensureFarmStores();
@@ -10288,7 +10169,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   function saveFarm(){
-    try{ if(typeof farmSaveInputsV78==='function') farmSaveInputsV78({force:true}); }catch(e){}
+    try{ if(typeof farmSaveInputsV78==='function') farmSaveInputsV78({force:true, intent:'manual'}); }catch(e){}
     try{ if(typeof updateSaveStateStatusV83==='function') updateSaveStateStatusV83(); }catch(e){}
     try{ if(typeof updateFarmPlanReinforceV84==='function') updateFarmPlanReinforceV84(); }catch(e){}
   }
@@ -10681,7 +10562,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       <h4>\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601</h4>
       <p class="farm-harvest-input-note-v113">\uC528\uC557\uC744 \uCC44\uC9D1\uD560 \uB54C \uBC18\uC601\uB418\uB294 \uCC44\uC9D1 \uC528\uC557\uACFC \uB4DC\uB86D \uBCA0\uC774\uC2A4\uB97C \uC785\uB825\uD569\uB2C8\uB2E4. \uC218\uD655 \uC791\uBB3C\uC740 \uC774\uACF3\uC5D0\uC11C \uB298\uB9AC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.</p>
       <div class="farm-inline-unit-row-v137 farm-gather-used-stamina-row-v510">
-        <div class="control"><label>현재 남은 체력</label><input data-no-farm-save="1" id="farmGatherRemainStaminaV620" min="0" type="number" step="1" value="0"></div>
+        <div class="control"><label>현재 남은 체력</label><input data-no-farm-save="1" id="farmGatherRemainStaminaV620" min="0" type="number" step="1" value="" placeholder="남은 체력"></div>
         <div class="control"><label>중간에 추가된 체력</label><input data-no-farm-save="1" id="farmGatherExtraStaminaV620" min="0" type="number" step="1" value="0"></div>
         <div class="control"><label>계산된 사용 체력</label><input data-no-farm-save="1" id="farmGatherUsedStaminaV510" min="0" type="number" step="1" value="0" readonly></div>
       </div>
@@ -11156,26 +11037,30 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return byId('farmGatherExtraStaminaV620');
   }
   function gatherReadInputNumberV620(el){
-    const n = Number(el?.value || 0);
-    return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : 0;
+    const raw = String(el?.value ?? '').trim();
+    if(raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : null;
   }
   function readGatherRemainStaminaV620(){
     return gatherReadInputNumberV620(gatherRemainStaminaInputV620());
   }
   function readGatherExtraStaminaV620(){
-    return gatherReadInputNumberV620(gatherExtraStaminaInputV620());
+    const v = gatherReadInputNumberV620(gatherExtraStaminaInputV620());
+    return v == null ? 0 : v;
   }
   function computeGatherUsedStaminaV620(){
     const currentStamina = Math.max(0, readNum('farmUseStamina'));
     const remainEl = gatherRemainStaminaInputV620();
     const extraEl = gatherExtraStaminaInputV620();
     if(!remainEl || !extraEl){
-      const legacy = gatherReadInputNumberV620(gatherUsedStaminaInputV510());
+      const legacy = gatherReadInputNumberV620(gatherUsedStaminaInputV510()) || 0;
       return {currentStamina, remaining:Math.max(0, currentStamina - legacy), extra:0, available:currentStamina, used:legacy, valid:legacy <= currentStamina};
     }
-    const remaining = readGatherRemainStaminaV620();
+    const remainingRaw = readGatherRemainStaminaV620();
     const extra = readGatherExtraStaminaV620();
     const available = currentStamina + extra;
+    const remaining = remainingRaw == null ? available : remainingRaw;
     const used = Math.max(0, available - remaining);
     return {currentStamina, remaining, extra, available, used, valid:remaining <= available};
   }
@@ -11596,8 +11481,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -11652,6 +11537,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       setGatherStatus('이미 반영됨 · 값 수정 후 다시 가능', 'warn');
       return;
     }
+    const confirmTextV720 = [
+      '실제 채집 반영 확인',
+      `사용 체력 ${numFmt(usedStaminaInput)}`,
+      `남은 체력 ${numFmt(staminaInfoV620.remaining)}`,
+      staminaInfoV620.extra > 0 ? `추가 체력 ${numFmt(staminaInfoV620.extra)}` : '',
+      '이대로 반영할까?'
+    ].filter(Boolean).join('\n');
+    if(!confirm(confirmTextV720)){
+      setGatherStatus('채집 반영 취소됨', 'warn');
+      return;
+    }
     const correctionExpectedV500 = gatherDefaultsFromResult();
     const correctionExpectedValuesV500 = total > 0
       ? scaledGatherExpectedV510(correctionExpectedV500, values, usedStaminaInput)
@@ -11681,8 +11577,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -11865,8 +11761,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveAndRefresh(){
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -12436,14 +12332,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
   function itemForButton(id){
     const map = {
-      undoInputBtn: {
-        type:'되돌리기',
-        lines:['입력 기록을 한 단계 되돌림']
-      },
-      redoInputBtn: {
-        type:'재실행',
-        lines:['되돌린 입력 기록을 다시 실행함']
-      },
       farmQuickBaseCalcV21: {
         type:'기준값 계산',
         lines:criteriaLines
@@ -12471,10 +12359,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
   function logAfterButton(btn){
     if(!btn || btn.disabled) return;
-    if(btn.id === 'clearUndoInputBtn'){
-      wrapClearHistory();
-      return;
-    }
     const item = itemForButton(btn.id);
     if(!item) return;
     setTimeout(function(){
@@ -12502,7 +12386,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   document.addEventListener('click', function(e){
     const target = e.target;
     if(!target || !target.closest) return;
-    const btn = target.closest('#undoInputBtn, #redoInputBtn, #clearUndoInputBtn, #farmQuickBaseCalcV21, #farmHarvestRecalcBtnV116, #farmManualSaveBtnV74, #farmQuickResetOwnedV21, #farmResetAllV87');
+    const btn = target.closest('#farmQuickBaseCalcV21, #farmHarvestRecalcBtnV116, #farmManualSaveBtnV74, #farmQuickResetOwnedV21, #farmResetAllV87');
     if(!btn) return;
     logAfterButton(btn);
   }, true);
@@ -12845,8 +12729,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveFarmInputs(){
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
     }catch(e){}
   }
   function toastSafe(text){ try{ if(typeof toast === 'function') toast(text); }catch(e){} }
@@ -13011,6 +12895,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return (Array.isArray(s.records) ? s.records : []).filter(rec => rec && !rec.shareRequestedAt);
   }
   function pendingCount(){ return pendingRecords().length; }
+  function clearPendingRecords(){
+    const s = store();
+    if(!s || !Array.isArray(s.records)) return 0;
+    const before = pendingRecords().length;
+    s.records = s.records.filter(rec => rec && rec.shareRequestedAt);
+    s.updatedAt = new Date().toISOString();
+    saveState();
+    const status = byId('farmIslandChestStatusV690');
+    if(status) status.textContent = before ? `상자 공유 대기 ${fmt(before)}건 삭제됨` : '삭제할 상자 공유 대기 없음';
+    return before;
+  }
   async function sharePendingRecords(){
     const s = store();
     const pending = pendingRecords();
@@ -13096,6 +12991,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   window.farmIslandChestRecordInsertV690 = insertUi;
   window.farmIslandChestPendingCountV690 = pendingCount;
   window.farmIslandChestSharePendingV690 = sharePendingRecords;
+  window.farmIslandChestClearPendingV690 = clearPendingRecords;
 
   boot();
   window.addEventListener('load', boot);
@@ -13427,7 +13323,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveQuiet(){
     try{ const store=ensureStore(); if(store) store.updatedAt = new Date().toISOString(); }catch(e){}
-    try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true}); }catch(e){}
+    try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'shelflife'}); }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof renderCards === 'function') renderCards(); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
