@@ -2796,10 +2796,12 @@ header .title h1.app-logo-title{
 #prices .material-owned-row-v712{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 #prices .material-owned-control-v712{min-width:0;display:flex;flex-direction:column;gap:4px;}
 #prices .material-owned-control-v712 span{font-size:11px;color:#bcd0f0;font-weight:850;}
-#prices .material-owned-control-v712 input{width:100%;min-width:0;box-sizing:border-box;height:39px;}
+#prices .material-owned-control-v712 input{width:100%;min-width:0;box-sizing:border-box;height:39px;background:#0f131c;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;font:inherit;}
+#prices .material-owned-control-v712 input:focus{border-color:var(--accent);}
 .owned-profit-v712.good{color:var(--good)}
 .owned-profit-v712.bad{color:var(--danger)}
 .owned-cost-zero-v712{color:#7dffd9;font-weight:950;}
+#prices .price-unit-hint-v702,#prices .stamina-drink-unit-v501,#prices .auto-price-hint-v701{display:block;min-height:16px;line-height:1.35;}
 #prices .auto-price-hint-v701{margin-top:6px;color:#7dffd9;font-weight:850;}
 #prices .stamina-drink-summary-v501{margin:0 0 10px;background:#0f1724;border:1px solid #2d3850;border-radius:13px;padding:10px 11px;color:#dbe8ff;font-size:12px;line-height:1.45;}
 #prices .stamina-drink-summary-v501 b{color:#7dffd9;font-weight:950;}
@@ -5977,14 +5979,14 @@ function priceCardHTML(n, fixed=false){
  const value=fixed?DATA.fixedPrices[n]:(state.marketPrices[n]||'');
  const isDrink=isStaminaDrinkNameV501(n);
  if(fixed){
-  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div>${ownedMaterialInputsHTMLV712(n)}</div>`;
+  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div><div class="tiny price-unit-hint-v702" aria-hidden="true"></div><div class="tiny auto-price-hint-v701" aria-hidden="true"></div>${ownedMaterialInputsHTMLV712(n)}</div>`;
  }
  const hint=isDrink?'0원/빈값이면 제외':'시세 입력';
  const placeholder=isDrink?'0원/빈값이면 제외':'비워두면 자동 환산';
  const unit=priceInputUnitV702(n);
  const unitSelect=`<select data-price-unit="${esc(n)}" aria-label="${esc(n)} 가격 단위"><option value="each"${unit==='each'?' selected':''}>개당</option><option value="set"${unit==='set'?' selected':''}>1세트</option></select>`;
  const drinkUnit=isDrink?`<div class="tiny stamina-drink-unit-v501" data-stamina-drink-unit="${esc(n)}"></div>`:'';
- const autoHint=isAutoPriceTargetV701(n)?`<div class="tiny auto-price-hint-v701" data-auto-price-hint-v701="${esc(n)}"></div>`:'';
+ const autoHint=`<div class="tiny auto-price-hint-v701" data-auto-price-hint-v701="${esc(n)}"></div>`;
  const unitHint=`<div class="tiny price-unit-hint-v702" data-price-unit-hint-v702="${esc(n)}"></div>`;
  return `<div class="price-item ${isDrink?'stamina-drink-price-v501':''}" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">${hint}</div><div class="control"><label>가격</label><div class="price-unit-row-v702"><input data-price="${esc(n)}" type="number" step="0.1" placeholder="${placeholder}" value="${value}">${unitSelect}</div></div>${unitHint}${drinkUnit}${autoHint}${ownedMaterialInputsHTMLV712(n)}</div>`;
 }
