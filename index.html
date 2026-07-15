@@ -13902,4 +13902,377 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 })();
 </script>
 
+
+<script id="farmPendingItemUndoScriptV722">
+/* 공유 대기 개별 관리 + 최근 반영 단위 취소 v722 */
+(function(){
+  if(window.__farmPendingItemUndoV722) return;
+  window.__farmPendingItemUndoV722 = true;
+
+  const CROPS = ['토마토','양파','마늘'];
+  const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
+  const UNDO_KEY = 'mtFarmUndoActionsV722';
+  const MAX_UNDO = 8;
+  const ACTIONS = {
+    farmGatherApplyBtnV117:'채집 반영',
+    farmHarvestApplyBtnV113:'수확 반영',
+    farmApplyPlantBtnV111:'추천대로 심기',
+    farmIslandChestApplyBtnV690:'상자 기록',
+    farmCropToBaseBtnV410:'작물→베이스 변환',
+    farmBaseToDishBtnV410:'베이스→요리 변환'
+  };
+
+  function byId(id){ return document.getElementById(id); }
+  function qa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+  function esc(text){ return String(text ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function num(v){ const n=Number(v); return Number.isFinite(n)?Math.trunc(n):0; }
+  function fmt(v){ return Math.max(0, Math.trunc(Number(v)||0)).toLocaleString('ko-KR'); }
+  function saveQuiet(){ try{ if(typeof save === 'function') save(false); }catch(e){} }
+  function farmSave(){ try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'}); else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'}); }catch(e){} }
+  function refreshAll(){
+    try{ farmSave(); }catch(e){}
+    try{ saveQuiet(); }catch(e){}
+    try{ if(typeof window.farmPlanUpdate === 'function') window.farmPlanUpdate(); }catch(e){}
+    try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
+    renderUndoPanel();
+    renderPendingManager(false);
+  }
+  function toastSafe(msg){ try{ if(typeof toast==='function') toast(msg); }catch(e){} }
+  function recentLog(type, lines, note){ try{ if(typeof window.farmAddRecentActionV116 === 'function') window.farmAddRecentActionV116({type, lines:lines||[], note:note||''}); }catch(e){} }
+
+  function ownedFieldIds(){
+    const ids = ['farmUseStamina'];
+    CROPS.forEach(crop=>{
+      const p=EN[crop];
+      ['Large','Small','Stack','Single'].forEach(u=>ids.push(`farmSeed${p}${u}`));
+      ['Stack','Single'].forEach(u=>ids.push(`farmCrop${p}${u}`, `farmBase${p}${u}`));
+    });
+    return ids;
+  }
+  function snapshotFields(){
+    const out={};
+    ownedFieldIds().forEach(id=>{ const el=byId(id); if(el) out[id]=String(el.value ?? ''); });
+    return out;
+  }
+  function diffFields(before, after){
+    const ids = new Set([...Object.keys(before||{}), ...Object.keys(after||{})]);
+    return Array.from(ids).filter(id => String((before||{})[id] ?? '') !== String((after||{})[id] ?? ''));
+  }
+  function restoreFields(values){
+    const changed=[];
+    Object.entries(values||{}).forEach(([id,value])=>{
+      const el=byId(id);
+      if(!el) return;
+      const next=String(value ?? '');
+      if(String(el.value ?? '') !== next){ el.value=next; changed.push(el); }
+    });
+    changed.forEach(el=>el.dispatchEvent(new Event('input',{bubbles:true})));
+    changed.forEach(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
+  }
+  function farmCorrectionStore(){
+    try{
+      const st=(typeof state !== 'undefined') ? state : window.state;
+      if(!st) return null;
+      if(!st.farmCorrection || typeof st.farmCorrection !== 'object') st.farmCorrection={version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,shareMeta:{}};
+      const fc=st.farmCorrection;
+      if(!fc.stats || typeof fc.stats!=='object') fc.stats={};
+      if(!Array.isArray(fc.recent)) fc.recent=[];
+      if(!fc.pendingStats || typeof fc.pendingStats!=='object') fc.pendingStats={};
+      if(!Array.isArray(fc.pendingRecent)) fc.pendingRecent=[];
+      return fc;
+    }catch(e){ return null; }
+  }
+  function correctionIds(list){ return new Set((Array.isArray(list)?list:[]).map(r=>r&&r.id).filter(Boolean)); }
+  function conditionKeyOf(rec){ return rec && (rec.conditionKey || rec.key); }
+  function subtractStat(map, rec){
+    if(!map || !rec) return;
+    const key=conditionKeyOf(rec);
+    if(!key || !map[key]) return;
+    const item=map[key];
+    const expected=Math.max(0, Number(rec.expected ?? rec.expectedTotal ?? 0) || 0);
+    const actual=Math.max(0, Number(rec.actual ?? rec.actualTotal ?? 0) || 0);
+    item.count = Math.max(0, Number(item.count||0) - 1);
+    item.expectedTotal = Math.max(0, Number(item.expectedTotal||0) - expected);
+    item.actualTotal = Math.max(0, Number(item.actualTotal||0) - actual);
+    item.ratio = item.expectedTotal > 0 ? item.actualTotal / item.expectedTotal : null;
+    item.updatedAt = new Date().toISOString();
+    if(item.count <= 0 || item.expectedTotal <= 0) delete map[key];
+  }
+  function removeCorrectionRecords(ids, removeLocalStats){
+    const fc=farmCorrectionStore();
+    if(!fc || !ids || !ids.length) return 0;
+    const set=new Set(ids);
+    let removed=0;
+    const pendingRemoved=[];
+    const localRemoved=[];
+    fc.pendingRecent = (fc.pendingRecent||[]).filter(rec=>{
+      if(rec && set.has(rec.id)){ pendingRemoved.push(rec); removed++; return false; }
+      return true;
+    });
+    pendingRemoved.forEach(rec=>subtractStat(fc.pendingStats, rec));
+    if(removeLocalStats){
+      fc.recent = (fc.recent||[]).filter(rec=>{
+        if(rec && set.has(rec.id)){ localRemoved.push(rec); return false; }
+        return true;
+      });
+      localRemoved.forEach(rec=>subtractStat(fc.stats, rec));
+    }
+    fc.pendingCount = Object.values(fc.pendingStats||{}).reduce((sum,item)=>sum+Number(item&&item.count||0),0);
+    fc.updatedAt = new Date().toISOString();
+    return removed;
+  }
+  function chestStore(){ try{ return typeof window.farmIslandChestRecordStoreV690 === 'function' ? window.farmIslandChestRecordStoreV690() : null; }catch(e){ return null; } }
+  function chestPendingIds(){ const s=chestStore(); return new Set(((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).map(r=>r.id).filter(Boolean)); }
+  function removeChestRecords(ids){
+    const s=chestStore();
+    if(!s || !Array.isArray(s.records) || !ids || !ids.length) return 0;
+    const set=new Set(ids);
+    const before=s.records.length;
+    s.records=s.records.filter(rec=>!(rec && set.has(rec.id)));
+    s.updatedAt=new Date().toISOString();
+    return before-s.records.length;
+  }
+  function readUndo(){ try{ const arr=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); return Array.isArray(arr)?arr.slice(0,MAX_UNDO):[]; }catch(e){ return []; } }
+  function writeUndo(arr){ try{ localStorage.setItem(UNDO_KEY, JSON.stringify((arr||[]).slice(0,MAX_UNDO))); }catch(e){} }
+  function pushUndo(record){
+    const list=readUndo();
+    list.unshift(Object.assign({id:`${Date.now()}-${Math.random().toString(16).slice(2)}`, time:Date.now()}, record||{}));
+    writeUndo(list);
+    renderUndoPanel();
+  }
+  function labelFromFields(before, after){
+    const changed=diffFields(before, after);
+    if(!changed.length) return '보유량 변화 없음';
+    const pick=[];
+    CROPS.forEach(crop=>{
+      const p=EN[crop];
+      const seedIds=[`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`];
+      const cropIds=[`farmCrop${p}Stack`,`farmCrop${p}Single`];
+      const baseIds=[`farmBase${p}Stack`,`farmBase${p}Single`];
+      function total(ids,obj){ return ids.reduce((sum,id)=>sum+num((obj||{})[id]),0); }
+      const sb=total(seedIds,before), sa=total(seedIds,after);
+      const cb=num((before||{})[`farmCrop${p}Stack`])*64+num((before||{})[`farmCrop${p}Single`]);
+      const ca=num((after||{})[`farmCrop${p}Stack`])*64+num((after||{})[`farmCrop${p}Single`]);
+      const bb=num((before||{})[`farmBase${p}Stack`])*64+num((before||{})[`farmBase${p}Single`]);
+      const ba=num((after||{})[`farmBase${p}Stack`])*64+num((after||{})[`farmBase${p}Single`]);
+      if(sa!==sb) pick.push(`${crop} 씨앗 ${sa>sb?'+':''}${fmt(sa-sb)}`);
+      if(ca!==cb) pick.push(`${crop} 작물 ${ca>cb?'+':''}${fmt(ca-cb)}`);
+      if(ba!==bb) pick.push(`${crop} 베이스 ${ba>bb?'+':''}${fmt(ba-bb)}`);
+    });
+    const stamB=num((before||{}).farmUseStamina), stamA=num((after||{}).farmUseStamina);
+    if(stamA!==stamB) pick.push(`체력 ${stamA>stamB?'+':''}${fmt(stamA-stamB)}`);
+    return pick.slice(0,4).join(' · ') || `${changed.length}개 입력 변경`;
+  }
+  let tx=null;
+  function startTx(action){
+    const fc=farmCorrectionStore();
+    tx={
+      id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      action,
+      beforeFields:snapshotFields(),
+      beforeCorrection:correctionIds(fc&&fc.recent),
+      beforePending:correctionIds(fc&&fc.pendingRecent),
+      beforeChest:chestPendingIds(),
+      startedAt:Date.now()
+    };
+  }
+  function finishTx(){
+    if(!tx) return;
+    const cur=tx; tx=null;
+    setTimeout(()=>{
+      const fc=farmCorrectionStore();
+      const afterFields=snapshotFields();
+      const changed=diffFields(cur.beforeFields, afterFields);
+      const afterRecent=correctionIds(fc&&fc.recent);
+      const afterPending=correctionIds(fc&&fc.pendingRecent);
+      const afterChest=chestPendingIds();
+      const newRecent=[...afterRecent].filter(id=>!cur.beforeCorrection.has(id));
+      const newPending=[...afterPending].filter(id=>!cur.beforePending.has(id));
+      const newChest=[...afterChest].filter(id=>!cur.beforeChest.has(id));
+      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length) return;
+      pushUndo({
+        action:cur.action,
+        beforeFields:cur.beforeFields,
+        afterFields,
+        correctionIds:newRecent,
+        pendingCorrectionIds:newPending,
+        chestIds:newChest,
+        summary:labelFromFields(cur.beforeFields, afterFields)
+      });
+    },250);
+  }
+  function undoRecord(id){
+    const list=readUndo();
+    const rec=list.find(r=>r&&r.id===id);
+    if(!rec) return;
+    if(!confirm(`${rec.action || '최근 반영'}을 취소할까?\n${rec.summary || ''}\n전체 되돌리기가 아니라 이 반영 1건만 되돌립니다.`)) return;
+    restoreFields(rec.beforeFields||{});
+    const removedCorrection=removeCorrectionRecords(rec.correctionIds||[], true);
+    const removedPendingOnly=removeCorrectionRecords((rec.pendingCorrectionIds||[]).filter(id=>!(rec.correctionIds||[]).includes(id)), false);
+    const removedChest=removeChestRecords(rec.chestIds||[]);
+    writeUndo(list.filter(r=>r&&r.id!==id));
+    refreshAll();
+    recentLog('최근 반영 취소', [`${rec.action || '반영'} 취소`, rec.summary || ''], `실측 ${removedCorrection+removedPendingOnly}건 · 상자 ${removedChest}건 연결 기록 정리`);
+    toastSafe('최근 반영 1건 취소됨');
+  }
+  function renderUndoPanel(){
+    const host=byId('farmRecentInnerV116');
+    if(!host) return;
+    let card=byId('farmUndoActionsCardV722');
+    if(!card){
+      card=document.createElement('div');
+      card.id='farmUndoActionsCardV722';
+      card.className='farm-undo-actions-card-v722';
+      host.appendChild(card);
+    }
+    const list=readUndo();
+    if(!list.length){
+      card.innerHTML='<h4>최근 반영 취소</h4><div class="farm-undo-empty-v722">취소 가능한 최근 반영 없음</div>';
+      return;
+    }
+    card.innerHTML='<h4>최근 반영 취소</h4><div class="farm-undo-list-v722">'+list.map(r=>{
+      const d=new Date(r.time||Date.now());
+      const time=`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `<div class="farm-undo-item-v722"><div><b>${esc(r.action||'반영')}</b><span>${esc(time)}</span><em>${esc(r.summary||'')}</em></div><button class="btn danger farm-undo-one-v722" data-undo-id="${esc(r.id)}" type="button">이 반영 취소</button></div>`;
+    }).join('')+'</div>';
+    qa('.farm-undo-one-v722', card).forEach(btn=>btn.addEventListener('click',()=>undoRecord(btn.dataset.undoId)));
+  }
+
+  function renderPendingManager(forceOpen){
+    const hosts=[byId('farmCorrectionShareStatusV500'), byId('farmCorrectionShareStatusFarmV520')].filter(Boolean);
+    if(!hosts.length) return;
+    hosts.forEach(status=>{
+      let panel=status.parentNode && status.parentNode.querySelector('.farm-pending-manager-v722');
+      if(!panel){
+        panel=document.createElement('div');
+        panel.className='farm-pending-manager-v722';
+        status.insertAdjacentElement('afterend', panel);
+      }
+      panel.style.display = forceOpen ? 'block' : (panel.dataset.open==='1' ? 'block' : 'none');
+      if(panel.style.display !== 'block') return;
+      panel.dataset.open='1';
+      const fc=farmCorrectionStore();
+      const pending=(fc&&Array.isArray(fc.pendingRecent)?fc.pendingRecent:[]).slice(0,100);
+      const chest=(()=>{ const s=chestStore(); return ((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).slice(0,100); })();
+      const correctionHtml=pending.length?pending.map(rec=>{
+        const name=[rec.crop, rec.typeLabel||rec.type].filter(Boolean).join(' ');
+        const actual=fmt(rec.actual); const expected=fmt(rec.expected);
+        const note=rec.note?` · ${rec.note}`:'';
+        return `<div class="farm-pending-item-v722"><div><b>실측 · ${esc(name)}</b><span>실제 ${actual} / 예상 ${expected}${esc(note)}</span></div><button class="btn danger farm-pending-del-v722" data-kind="correction" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
+      }).join(''):'<div class="farm-pending-empty-v722">실측 공유 대기 없음</div>';
+      const chestHtml=chest.length?chest.map(rec=>{
+        const seeds=rec.seeds||{}, drinks=rec.drinks||{};
+        const lines=[];
+        CROPS.forEach(c=>{ if(num(seeds[c])>0) lines.push(`${c} 씨앗 ${fmt(seeds[c])}`); });
+        ['I','II','III','IV','V'].forEach(d=>{ if(num(drinks[d])>0) lines.push(`드링크 ${d} ${fmt(drinks[d])}`); });
+        return `<div class="farm-pending-item-v722"><div><b>상자 · ${esc(rec.grade||'루키')}</b><span>${esc(lines.join(' · ') || '추적 아이템 없음')}</span></div><button class="btn danger farm-pending-del-v722" data-kind="chest" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
+      }).join(''):'<div class="farm-pending-empty-v722">상자 공유 대기 없음</div>';
+      panel.innerHTML=`<div class="farm-pending-head-v722"><b>공유 대기 관리</b><button class="btn farm-pending-close-v722" type="button">닫기</button></div><div class="farm-pending-section-v722"><h5>실측</h5>${correctionHtml}</div><div class="farm-pending-section-v722"><h5>상자</h5>${chestHtml}</div><div class="farm-pending-actions-v722"><button class="btn danger farm-pending-clear-all-v722" type="button">전체 삭제</button></div>`;
+      panel.querySelector('.farm-pending-close-v722')?.addEventListener('click',()=>{ panel.dataset.open='0'; panel.style.display='none'; });
+      qa('.farm-pending-del-v722', panel).forEach(btn=>btn.addEventListener('click',()=>deletePendingOne(btn.dataset.kind, btn.dataset.id)));
+      panel.querySelector('.farm-pending-clear-all-v722')?.addEventListener('click',()=>deleteAllPending());
+    });
+  }
+  function deletePendingOne(kind, id){
+    if(!id) return;
+    if(!confirm('이 공유 대기 기록 1건만 삭제할까?')) return;
+    let removed=0;
+    if(kind==='correction') removed=removeCorrectionRecords([id], false);
+    else if(kind==='chest') removed=removeChestRecords([id]);
+    saveQuiet();
+    try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
+    renderPendingManager(true);
+    toastSafe(removed?'공유 대기 1건 삭제됨':'삭제할 기록을 찾지 못함');
+  }
+  function deleteAllPending(){
+    const fc=farmCorrectionStore();
+    const correctionCount=(fc&&Array.isArray(fc.pendingRecent))?fc.pendingRecent.length:0;
+    const chestCount=(()=>{ const s=chestStore(); return ((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).length; })();
+    if(!correctionCount && !chestCount){ toastSafe('삭제할 공유 대기 없음'); return; }
+    if(!confirm(`모든 공유 대기 기록을 삭제할까?\n실측 ${fmt(correctionCount)}건 · 상자 ${fmt(chestCount)}건`)) return;
+    if(!confirm('정상 데이터도 전부 삭제됩니다. 정말 전체 삭제할까요?')) return;
+    if(fc){ fc.pendingRecent=[]; fc.pendingStats={}; fc.pendingCount=0; }
+    const s=chestStore();
+    if(s&&Array.isArray(s.records)){ s.records=s.records.filter(r=>r&&r.shareRequestedAt); s.updatedAt=new Date().toISOString(); }
+    saveQuiet();
+    try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
+    renderPendingManager(true);
+    toastSafe('공유 대기 전체 삭제됨');
+  }
+
+  function bindPendingButtons(){
+    ['farmCorrectionClearPendingBtnV720','farmCorrectionClearPendingBtnFarmV720'].forEach(id=>{
+      const btn=byId(id);
+      if(!btn || btn.__pendingManagerV722) return;
+      btn.__pendingManagerV722=true;
+      btn.textContent='공유 대기 관리';
+      btn.classList.remove('danger');
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        renderPendingManager(true);
+      }, true);
+    });
+  }
+  window.dataClearPendingShareV720 = function(){ renderPendingManager(true); };
+
+  function validateGatherBeforeClick(e){
+    const btn=e.target && e.target.closest ? e.target.closest('button') : null;
+    if(!btn || btn.id !== 'farmGatherApplyBtnV117') return;
+    const remain=byId('farmGatherRemainStaminaV620');
+    const raw=String(remain?.value ?? '').trim();
+    if(raw === ''){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const status=byId('farmGatherStatusV117');
+      if(status) status.textContent='현재 남은 체력을 입력해야 반영됩니다.';
+      toastSafe('현재 남은 체력 입력 필요');
+    }
+  }
+  function captureAction(e){
+    const btn=e.target && e.target.closest ? e.target.closest('button') : null;
+    if(!btn || !ACTIONS[btn.id]) return;
+    if(btn.id === 'farmGatherApplyBtnV117'){
+      const raw=String(byId('farmGatherRemainStaminaV620')?.value ?? '').trim();
+      if(raw === '') return;
+    }
+    startTx(ACTIONS[btn.id]);
+    setTimeout(finishTx, 0);
+  }
+  function installStyle(){
+    if(byId('farmPendingItemUndoStyleV722')) return;
+    const style=document.createElement('style');
+    style.id='farmPendingItemUndoStyleV722';
+    style.textContent=`
+      #seedplan .farm-undo-actions-card-v722{border:1px solid rgba(255,209,106,.26);background:rgba(255,209,106,.06);border-radius:16px;padding:12px;margin-top:12px}
+      #seedplan .farm-undo-actions-card-v722 h4{margin:0 0 8px;font-size:14px;color:#ffe1a0}
+      #seedplan .farm-undo-empty-v722,.farm-pending-empty-v722{font-size:12px;color:var(--muted);padding:6px 0}
+      #seedplan .farm-undo-list-v722{display:grid;gap:8px}
+      #seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:12px;padding:8px}
+      #seedplan .farm-undo-item-v722 div,.farm-pending-item-v722 div{display:grid;gap:2px;min-width:0}
+      #seedplan .farm-undo-item-v722 span,.farm-pending-item-v722 span{font-size:11px;color:var(--muted)}
+      #seedplan .farm-undo-item-v722 em{font-style:normal;font-size:12px;color:#e9edf7}
+      .farm-pending-manager-v722{margin-top:10px;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.92);border-radius:16px;padding:12px;display:none}
+      .farm-pending-head-v722{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+      .farm-pending-section-v722{display:grid;gap:6px;margin-top:8px}
+      .farm-pending-section-v722 h5{margin:0;color:#cdeee4;font-size:13px}
+      .farm-pending-actions-v722{margin-top:10px;display:flex;justify-content:flex-end}
+      @media(max-width:720px){#seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
+    `;
+    document.head.appendChild(style);
+  }
+  function boot(){ installStyle(); bindPendingButtons(); renderUndoPanel(); renderPendingManager(false); }
+  document.addEventListener('click', validateGatherBeforeClick, true);
+  document.addEventListener('click', captureAction, true);
+  window.addEventListener('load', boot);
+  const oldOpen=window.openTab;
+  if(typeof oldOpen === 'function' && !oldOpen.__pendingItemUndoV722){
+    const wrapped=function(tabName){ const ret=oldOpen.apply(this, arguments); setTimeout(boot,0); return ret; };
+    wrapped.__pendingItemUndoV722=true;
+    window.openTab=wrapped;
+  }
+  boot();
+})();
+</script>
+
 </body></html>
