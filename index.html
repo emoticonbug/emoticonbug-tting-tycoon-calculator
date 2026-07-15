@@ -10533,15 +10533,33 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function recentStorageKey(){ return 'mtFarmRecentActionsV116'; }
   let recentActionsExpandedV433 = false;
+  function recentActionHashV732(action, idx){
+    const base = [action && action.time || '', action && action.type || '', Array.isArray(action && action.lines) ? action.lines.join('|') : '', action && action.note || '', idx].join('::');
+    let h = 2166136261;
+    for(let i=0;i<base.length;i++){ h ^= base.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h>>>0).toString(36);
+  }
+  function normalizeRecentActionsV732(actions){
+    let changed = false;
+    const arr = (Array.isArray(actions) ? actions : []).slice(0, 12).map((raw, idx) => {
+      const action = raw && typeof raw === 'object' ? raw : {type:'반영', lines:[String(raw || '')]};
+      if(!action.id){ action.id = 'ra-' + recentActionHashV732(action, idx); changed = true; }
+      if(!Array.isArray(action.lines)){ action.lines = action.lines ? [String(action.lines)] : []; changed = true; }
+      return action;
+    });
+    return {actions:arr, changed};
+  }
   function readRecentActions(){
     try{
       const raw = localStorage.getItem(recentStorageKey());
       const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr.slice(0, 12) : [];
+      const normalized = normalizeRecentActionsV732(arr);
+      if(normalized.changed) writeRecentActions(normalized.actions);
+      return normalized.actions;
     }catch(e){ return []; }
   }
   function writeRecentActions(actions){
-    try{ localStorage.setItem(recentStorageKey(), JSON.stringify((actions || []).slice(0, 12))); }catch(e){}
+    try{ localStorage.setItem(recentStorageKey(), JSON.stringify(normalizeRecentActionsV732(actions || []).actions.slice(0, 12))); }catch(e){}
   }
   function formatRecentTime(ts){
     const d = new Date(ts || Date.now());
@@ -10556,7 +10574,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(t.includes('수확')) return 'farm-recent-type-harvest-v433';
     if(t.includes('채집')) return 'farm-recent-type-gather-v433';
     if(t.includes('변환')) return 'farm-recent-type-convert-v433';
-    if(t.includes('되돌') || t.includes('재실행')) return 'farm-recent-type-undo-v433';
+    if(t.includes('취소') || t.includes('되돌') || t.includes('재실행')) return 'farm-recent-type-undo-v433';
     if(t.includes('초기화') || t.includes('삭제')) return 'farm-recent-type-reset-v433';
     if(t.includes('저장') || t.includes('기준값')) return 'farm-recent-type-save-v433';
     if(t.includes('판매가')) return 'farm-recent-type-price-v433';
@@ -10580,14 +10598,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const card = byId('farmRecentActionsCardV116');
     if(!card) return;
     const actions = readRecentActions();
-    let recentIdChangedV731 = false;
-    actions.forEach((action, idx) => {
-      if(action && !action.id){
-        action.id = 'ra_legacy_' + (Number(action.time || 0) || Date.now()).toString(36) + '_' + idx;
-        recentIdChangedV731 = true;
-      }
-    });
-    if(recentIdChangedV731) writeRecentActions(actions);
     const titleHtml = '<h4>최근 반영 내역</h4>';
     if(!actions.length){
       recentActionsExpandedV433 = false;
@@ -10600,20 +10610,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const listHtml = visibleActions.map(action => {
       const lines = Array.isArray(action.lines) ? action.lines : [];
       const lineHtml = lines.length ? lines.map(line => `<div>${escapeHtml(line)}</div>`).join('') : '<div>반영 수량 없음</div>';
-      const undoCanceled = action.undoStatus === 'canceled';
-      const noteParts = [];
-      if(action.note) noteParts.push(escapeHtml(action.note));
-      if(undoCanceled) noteParts.push('취소됨');
-      const note = noteParts.length ? `<div class="farm-recent-action-note-v116">${noteParts.join(' · ')}</div>` : '';
+      const cancelNote = action.cancelled ? '<div class="farm-recent-action-note-v116 farm-recent-cancel-note-v732">취소됨</div>' : '';
+      const note = action.note ? `<div class="farm-recent-action-note-v116">${escapeHtml(action.note)}</div>` : '';
       const typeClass = recentActionTypeClass(action.type);
-      const undoId = action.undoId || '';
-      const canUndo = undoId && !undoCanceled && (!window.farmUndoExistsV729 || window.farmUndoExistsV729(undoId));
-      const undoHtml = undoCanceled ? '' : (canUndo
-        ? `<button class="farm-recent-undo-icon-v729" type="button" data-undo-id="${escapeHtml(undoId)}" title="이 반영 취소" aria-label="이 반영 취소">↩</button>`
-        : `<button class="farm-recent-undo-icon-v729 farm-recent-undo-legacy-v730" type="button" data-action-id="${escapeHtml(action.id || '')}" title="기록 기준 취소" aria-label="기록 기준 취소">↩</button>`);
-      return `<div class="farm-recent-action-item-v116 farm-recent-action-item-v433 ${typeClass} ${undoCanceled ? 'farm-recent-action-canceled-v729' : ''}">
-        <div class="farm-recent-action-head-v116"><span class="farm-recent-action-title-v729"><b>${escapeHtml(action.type || '반영')}</b><span>${escapeHtml(formatRecentTime(action.time))}</span></span>${undoHtml}</div>
-        <div class="farm-recent-action-lines-v116">${lineHtml}</div>${note}
+      const undoButton = action.cancelled ? '' : `<button class="farm-recent-undo-icon-v732" data-recent-id="${escapeHtml(action.id)}" type="button" title="이 반영 취소">↩</button>`;
+      return `<div class="farm-recent-action-item-v116 farm-recent-action-item-v433 ${typeClass} ${action.cancelled ? 'farm-recent-action-canceled-v732' : ''}" data-recent-id="${escapeHtml(action.id)}">
+        <div class="farm-recent-action-head-v116 farm-recent-action-head-v732"><div class="farm-recent-action-title-v732"><b>${escapeHtml(action.type || '반영')}</b><span>${escapeHtml(formatRecentTime(action.time))}</span></div>${undoButton}</div>
+        <div class="farm-recent-action-lines-v116">${lineHtml}</div>${note}${cancelNote}
       </div>`;
     }).join('');
     const toggleHtml = actions.length > visibleLimit
@@ -10627,29 +10630,23 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         renderRecentActions();
       });
     }
-    Array.from(card.querySelectorAll('.farm-recent-undo-icon-v729')).forEach(btn => {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        if(btn.classList.contains('farm-recent-undo-legacy-v730')){
-          if(window.farmUndoLegacyRecentActionV730) window.farmUndoLegacyRecentActionV730(btn.dataset.actionId || '');
-          return;
-        }
-        if(window.farmUndoRecentActionV729) window.farmUndoRecentActionV729(btn.dataset.undoId || '');
+    card.querySelectorAll('.farm-recent-undo-icon-v732').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(window.farmUndoRecentActionV732) window.farmUndoRecentActionV732(btn.dataset.recentId);
       });
     });
   }
-  window.farmRenderRecentActionsV729 = renderRecentActions;
   function addRecentAction(action){
     const next = Object.assign({time:Date.now(), lines:[]}, action || {});
-    if(!next.id) next.id = 'ra_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    if(!next.id) next.id = `ra-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    if(!Array.isArray(next.lines)) next.lines = next.lines ? [String(next.lines)] : [];
     const actions = readRecentActions();
     actions.unshift(next);
     writeRecentActions(actions);
     renderRecentActions();
   }
   window.farmAddRecentActionV116 = addRecentAction;
-
+  window.farmRenderRecentActionsV116 = renderRecentActions;
   const CORRECTION_RECENT_LIMIT_V500 = 200;
   function correctionStoreV500(){
     try{
@@ -13981,16 +13978,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 </script>
 
 
-<script id="farmPendingItemUndoScriptV722">
-/* 공유 대기 개별 관리 + 최근 반영 단위 취소 v722 */
+<script id="farmPendingItemUndoScriptV732">
+/* 공유 대기 개별 관리 + 최근 반영 내역 아이콘 취소 v732 */
 (function(){
-  if(window.__farmPendingItemUndoV722) return;
-  window.__farmPendingItemUndoV722 = true;
+  if(window.__farmPendingItemUndoV732) return;
+  window.__farmPendingItemUndoV732 = true;
 
   const CROPS = ['토마토','양파','마늘'];
   const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
-  const UNDO_KEY = 'mtFarmUndoActionsV722';
-  const MAX_UNDO = 8;
+  const UNDO_KEY = 'mtFarmUndoRecordsV732';
+  const RECENT_KEY = 'mtFarmRecentActionsV116';
+  const SHELF_KEY = 'farmShelfLifeV710';
+  const MAX_UNDO = 30;
   const ACTIONS = {
     farmGatherApplyBtnV117:'채집 반영',
     farmHarvestApplyBtnV113:'수확 반영',
@@ -13999,27 +13998,28 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     farmCropToBaseBtnV410:'작물→베이스 변환',
     farmBaseToDishBtnV410:'베이스→요리 변환'
   };
+  const UNIT_SEED = {Large:3456, Small:1728, Stack:64, Single:1};
 
   function byId(id){ return document.getElementById(id); }
   function qa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
   function esc(text){ return String(text ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-  function num(v){ const n=Number(v); return Number.isFinite(n)?Math.trunc(n):0; }
-  function fmt(v){ return Math.max(0, Math.trunc(Number(v)||0)).toLocaleString('ko-KR'); }
+  function int(v){ const n=Number(String(v ?? '').replace(/,/g,'')); return Number.isFinite(n) ? Math.trunc(n) : 0; }
+  function fmt(v){ return Math.trunc(Number(v)||0).toLocaleString('ko-KR'); }
+  function nowIso(){ return new Date().toISOString(); }
   function saveQuiet(){ try{ if(typeof save === 'function') save(false); }catch(e){} }
+  function toastSafe(msg){ try{ if(typeof toast === 'function') toast(msg); }catch(e){} }
   function farmSave(){ try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'}); else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'}); }catch(e){} }
   function refreshAll(){
     try{ farmSave(); }catch(e){}
     try{ saveQuiet(); }catch(e){}
     try{ if(typeof window.farmPlanUpdate === 'function') window.farmPlanUpdate(); }catch(e){}
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
-    renderUndoPanel();
+    try{ if(typeof window.farmRenderRecentActionsV116 === 'function') window.farmRenderRecentActionsV116(); }catch(e){}
     renderPendingManager(false);
   }
-  function toastSafe(msg){ try{ if(typeof toast==='function') toast(msg); }catch(e){} }
-  function recentLog(type, lines, note){ try{ if(typeof window.farmAddRecentActionV116 === 'function') window.farmAddRecentActionV116({type, lines:lines||[], note:note||''}); }catch(e){} }
 
   function ownedFieldIds(){
-    const ids = ['farmUseStamina'];
+    const ids=['farmUseStamina'];
     CROPS.forEach(crop=>{
       const p=EN[crop];
       ['Large','Small','Stack','Single'].forEach(u=>ids.push(`farmSeed${p}${u}`));
@@ -14027,26 +14027,52 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     return ids;
   }
-  function snapshotFields(){
-    const out={};
-    ownedFieldIds().forEach(id=>{ const el=byId(id); if(el) out[id]=String(el.value ?? ''); });
-    return out;
-  }
-  function diffFields(before, after){
-    const ids = new Set([...Object.keys(before||{}), ...Object.keys(after||{})]);
-    return Array.from(ids).filter(id => String((before||{})[id] ?? '') !== String((after||{})[id] ?? ''));
-  }
+  function snapshotFields(){ const out={}; ownedFieldIds().forEach(id=>{ const el=byId(id); if(el) out[id]=String(el.value ?? ''); }); return out; }
+  function diffFields(before, after){ const ids=new Set([...Object.keys(before||{}), ...Object.keys(after||{})]); return Array.from(ids).filter(id=>String((before||{})[id] ?? '') !== String((after||{})[id] ?? '')); }
+  function setInputValue(id, value, changed){ const el=byId(id); if(!el) return; const next=String(value ?? ''); if(String(el.value ?? '')!==next){ el.value=next; if(changed) changed.push(el); } }
   function restoreFields(values){
     const changed=[];
-    Object.entries(values||{}).forEach(([id,value])=>{
-      const el=byId(id);
-      if(!el) return;
-      const next=String(value ?? '');
-      if(String(el.value ?? '') !== next){ el.value=next; changed.push(el); }
-    });
+    Object.entries(values||{}).forEach(([id,value])=>setInputValue(id, value, changed));
     changed.forEach(el=>el.dispatchEvent(new Event('input',{bubbles:true})));
     changed.forEach(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
   }
+  function readNum(id){ return int(byId(id)?.value); }
+  function writeNum(id, value, changed){ setInputValue(id, Math.max(0, Math.trunc(Number(value)||0)), changed); }
+  function seedTotal(crop){ const p=EN[crop]; return readNum(`farmSeed${p}Large`)*UNIT_SEED.Large + readNum(`farmSeed${p}Small`)*UNIT_SEED.Small + readNum(`farmSeed${p}Stack`)*64 + readNum(`farmSeed${p}Single`); }
+  function writeSeedTotal(crop, total, changed){
+    const p=EN[crop]; let remain=Math.max(0, Math.trunc(Number(total)||0));
+    const large=Math.floor(remain/UNIT_SEED.Large); remain-=large*UNIT_SEED.Large;
+    const small=Math.floor(remain/UNIT_SEED.Small); remain-=small*UNIT_SEED.Small;
+    const stack=Math.floor(remain/64); remain-=stack*64;
+    writeNum(`farmSeed${p}Large`, large, changed);
+    writeNum(`farmSeed${p}Small`, small, changed);
+    writeNum(`farmSeed${p}Stack`, stack, changed);
+    writeNum(`farmSeed${p}Single`, remain, changed);
+  }
+  function itemTotal(kind, crop){
+    if(kind==='seed') return seedTotal(crop);
+    const p=EN[crop]; const prefix=kind==='crop' ? `farmCrop${p}` : `farmBase${p}`;
+    return readNum(prefix+'Stack')*64 + readNum(prefix+'Single');
+  }
+  function writeItemTotal(kind, crop, total, changed){
+    if(kind==='seed') return writeSeedTotal(crop, total, changed);
+    const p=EN[crop]; const prefix=kind==='crop' ? `farmCrop${p}` : `farmBase${p}`;
+    let remain=Math.max(0, Math.trunc(Number(total)||0));
+    const stack=Math.floor(remain/64); remain-=stack*64;
+    writeNum(prefix+'Stack', stack, changed);
+    writeNum(prefix+'Single', remain, changed);
+  }
+
+  function readRecentActions(){ try{ const arr=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
+  function writeRecentActions(actions){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify((actions||[]).slice(0,12))); }catch(e){} }
+  function recentIds(){ return new Set(readRecentActions().map(a=>a&&a.id).filter(Boolean)); }
+  function findRecent(id){ return readRecentActions().find(a=>a && a.id===id); }
+  function markRecentCanceled(id, label){
+    const actions=readRecentActions(); let changed=false;
+    actions.forEach(a=>{ if(a&&a.id===id){ a.cancelled=true; a.cancelledAt=Date.now(); a.cancelNote=label||'취소됨'; changed=true; } });
+    if(changed) writeRecentActions(actions);
+  }
+
   function farmCorrectionStore(){
     try{
       const st=(typeof state !== 'undefined') ? state : window.state;
@@ -14060,136 +14086,80 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       return fc;
     }catch(e){ return null; }
   }
-  function correctionIds(list){ return new Set((Array.isArray(list)?list:[]).map(r=>r&&r.id).filter(Boolean)); }
   function conditionKeyOf(rec){ return rec && (rec.conditionKey || rec.key); }
+  function correctionIds(list){ return new Set((Array.isArray(list)?list:[]).map(r=>r&&r.id).filter(Boolean)); }
   function subtractStat(map, rec){
     if(!map || !rec) return;
-    const key=conditionKeyOf(rec);
-    if(!key || !map[key]) return;
+    const key=conditionKeyOf(rec); if(!key || !map[key]) return;
     const item=map[key];
     const expected=Math.max(0, Number(rec.expected ?? rec.expectedTotal ?? 0) || 0);
     const actual=Math.max(0, Number(rec.actual ?? rec.actualTotal ?? 0) || 0);
-    item.count = Math.max(0, Number(item.count||0) - 1);
-    item.expectedTotal = Math.max(0, Number(item.expectedTotal||0) - expected);
-    item.actualTotal = Math.max(0, Number(item.actualTotal||0) - actual);
-    item.ratio = item.expectedTotal > 0 ? item.actualTotal / item.expectedTotal : null;
-    item.updatedAt = new Date().toISOString();
-    if(item.count <= 0 || item.expectedTotal <= 0) delete map[key];
+    item.count=Math.max(0, Number(item.count||0)-1);
+    item.expectedTotal=Math.max(0, Number(item.expectedTotal||0)-expected);
+    item.actualTotal=Math.max(0, Number(item.actualTotal||0)-actual);
+    item.ratio=item.expectedTotal>0 ? item.actualTotal/item.expectedTotal : null;
+    item.updatedAt=nowIso();
+    if(item.count<=0 || item.expectedTotal<=0) delete map[key];
   }
   function removeCorrectionRecords(ids, removeLocalStats){
-    const fc=farmCorrectionStore();
-    if(!fc || !ids || !ids.length) return 0;
-    const set=new Set(ids);
-    let removed=0;
-    const pendingRemoved=[];
-    const localRemoved=[];
-    fc.pendingRecent = (fc.pendingRecent||[]).filter(rec=>{
-      if(rec && set.has(rec.id)){ pendingRemoved.push(rec); removed++; return false; }
-      return true;
-    });
+    const fc=farmCorrectionStore(); if(!fc || !ids || !ids.length) return 0;
+    const set=new Set(ids); let removed=0; const pendingRemoved=[]; const localRemoved=[];
+    fc.pendingRecent=(fc.pendingRecent||[]).filter(rec=>{ if(rec&&set.has(rec.id)){ pendingRemoved.push(rec); removed++; return false; } return true; });
     pendingRemoved.forEach(rec=>subtractStat(fc.pendingStats, rec));
     if(removeLocalStats){
-      fc.recent = (fc.recent||[]).filter(rec=>{
-        if(rec && set.has(rec.id)){ localRemoved.push(rec); return false; }
-        return true;
-      });
+      fc.recent=(fc.recent||[]).filter(rec=>{ if(rec&&set.has(rec.id)){ localRemoved.push(rec); return false; } return true; });
       localRemoved.forEach(rec=>subtractStat(fc.stats, rec));
     }
-    fc.pendingCount = Object.values(fc.pendingStats||{}).reduce((sum,item)=>sum+Number(item&&item.count||0),0);
-    fc.updatedAt = new Date().toISOString();
+    fc.pendingCount=Object.values(fc.pendingStats||{}).reduce((sum,item)=>sum+Number(item&&item.count||0),0);
+    fc.updatedAt=nowIso();
     return removed;
   }
   function chestStore(){ try{ return typeof window.farmIslandChestRecordStoreV690 === 'function' ? window.farmIslandChestRecordStoreV690() : null; }catch(e){ return null; } }
   function chestPendingIds(){ const s=chestStore(); return new Set(((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).map(r=>r.id).filter(Boolean)); }
   function removeChestRecords(ids){
-    const s=chestStore();
-    if(!s || !Array.isArray(s.records) || !ids || !ids.length) return 0;
-    const set=new Set(ids);
-    const before=s.records.length;
+    const s=chestStore(); if(!s || !Array.isArray(s.records) || !ids || !ids.length) return 0;
+    const set=new Set(ids); const before=s.records.length;
     s.records=s.records.filter(rec=>!(rec && set.has(rec.id)));
-    s.updatedAt=new Date().toISOString();
+    s.updatedAt=nowIso();
     return before-s.records.length;
   }
+
   function readUndo(){ try{ const arr=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); return Array.isArray(arr)?arr.slice(0,MAX_UNDO):[]; }catch(e){ return []; } }
   function writeUndo(arr){ try{ localStorage.setItem(UNDO_KEY, JSON.stringify((arr||[]).slice(0,MAX_UNDO))); }catch(e){} }
-  function recentKey(){ return 'mtFarmRecentActionsV116'; }
-  function readRecent(){ try{ const raw=localStorage.getItem(recentKey()); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
-  function writeRecent(arr){ try{ localStorage.setItem(recentKey(), JSON.stringify((arr||[]).slice(0,12))); }catch(e){} }
-  function actionMatchesRecent(undo, action){
-    const ut=String(undo && undo.action || '');
-    const at=String(action && action.type || '');
-    if(!ut || !at) return false;
-    if(ut===at) return true;
-    return at.includes(ut) || ut.includes(at);
-  }
-  function linkUndoToRecent(undo){
-    if(!undo || !undo.id) return false;
-    const actions=readRecent();
-    if(!actions.length) return false;
-    if(actions.some(a=>a && a.undoId===undo.id)) return true;
-    const undoTime=Number(undo.time||Date.now());
-    let idx=actions.findIndex(a=>a && !a.undoId && actionMatchesRecent(undo,a) && Math.abs(Number(a.time||0)-undoTime)<15000);
-    if(idx<0) idx=actions.findIndex(a=>a && !a.undoId && actionMatchesRecent(undo,a));
-    if(idx<0) idx=actions.findIndex(a=>a && !a.undoId && Number(a.time||0)<=undoTime+15000);
-    if(idx<0) return false;
-    actions[idx].undoId=undo.id;
-    actions[idx].undoSummary=undo.summary||'';
-    writeRecent(actions);
-    return true;
-  }
-  function linkExistingUndoRecords(){ readUndo().forEach(linkUndoToRecent); }
-  function markRecentCanceled(undoId){
-    if(!undoId) return;
-    const actions=readRecent();
-    let changed=false;
-    actions.forEach(a=>{
-      if(a && a.undoId===undoId){ a.undoStatus='canceled'; delete a.undoId; changed=true; }
-    });
-    if(changed) writeRecent(actions);
-  }
-  function pushUndo(record){
-    const list=readUndo();
-    const item=Object.assign({id:`${Date.now()}-${Math.random().toString(16).slice(2)}`, time:Date.now()}, record||{});
-    list.unshift(item);
-    writeUndo(list);
-    linkUndoToRecent(item);
-    renderUndoPanel();
-    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
-    return item;
-  }
+  function pushUndo(record){ const list=readUndo(); list.unshift(Object.assign({id:`ur-${Date.now()}-${Math.random().toString(16).slice(2)}`, time:Date.now()}, record||{})); writeUndo(list); }
+  function removeUndo(id){ writeUndo(readUndo().filter(r=>r&&r.id!==id)); }
   function labelFromFields(before, after){
-    const changed=diffFields(before, after);
-    if(!changed.length) return '보유량 변화 없음';
     const pick=[];
     CROPS.forEach(crop=>{
-      const p=EN[crop];
-      const seedIds=[`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`];
-      const cropIds=[`farmCrop${p}Stack`,`farmCrop${p}Single`];
-      const baseIds=[`farmBase${p}Stack`,`farmBase${p}Single`];
-      function total(ids,obj){ return ids.reduce((sum,id)=>sum+num((obj||{})[id]),0); }
-      const sb=total(seedIds,before), sa=total(seedIds,after);
-      const cb=num((before||{})[`farmCrop${p}Stack`])*64+num((before||{})[`farmCrop${p}Single`]);
-      const ca=num((after||{})[`farmCrop${p}Stack`])*64+num((after||{})[`farmCrop${p}Single`]);
-      const bb=num((before||{})[`farmBase${p}Stack`])*64+num((before||{})[`farmBase${p}Single`]);
-      const ba=num((after||{})[`farmBase${p}Stack`])*64+num((after||{})[`farmBase${p}Single`]);
+      const sb=fieldTotalFromSnapshot(before,'seed',crop), sa=fieldTotalFromSnapshot(after,'seed',crop);
+      const cb=fieldTotalFromSnapshot(before,'crop',crop), ca=fieldTotalFromSnapshot(after,'crop',crop);
+      const bb=fieldTotalFromSnapshot(before,'base',crop), ba=fieldTotalFromSnapshot(after,'base',crop);
       if(sa!==sb) pick.push(`${crop} 씨앗 ${sa>sb?'+':''}${fmt(sa-sb)}`);
       if(ca!==cb) pick.push(`${crop} 작물 ${ca>cb?'+':''}${fmt(ca-cb)}`);
       if(ba!==bb) pick.push(`${crop} 베이스 ${ba>bb?'+':''}${fmt(ba-bb)}`);
     });
-    const stamB=num((before||{}).farmUseStamina), stamA=num((after||{}).farmUseStamina);
+    const stamB=int((before||{}).farmUseStamina), stamA=int((after||{}).farmUseStamina);
     if(stamA!==stamB) pick.push(`체력 ${stamA>stamB?'+':''}${fmt(stamA-stamB)}`);
-    return pick.slice(0,4).join(' · ') || `${changed.length}개 입력 변경`;
+    return pick.slice(0,5).join(' · ') || '보유량 변화';
   }
+  function fieldTotalFromSnapshot(obj, kind, crop){
+    const p=EN[crop]; obj=obj||{};
+    if(kind==='seed') return int(obj[`farmSeed${p}Large`])*UNIT_SEED.Large + int(obj[`farmSeed${p}Small`])*UNIT_SEED.Small + int(obj[`farmSeed${p}Stack`])*64 + int(obj[`farmSeed${p}Single`]);
+    const prefix=kind==='crop' ? `farmCrop${p}` : `farmBase${p}`;
+    return int(obj[prefix+'Stack'])*64 + int(obj[prefix+'Single']);
+  }
+
   let tx=null;
   function startTx(action){
     const fc=farmCorrectionStore();
     tx={
-      id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,
       action,
       beforeFields:snapshotFields(),
       beforeCorrection:correctionIds(fc&&fc.recent),
       beforePending:correctionIds(fc&&fc.pendingRecent),
       beforeChest:chestPendingIds(),
+      beforeRecent:recentIds(),
+      beforeShelf:localStorage.getItem(SHELF_KEY),
       startedAt:Date.now()
     };
   }
@@ -14200,222 +14170,142 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const fc=farmCorrectionStore();
       const afterFields=snapshotFields();
       const changed=diffFields(cur.beforeFields, afterFields);
-      const afterRecent=correctionIds(fc&&fc.recent);
-      const afterPending=correctionIds(fc&&fc.pendingRecent);
-      const afterChest=chestPendingIds();
+      const afterRecent=correctionIds(fc&&fc.recent), afterPending=correctionIds(fc&&fc.pendingRecent), afterChest=chestPendingIds(), afterRecentActions=recentIds();
       const newRecent=[...afterRecent].filter(id=>!cur.beforeCorrection.has(id));
       const newPending=[...afterPending].filter(id=>!cur.beforePending.has(id));
       const newChest=[...afterChest].filter(id=>!cur.beforeChest.has(id));
-      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length) return;
-      pushUndo({
-        action:cur.action,
-        startedAt:cur.startedAt,
-        beforeFields:cur.beforeFields,
-        afterFields,
-        correctionIds:newRecent,
-        pendingCorrectionIds:newPending,
-        chestIds:newChest,
-        summary:labelFromFields(cur.beforeFields, afterFields)
-      });
-    },250);
-  }
-  function undoRecord(id){
-    const list=readUndo();
-    const rec=list.find(r=>r&&r.id===id);
-    if(!rec) return;
-    if(!confirm(`${rec.action || '최근 반영'}을 취소할까?\n${rec.summary || ''}\n전체 되돌리기가 아니라 이 반영 1건만 되돌립니다.`)) return;
-    restoreFields(rec.beforeFields||{});
-    const removedCorrection=removeCorrectionRecords(rec.correctionIds||[], true);
-    const removedPendingOnly=removeCorrectionRecords((rec.pendingCorrectionIds||[]).filter(id=>!(rec.correctionIds||[]).includes(id)), false);
-    const removedChest=removeChestRecords(rec.chestIds||[]);
-    writeUndo(list.filter(r=>r&&r.id!==id));
-    markRecentCanceled(id);
-    refreshAll();
-    recentLog('최근 반영 취소', [`${rec.action || '반영'} 취소`, rec.summary || ''], `실측 ${removedCorrection+removedPendingOnly}건 · 상자 ${removedChest}건 연결 기록 정리`);
-    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
-    toastSafe('최근 반영 1건 취소됨');
+      const newRecentActionIds=[...afterRecentActions].filter(id=>!cur.beforeRecent.has(id));
+      const afterShelf=localStorage.getItem(SHELF_KEY);
+      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf) return;
+      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,summary:labelFromFields(cur.beforeFields, afterFields)});
+    },350);
   }
 
-  const UNIT_SEED_LEGACY_V730 = {Large:3456, Small:1728, Stack:64, Single:1};
-  function readFieldNum(id){ const el=byId(id); return Math.max(0, Math.trunc(Number(el && el.value || 0) || 0)); }
-  function writeFieldNum(id, value){ const el=byId(id); if(!el) return null; const next=String(Math.max(0, Math.trunc(Number(value)||0))); if(String(el.value ?? '') === next) return null; el.value=next; return el; }
-  function readSeedTotalLegacy(crop){ const p=EN[crop]; return readFieldNum(`farmSeed${p}Large`)*UNIT_SEED_LEGACY_V730.Large + readFieldNum(`farmSeed${p}Small`)*UNIT_SEED_LEGACY_V730.Small + readFieldNum(`farmSeed${p}Stack`)*UNIT_SEED_LEGACY_V730.Stack + readFieldNum(`farmSeed${p}Single`); }
-  function writeSeedTotalLegacy(crop,total){ const p=EN[crop]; let remain=Math.max(0,Math.trunc(Number(total)||0)); const changed=[]; const large=Math.floor(remain/UNIT_SEED_LEGACY_V730.Large); remain-=large*UNIT_SEED_LEGACY_V730.Large; const small=Math.floor(remain/UNIT_SEED_LEGACY_V730.Small); remain-=small*UNIT_SEED_LEGACY_V730.Small; const stack=Math.floor(remain/UNIT_SEED_LEGACY_V730.Stack); remain-=stack*UNIT_SEED_LEGACY_V730.Stack; [`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`].forEach((id,idx)=>{ const value=[large,small,stack,remain][idx]; const el=writeFieldNum(id,value); if(el) changed.push(el); }); return changed; }
-  function readStackSingleLegacy(prefix){ return readFieldNum(prefix+'Stack')*64 + readFieldNum(prefix+'Single'); }
-  function writeStackSingleLegacy(prefix,total){ const value=Math.max(0,Math.trunc(Number(total)||0)); const stack=Math.floor(value/64), single=value%64; const changed=[]; const st=writeFieldNum(prefix+'Stack',stack); if(st) changed.push(st); const si=writeFieldNum(prefix+'Single',single); if(si) changed.push(si); return changed; }
-  function parseKoreanAmountLegacy(text){
-    const raw=String(text||'').replace(/,/g,'');
-    const signMatch=raw.match(/([+-])\s*(\d+)/);
-    if(!signMatch) return null;
-    const sign=signMatch[1]==='-'?-1:1;
-    return sign * Math.trunc(Number(signMatch[2])||0);
+  function exactUndoForRecent(recentId){ return readUndo().find(r=>r && !r.cancelled && Array.isArray(r.recentIds) && r.recentIds.includes(recentId)); }
+  function undoExactRecord(rec, recentId){
+    const line=[rec.action||'최근 반영', rec.summary||''].filter(Boolean).join('\n');
+    if(!confirm(`${line}\n\n이 반영 1건만 취소할까?`)) return;
+    restoreFields(rec.beforeFields||{});
+    const removedLocal=removeCorrectionRecords([...(rec.correctionIds||[]), ...(rec.pendingCorrectionIds||[])], true);
+    const removedChest=removeChestRecords(rec.chestIds||[]);
+    if(Object.prototype.hasOwnProperty.call(rec,'beforeShelf')){
+      if(rec.beforeShelf == null) localStorage.removeItem(SHELF_KEY);
+      else localStorage.setItem(SHELF_KEY, rec.beforeShelf);
+    }
+    markRecentCanceled(recentId, '취소됨');
+    removeUndo(rec.id);
+    refreshAll();
+    toastSafe(`최근 반영 취소됨 · 실측 ${fmt(removedLocal)}건 · 상자 ${fmt(removedChest)}건`);
   }
-  function canParseLegacyRecentAction(action){
-    if(!action || action.undoStatus==='canceled') return false;
-    const type=String(action.type||'');
-    if(/유통기한|공유|저장|초기화|삭제|취소/.test(type)) return false;
-    return !!parseLegacyRecentAction(action).changes.length;
+
+  function parseLegacyAction(action){
+    const type=String(action&&action.type||'');
+    if(type.includes('유통기한')) return {changes:[], reason:'유통기한 추적/만료 기록은 보유량 취소 대상이 아님'};
+    const text=[type].concat(Array.isArray(action&&action.lines)?action.lines:[]).concat(action&&action.note?[action.note]:[]).join('\n');
+    const changes=[];
+    const seen=new Set();
+    const itemRe=/(토마토|양파|마늘)(?:\s+(?:채집|수확))?\s+((?:추가\s+)?씨앗|작물|베이스)[^+\-\n]*([+\-])\s*([\d,]+)\s*개/g;
+    let m;
+    while((m=itemRe.exec(text))){
+      const crop=m[1];
+      const kind=m[2].includes('씨앗') ? 'seed' : (m[2].includes('작물') ? 'crop' : 'base');
+      const delta=(m[3]==='-'?-1:1)*int(m[4]);
+      if(!delta) continue;
+      const key=[kind,crop,delta,m.index].join('|');
+      if(seen.has(key)) continue;
+      seen.add(key);
+      changes.push({kind,crop,delta});
+    }
+    const staminaRe=/사용\s*체력\s*([+\-])\s*([\d,]+)/g;
+    while((m=staminaRe.exec(text))){
+      const delta=(m[1]==='-'?-1:1)*int(m[2]);
+      if(delta) changes.push({kind:'stamina',delta});
+    }
+    return {changes};
   }
-  function parseLegacyRecentAction(action){
-    const lines=Array.isArray(action&&action.lines)?action.lines:[];
-    const parsed={changes:[], crops:new Set(), correctionHintCount:0, chestHintCount:0, warnings:[]};
+  function combineChanges(changes){
+    const map=new Map();
+    (changes||[]).forEach(ch=>{
+      const key=ch.kind==='stamina'?'stamina':`${ch.kind}:${ch.crop}`;
+      const old=map.get(key) || Object.assign({}, ch, {delta:0});
+      old.delta += ch.delta;
+      map.set(key, old);
+    });
+    return Array.from(map.values()).filter(ch=>ch.delta!==0);
+  }
+  function legacyChangePreview(changes){
+    return changes.map(ch=>{
+      const inverse=-ch.delta;
+      if(ch.kind==='stamina') return `체력 ${inverse>0?'+':''}${fmt(inverse)}`;
+      const label=ch.kind==='seed'?'씨앗':(ch.kind==='crop'?'작물':'베이스');
+      return `${ch.crop} ${label} ${inverse>0?'+':''}${fmt(inverse)}개`;
+    });
+  }
+  function pendingCandidateIdsForLegacy(action){
     const note=String(action&&action.note||'');
-    const mNote=note.replace(/,/g,'').match(/실측\s*기록\s*(\d+)개/);
-    if(mNote) parsed.correctionHintCount=Math.max(0,Math.trunc(Number(mNote[1])||0));
-    if(/상자/.test(String(action&&action.type||''))) parsed.chestHintCount=1;
-    lines.forEach(line=>{
-      const text=String(line||'');
-      CROPS.forEach(crop=>{
-        if(!text.includes(crop)) return;
-        const amount=parseKoreanAmountLegacy(text);
-        if(!amount) return;
-        if(text.includes('씨앗')){ parsed.changes.push({kind:'seed', crop, delta:amount}); parsed.crops.add(crop); }
-        else if(text.includes('작물')){ parsed.changes.push({kind:'crop', crop, delta:amount}); parsed.crops.add(crop); }
-        else if(text.includes('베이스')){ parsed.changes.push({kind:'base', crop, delta:amount}); parsed.crops.add(crop); }
-      });
-      if(text.includes('사용 체력')){
-        const amount=parseKoreanAmountLegacy(text);
-        if(amount) parsed.changes.push({kind:'stamina', delta:amount});
-      }else if(text.includes('추가 체력')){
-        const amount=parseKoreanAmountLegacy(text);
-        if(amount) parsed.changes.push({kind:'extraStamina', delta:amount});
-      }
-    });
-    return parsed;
-  }
-  function previewLegacyUndo(action, parsed, candidates){
-    const lines=[];
-    parsed.changes.forEach(ch=>{
-      const inv=-ch.delta;
-      if(ch.kind==='seed') lines.push(`${ch.crop} 씨앗 ${inv>0?'+':''}${fmt(inv)}`);
-      if(ch.kind==='crop') lines.push(`${ch.crop} 작물 ${inv>0?'+':''}${fmt(inv)}`);
-      if(ch.kind==='base') lines.push(`${ch.crop} 베이스 ${inv>0?'+':''}${fmt(inv)}`);
-      if(ch.kind==='stamina') lines.push(`체력 ${(-ch.delta)>0?'+':''}${fmt(-ch.delta)}`);
-      if(ch.kind==='extraStamina') lines.push(`추가 체력 취소 ${(-ch.delta)>0?'+':''}${fmt(-ch.delta)}`);
-    });
-    if(candidates.correctionIds.length) lines.push(`연결 추정 실측 공유 대기 ${candidates.correctionIds.length}건 삭제`);
-    if(candidates.chestIds.length) lines.push(`연결 추정 상자 공유 대기 ${candidates.chestIds.length}건 삭제`);
-    return lines.join('\n') || '되돌릴 수량 없음';
-  }
-  function legacyCorrectionCandidates(action, parsed){
-    const fc=farmCorrectionStore();
-    const need=parsed.correctionHintCount||0;
-    if(!fc || !need) return [];
-    const time=Number(action.time||0);
-    const type=String(action.type||'');
-    const mode=type.includes('채집')?'채집':(type.includes('수확')?'수확':'');
-    const crops=parsed.crops||new Set();
-    return (fc.pendingRecent||[]).filter(rec=>{
-      if(!rec || !rec.id) return false;
-      const recTime=Date.parse(rec.createdAt||rec.time||'');
-      if(time && Number.isFinite(recTime) && Math.abs(recTime-time)>120000) return false;
-      const actionText=String(rec.action||rec.source||'');
-      if(mode && actionText && !actionText.includes(mode)) return false;
-      if(rec.crop && crops.size && !crops.has(rec.crop)) return false;
-      return true;
-    }).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0)).slice(0,need).map(r=>r.id);
-  }
-  function legacyChestCandidates(action, parsed){
-    const need=parsed.chestHintCount||0;
+    const m=note.match(/실측\s*기록\s*([\d,]+)개/);
+    const need=m?int(m[1]):0;
     if(!need) return [];
-    const s=chestStore();
-    if(!s || !Array.isArray(s.records)) return [];
-    const time=Number(action.time||0);
-    return s.records.filter(r=>r&&!r.shareRequestedAt&&r.id).filter(r=>{
+    const fc=farmCorrectionStore();
+    const pending=(fc&&Array.isArray(fc.pendingRecent))?fc.pendingRecent:[];
+    const t=Number(action&&action.time||0);
+    const candidates=pending.filter(r=>r&&r.id).filter(r=>{
       const rt=Date.parse(r.createdAt||r.recordedAt||r.updatedAt||'');
-      return !time || !Number.isFinite(rt) || Math.abs(rt-time)<=120000;
-    }).slice(-need).map(r=>r.id);
+      return !t || !Number.isFinite(rt) || Math.abs(rt-t)<=5*60*1000;
+    }).sort((a,b)=>Date.parse(b.createdAt||b.recordedAt||0)-Date.parse(a.createdAt||a.recordedAt||0)).slice(0, need).map(r=>r.id);
+    return candidates;
   }
-  function legacyCandidates(action, parsed){ return {correctionIds:legacyCorrectionCandidates(action, parsed), chestIds:legacyChestCandidates(action, parsed)}; }
-  function applyLegacyChanges(parsed){
+  function applyLegacyUndo(action){
+    const parsed=parseLegacyAction(action);
+    if(parsed.reason){ alert(parsed.reason); return; }
+    const changes=combineChanges(parsed.changes);
+    if(!changes.length){ alert('이 기록에서 되돌릴 수량을 찾지 못했어.'); return; }
+    const preview=legacyChangePreview(changes);
+    const candidateIds=pendingCandidateIdsForLegacy(action);
+    const pendingText=candidateIds.length ? `\n실측 공유 대기 후보 ${fmt(candidateIds.length)}건도 같이 삭제` : '\n연결된 공유 대기는 자동 특정 안 됨';
+    if(!confirm(`기록 기준으로 이 반영을 취소할까?\n\n${preview.join('\n')}${pendingText}\n\n전역 되돌리기가 아니라 이 기록의 증감량만 반대로 적용합니다.`)) return;
     const changed=[];
-    for(const ch of parsed.changes){
-      if(ch.kind==='seed'){
-        const cur=readSeedTotalLegacy(ch.crop), next=cur-ch.delta;
-        if(next<0) throw new Error(`${ch.crop} 씨앗 현재 보유량이 부족해서 취소할 수 없음`);
-        changed.push(...writeSeedTotalLegacy(ch.crop,next));
-        if(ch.delta>0 && window.farmShelfLifeV710){};
-      }else if(ch.kind==='crop'){
-        const prefix='farmCrop'+EN[ch.crop]; const cur=readStackSingleLegacy(prefix), next=cur-ch.delta;
-        if(next<0) throw new Error(`${ch.crop} 작물 현재 보유량이 부족해서 취소할 수 없음`);
-        changed.push(...writeStackSingleLegacy(prefix,next));
-        if(ch.delta>0 && window.farmShelfLifeV710 && window.farmShelfLifeV710.consumeLot) window.farmShelfLifeV710.consumeLot(ch.crop, ch.delta);
-      }else if(ch.kind==='base'){
-        const prefix='farmBase'+EN[ch.crop]; const cur=readStackSingleLegacy(prefix), next=cur-ch.delta;
-        if(next<0) throw new Error(`${ch.crop} 베이스 현재 보유량이 부족해서 취소할 수 없음`);
-        changed.push(...writeStackSingleLegacy(prefix,next));
-        if(ch.delta>0 && window.farmShelfLifeV710 && window.farmShelfLifeV710.consumeLot) window.farmShelfLifeV710.consumeLot(ch.crop+' 베이스', ch.delta);
-      }else if(ch.kind==='stamina'){
-        const cur=readFieldNum('farmUseStamina'); const next=cur-ch.delta;
-        if(next<0) throw new Error('체력 값이 음수가 되어 취소할 수 없음');
-        const el=writeFieldNum('farmUseStamina', next); if(el) changed.push(el);
-      }else if(ch.kind==='extraStamina'){
-        const cur=readFieldNum('farmUseStamina'); const next=cur-ch.delta;
-        if(next<0) throw new Error('체력 값이 음수가 되어 취소할 수 없음');
-        const el=writeFieldNum('farmUseStamina', next); if(el) changed.push(el);
+    for(const ch of changes){
+      const inverse=-ch.delta;
+      if(ch.kind==='stamina'){
+        const cur=readNum('farmUseStamina');
+        const next=cur+inverse;
+        if(next<0){ alert('체력이 음수가 되어 취소할 수 없음'); return; }
+        writeNum('farmUseStamina', next, changed);
+      }else{
+        const cur=itemTotal(ch.kind, ch.crop);
+        const next=cur+inverse;
+        if(next<0){ alert(`${ch.crop} ${ch.kind==='seed'?'씨앗':ch.kind==='crop'?'작물':'베이스'} 보유량이 부족해서 취소할 수 없음`); return; }
+        writeItemTotal(ch.kind, ch.crop, next, changed);
       }
     }
     changed.forEach(el=>el.dispatchEvent(new Event('input',{bubbles:true})));
     changed.forEach(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
-    return changed.length;
-  }
-  function markLegacyRecentCanceled(actionId){
-    const actions=readRecent();
-    let changed=false;
-    actions.forEach(a=>{ if(a && a.id===actionId){ a.undoStatus='canceled'; a.note=[a.note||'', '취소됨'].filter(Boolean).join(' · '); changed=true; } });
-    if(changed) writeRecent(actions);
-  }
-  function undoLegacyRecentAction(actionId){
-    const actions=readRecent();
-    const action=actions.find(a=>a&&a.id===actionId);
-    if(!action) return;
-    const parsed=parseLegacyRecentAction(action);
-    if(!parsed.changes.length){ alert('이전 기록에서 되돌릴 수량을 찾지 못했어.'); return; }
-    const candidates=legacyCandidates(action, parsed);
-    const preview=previewLegacyUndo(action, parsed, candidates);
-    const warn=[];
-    if(parsed.correctionHintCount && candidates.correctionIds.length<parsed.correctionHintCount) warn.push(`실측 공유 대기 ${parsed.correctionHintCount}건 중 ${candidates.correctionIds.length}건만 특정됨`);
-    const text=[`기록 기준으로 이 반영을 취소할까?`, '', preview, warn.length?'\n주의: '+warn.join(' · '):'', '', '전역 되돌리기가 아니라 이 기록에 적힌 증감량만 반대로 적용합니다.'].join('\n');
-    if(!confirm(text)) return;
-    try{ applyLegacyChanges(parsed); }
-    catch(e){ alert(e && e.message ? e.message : '취소 실패'); return; }
-    const removedCorrection=removeCorrectionRecords(candidates.correctionIds||[], true);
-    const removedChest=removeChestRecords(candidates.chestIds||[]);
-    markLegacyRecentCanceled(actionId);
+    const removed=removeCorrectionRecords(candidateIds, true);
+    markRecentCanceled(action.id, '기록 기준 취소됨');
     refreshAll();
-    recentLog('최근 반영 취소', [`${action.type || '이전 반영'} 기록 기준 취소`], `실측 ${removedCorrection}건 · 상자 ${removedChest}건 연결 기록 정리`);
-    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
-    toastSafe('이전 최근 반영 1건 취소됨');
+    toastSafe(`기록 기준 취소 완료 · 실측 ${fmt(removed)}건`);
   }
-  window.farmLegacyUndoCanParseV730 = canParseLegacyRecentAction;
-  window.farmUndoLegacyRecentActionV730 = undoLegacyRecentAction;
-
-  window.farmUndoRecentActionV729 = undoRecord;
-  window.farmUndoExistsV729 = function(id){ return !!id && readUndo().some(r=>r&&r.id===id); };
-  function renderUndoPanel(){
-    const old=byId('farmUndoActionsCardV722');
-    if(old) old.remove();
-  }
+  window.farmUndoRecentActionV732 = function(recentId){
+    const action=findRecent(recentId);
+    if(!action){ alert('최근 반영 기록을 찾지 못했어.'); return; }
+    if(action.cancelled){ alert('이미 취소된 기록이야.'); return; }
+    const exact=exactUndoForRecent(recentId);
+    if(exact) undoExactRecord(exact, recentId);
+    else applyLegacyUndo(action);
+  };
 
   function renderPendingManager(forceOpen){
-    const farmStaticPanel = byId('farmPendingManagerFarmV728');
     const panels=[];
+    const farmStaticPanel=byId('farmPendingManagerFarmV728');
     if(farmStaticPanel) panels.push(farmStaticPanel);
-
-    // 데이터 관리 탭은 기존 위치에서만 작은 관리 영역을 생성한다. 실측 보정 상단 패널에는 아래 펼침을 만들지 않는다.
-    const dataStatus = byId('farmCorrectionShareStatusV500');
+    const dataStatus=byId('farmCorrectionShareStatusV500');
     if(dataStatus){
-      let dataPanel = dataStatus.parentNode && dataStatus.parentNode.querySelector('.farm-pending-manager-v722[data-scope="data"]');
-      if(!dataPanel){
-        dataPanel=document.createElement('div');
-        dataPanel.className='farm-pending-manager-v722';
-        dataPanel.dataset.scope='data';
-        dataStatus.insertAdjacentElement('afterend', dataPanel);
-      }
+      let dataPanel=dataStatus.parentNode && dataStatus.parentNode.querySelector('.farm-pending-manager-v732[data-scope="data"]');
+      if(!dataPanel){ dataPanel=document.createElement('div'); dataPanel.className='farm-pending-manager-v732'; dataPanel.dataset.scope='data'; dataStatus.insertAdjacentElement('afterend', dataPanel); }
       panels.push(dataPanel);
     }
     if(!panels.length) return;
-
     const fc=farmCorrectionStore();
     const pending=(fc&&Array.isArray(fc.pendingRecent)?fc.pendingRecent:[]).slice(0,100);
     const chest=(()=>{ const s=chestStore(); return ((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).slice(0,100); })();
@@ -14423,33 +14313,29 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const name=[rec.crop, rec.typeLabel||rec.type].filter(Boolean).join(' ');
       const actual=fmt(rec.actual); const expected=fmt(rec.expected);
       const note=rec.note?` · ${rec.note}`:'';
-      return `<div class="farm-pending-item-v722"><div><b>실측 · ${esc(name)}</b><span>실제 ${actual} / 예상 ${expected}${esc(note)}</span></div><button class="btn danger farm-pending-del-v722" data-kind="correction" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
-    }).join(''):'<div class="farm-pending-empty-v722">실측 공유 대기 없음</div>';
+      return `<div class="farm-pending-item-v732"><div><b>실측 · ${esc(name)}</b><span>실제 ${actual} / 예상 ${expected}${esc(note)}</span></div><button class="btn danger farm-pending-del-v732" data-kind="correction" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
+    }).join(''):'<div class="farm-pending-empty-v732">실측 공유 대기 없음</div>';
     const chestHtml=chest.length?chest.map(rec=>{
-      const seeds=rec.seeds||{}, drinks=rec.drinks||{};
-      const lines=[];
-      CROPS.forEach(c=>{ if(num(seeds[c])>0) lines.push(`${c} 씨앗 ${fmt(seeds[c])}`); });
-      ['I','II','III','IV','V'].forEach(d=>{ if(num(drinks[d])>0) lines.push(`드링크 ${d} ${fmt(drinks[d])}`); });
-      return `<div class="farm-pending-item-v722"><div><b>상자 · ${esc(rec.grade||'루키')}</b><span>${esc(lines.join(' · ') || '추적 아이템 없음')}</span></div><button class="btn danger farm-pending-del-v722" data-kind="chest" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
-    }).join(''):'<div class="farm-pending-empty-v722">상자 공유 대기 없음</div>';
-    const html=`<div class="farm-pending-head-v722"><b>공유 대기 관리</b><button class="btn farm-pending-close-v722" type="button">닫기</button></div><div class="farm-pending-section-v722"><h5>실측</h5>${correctionHtml}</div><div class="farm-pending-section-v722"><h5>상자</h5>${chestHtml}</div><div class="farm-pending-actions-v722"><button class="btn danger farm-pending-clear-all-v722" type="button">전체 삭제</button></div>`;
+      const seeds=rec.seeds||{}, drinks=rec.drinks||{}; const lines=[];
+      CROPS.forEach(c=>{ if(int(seeds[c])>0) lines.push(`${c} 씨앗 ${fmt(seeds[c])}`); });
+      ['I','II','III','IV','V'].forEach(d=>{ if(int(drinks[d])>0) lines.push(`드링크 ${d} ${fmt(drinks[d])}`); });
+      return `<div class="farm-pending-item-v732"><div><b>상자 · ${esc(rec.grade||'루키')}</b><span>${esc(lines.join(' · ') || '추적 아이템 없음')}</span></div><button class="btn danger farm-pending-del-v732" data-kind="chest" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
+    }).join(''):'<div class="farm-pending-empty-v732">상자 공유 대기 없음</div>';
+    const html=`<div class="farm-pending-head-v732"><b>공유 대기 관리</b><button class="btn farm-pending-close-v732" type="button">닫기</button></div><div class="farm-pending-section-v732"><h5>실측</h5>${correctionHtml}</div><div class="farm-pending-section-v732"><h5>상자</h5>${chestHtml}</div><div class="farm-pending-actions-v732"><button class="btn danger farm-pending-clear-all-v732" type="button">전체 삭제</button></div>`;
     panels.forEach(panel=>{
-      const shouldOpen = forceOpen || panel.dataset.open==='1';
-      panel.dataset.open = shouldOpen ? '1' : '0';
-      panel.style.display = shouldOpen ? 'block' : 'none';
+      const shouldOpen=forceOpen || panel.dataset.open==='1';
+      panel.dataset.open=shouldOpen?'1':'0'; panel.style.display=shouldOpen?'block':'none';
       if(!shouldOpen) return;
       panel.innerHTML=html;
-      panel.querySelector('.farm-pending-close-v722')?.addEventListener('click',()=>{ panel.dataset.open='0'; panel.style.display='none'; });
-      qa('.farm-pending-del-v722', panel).forEach(btn=>btn.addEventListener('click',()=>deletePendingOne(btn.dataset.kind, btn.dataset.id)));
-      panel.querySelector('.farm-pending-clear-all-v722')?.addEventListener('click',()=>deleteAllPending());
+      panel.querySelector('.farm-pending-close-v732')?.addEventListener('click',()=>{ panel.dataset.open='0'; panel.style.display='none'; });
+      qa('.farm-pending-del-v732', panel).forEach(btn=>btn.addEventListener('click',()=>deletePendingOne(btn.dataset.kind, btn.dataset.id)));
+      panel.querySelector('.farm-pending-clear-all-v732')?.addEventListener('click',()=>deleteAllPending());
     });
   }
   function deletePendingOne(kind, id){
     if(!id) return;
     if(!confirm('이 공유 대기 기록 1건만 삭제할까?')) return;
-    let removed=0;
-    if(kind==='correction') removed=removeCorrectionRecords([id], false);
-    else if(kind==='chest') removed=removeChestRecords([id]);
+    const removed=kind==='correction' ? removeCorrectionRecords([id], false) : removeChestRecords([id]);
     saveQuiet();
     try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
     renderPendingManager(true);
@@ -14463,86 +14349,68 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(!confirm(`모든 공유 대기 기록을 삭제할까?\n실측 ${fmt(correctionCount)}건 · 상자 ${fmt(chestCount)}건`)) return;
     if(!confirm('정상 데이터도 전부 삭제됩니다. 정말 전체 삭제할까요?')) return;
     if(fc){ fc.pendingRecent=[]; fc.pendingStats={}; fc.pendingCount=0; }
-    const s=chestStore();
-    if(s&&Array.isArray(s.records)){ s.records=s.records.filter(r=>r&&r.shareRequestedAt); s.updatedAt=new Date().toISOString(); }
+    const s=chestStore(); if(s&&Array.isArray(s.records)){ s.records=s.records.filter(r=>r&&r.shareRequestedAt); s.updatedAt=nowIso(); }
     saveQuiet();
     try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
     renderPendingManager(true);
     toastSafe('공유 대기 전체 삭제됨');
   }
-
   function bindPendingButtons(){
     ['farmCorrectionClearPendingBtnV720','farmCorrectionClearPendingBtnFarmV720'].forEach(id=>{
-      const btn=byId(id);
-      if(!btn || btn.__pendingManagerV722) return;
-      btn.__pendingManagerV722=true;
-      btn.textContent='공유 대기 관리';
-      btn.classList.remove('danger');
-      btn.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        renderPendingManager(true);
-      }, true);
+      const btn=byId(id); if(!btn || btn.__pendingManagerV732) return;
+      btn.__pendingManagerV732=true; btn.textContent='공유 대기 관리'; btn.classList.remove('danger');
+      btn.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); renderPendingManager(true); }, true);
     });
   }
-  window.dataClearPendingShareV720 = function(){ renderPendingManager(true); };
+  window.dataClearPendingShareV720=function(){ renderPendingManager(true); };
 
   function validateGatherBeforeClick(e){
     const btn=e.target && e.target.closest ? e.target.closest('button') : null;
-    if(!btn || btn.id !== 'farmGatherApplyBtnV117') return;
-    const remain=byId('farmGatherRemainStaminaV620');
-    const raw=String(remain?.value ?? '').trim();
-    if(raw === ''){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const status=byId('farmGatherStatusV117');
-      if(status) status.textContent='현재 남은 체력을 입력해야 반영됩니다.';
+    if(!btn || btn.id!=='farmGatherApplyBtnV117') return;
+    const raw=String(byId('farmGatherRemainStaminaV620')?.value ?? '').trim();
+    if(raw===''){
+      e.preventDefault(); e.stopImmediatePropagation();
+      const status=byId('farmGatherStatusV117'); if(status) status.textContent='현재 남은 체력을 입력해야 반영됩니다.';
       toastSafe('현재 남은 체력 입력 필요');
     }
   }
   function captureAction(e){
     const btn=e.target && e.target.closest ? e.target.closest('button') : null;
     if(!btn || !ACTIONS[btn.id]) return;
-    if(btn.id === 'farmGatherApplyBtnV117'){
-      const raw=String(byId('farmGatherRemainStaminaV620')?.value ?? '').trim();
-      if(raw === '') return;
-    }
+    if(btn.id==='farmGatherApplyBtnV117' && String(byId('farmGatherRemainStaminaV620')?.value ?? '').trim()==='') return;
     startTx(ACTIONS[btn.id]);
     setTimeout(finishTx, 0);
   }
   function installStyle(){
-    if(byId('farmPendingItemUndoStyleV722')) return;
+    if(byId('farmPendingItemUndoStyleV732')) return;
     const style=document.createElement('style');
-    style.id='farmPendingItemUndoStyleV722';
+    style.id='farmPendingItemUndoStyleV732';
     style.textContent=`
-      #seedplan .farm-recent-action-head-v116{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-      #seedplan .farm-recent-action-title-v729{display:flex;align-items:center;gap:8px;min-width:0}
-      #seedplan .farm-recent-undo-icon-v729{border:1px solid rgba(130,246,201,.35);background:rgba(130,246,201,.12);color:#96ffe1;border-radius:10px;width:28px;height:28px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;flex:0 0 auto}
-      #seedplan .farm-recent-undo-icon-v729:hover{background:rgba(130,246,201,.22)}
-      #seedplan .farm-recent-action-canceled-v729{opacity:.65}
-      #seedplan .farm-recent-action-canceled-v729 .farm-recent-action-note-v116{color:#ffd166}
-      .farm-pending-empty-v722{font-size:12px;color:var(--muted);padding:6px 0}
-      .farm-pending-item-v722{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:12px;padding:8px}
-      .farm-pending-item-v722 div{display:grid;gap:2px;min-width:0}
-      .farm-pending-item-v722 span{font-size:11px;color:var(--muted)}
-      .farm-pending-manager-v722{margin-top:10px;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.92);border-radius:16px;padding:12px;display:none}
-      .farm-pending-head-v722{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-      .farm-pending-section-v722{display:grid;gap:6px;margin-top:8px}
-      .farm-pending-section-v722 h5{margin:0;color:#cdeee4;font-size:13px}
-      .farm-pending-actions-v722{margin-top:10px;display:flex;justify-content:flex-end}
-      @media(max-width:720px){.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
+      #seedplan .farm-recent-action-head-v732{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+      #seedplan .farm-recent-action-title-v732{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+      #seedplan .farm-recent-undo-icon-v732{border:1px solid rgba(130,246,201,.35);background:rgba(130,246,201,.12);color:#96ffe1;border-radius:10px;width:28px;height:28px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;flex:0 0 auto}
+      #seedplan .farm-recent-undo-icon-v732:hover{background:rgba(130,246,201,.22)}
+      #seedplan .farm-recent-action-canceled-v732{opacity:.65}
+      #seedplan .farm-recent-cancel-note-v732{color:#ffd166}
+      .farm-pending-empty-v732{font-size:12px;color:var(--muted);padding:6px 0}
+      .farm-pending-item-v732{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:12px;padding:8px}
+      .farm-pending-item-v732 div{display:grid;gap:2px;min-width:0}.farm-pending-item-v732 span{font-size:11px;color:var(--muted)}
+      .farm-pending-manager-v732{margin-top:10px;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.92);border-radius:16px;padding:12px;display:none}
+      .farm-pending-head-v732{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+      .farm-pending-section-v732{display:grid;gap:6px;margin-top:8px}.farm-pending-section-v732 h5{margin:0;color:#cdeee4;font-size:13px}
+      .farm-pending-actions-v732{margin-top:10px;display:flex;justify-content:flex-end}
+      @media(max-width:720px){.farm-pending-item-v732{display:grid}.farm-pending-head-v732{align-items:flex-start}}
     `;
     document.head.appendChild(style);
   }
-  function boot(){ installStyle(); bindPendingButtons(); linkExistingUndoRecords(); renderUndoPanel(); renderPendingManager(false); try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){} }
+  function boot(){ installStyle(); bindPendingButtons(); renderPendingManager(false); try{ if(typeof window.farmRenderRecentActionsV116==='function') window.farmRenderRecentActionsV116(); }catch(e){} }
   document.addEventListener('click', validateGatherBeforeClick, true);
   document.addEventListener('click', captureAction, true);
   window.addEventListener('load', boot);
   const oldOpen=window.openTab;
-  if(typeof oldOpen === 'function' && !oldOpen.__pendingItemUndoV722){
+  if(typeof oldOpen==='function' && !oldOpen.__pendingItemUndoV732){
     const wrapped=function(tabName){ const ret=oldOpen.apply(this, arguments); setTimeout(boot,0); return ret; };
-    wrapped.__pendingItemUndoV722=true;
-    window.openTab=wrapped;
+    wrapped.__pendingItemUndoV732=true; window.openTab=wrapped;
   }
   boot();
 })();
