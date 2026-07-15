@@ -14252,13 +14252,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       #seedplan .farm-undo-item-v722 div,.farm-pending-item-v722 div{display:grid;gap:2px;min-width:0}
       #seedplan .farm-undo-item-v722 span,.farm-pending-item-v722 span{font-size:11px;color:var(--muted)}
       #seedplan .farm-undo-item-v722 em{font-style:normal;font-size:12px;color:#e9edf7}
-      .farm-pending-manager-v722{margin-top:10px;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.92);border-radius:16px;padding:12px;display:none;max-height:min(520px,calc(100vh - 180px));overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+      .farm-pending-manager-v722{position:fixed;top:84px;right:18px;bottom:18px;width:min(420px,calc(100vw - 36px));margin:0;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.96);border-radius:16px;padding:12px;display:none;max-height:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,.45)}
       .farm-pending-head-v722{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:2;background:rgba(12,18,28,.96)}
       .farm-pending-section-v722{display:grid;gap:6px;margin-top:8px}
       .farm-pending-section-v722 h5{margin:0;color:#cdeee4;font-size:13px}
       .farm-pending-actions-v722{margin:10px -2px -2px;padding-top:8px;display:flex;justify-content:flex-end;border-top:1px solid rgba(255,255,255,.08);position:sticky;bottom:0;z-index:2;background:rgba(12,18,28,.96)}
       .farm-pending-item-v722 .btn{flex:0 0 auto}
-      @media(max-width:720px){.farm-pending-manager-v722{max-height:calc(100vh - 120px)}#seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
+      @media(max-width:720px){.farm-pending-manager-v722{top:64px;left:10px;right:10px;bottom:10px;width:auto}#seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
     `;
     document.head.appendChild(style);
   }
