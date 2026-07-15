@@ -10580,6 +10580,14 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const card = byId('farmRecentActionsCardV116');
     if(!card) return;
     const actions = readRecentActions();
+    let recentIdChangedV731 = false;
+    actions.forEach((action, idx) => {
+      if(action && !action.id){
+        action.id = 'ra_legacy_' + (Number(action.time || 0) || Date.now()).toString(36) + '_' + idx;
+        recentIdChangedV731 = true;
+      }
+    });
+    if(recentIdChangedV731) writeRecentActions(actions);
     const titleHtml = '<h4>최근 반영 내역</h4>';
     if(!actions.length){
       recentActionsExpandedV433 = false;
@@ -10600,7 +10608,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const typeClass = recentActionTypeClass(action.type);
       const undoId = action.undoId || '';
       const canUndo = undoId && !undoCanceled && (!window.farmUndoExistsV729 || window.farmUndoExistsV729(undoId));
-      const undoHtml = canUndo ? `<button class="farm-recent-undo-icon-v729" type="button" data-undo-id="${escapeHtml(undoId)}" title="이 반영 취소" aria-label="이 반영 취소">↩</button>` : '';
+      const undoHtml = undoCanceled ? '' : (canUndo
+        ? `<button class="farm-recent-undo-icon-v729" type="button" data-undo-id="${escapeHtml(undoId)}" title="이 반영 취소" aria-label="이 반영 취소">↩</button>`
+        : `<button class="farm-recent-undo-icon-v729 farm-recent-undo-legacy-v730" type="button" data-action-id="${escapeHtml(action.id || '')}" title="기록 기준 취소" aria-label="기록 기준 취소">↩</button>`);
       return `<div class="farm-recent-action-item-v116 farm-recent-action-item-v433 ${typeClass} ${undoCanceled ? 'farm-recent-action-canceled-v729' : ''}">
         <div class="farm-recent-action-head-v116"><span class="farm-recent-action-title-v729"><b>${escapeHtml(action.type || '반영')}</b><span>${escapeHtml(formatRecentTime(action.time))}</span></span>${undoHtml}</div>
         <div class="farm-recent-action-lines-v116">${lineHtml}</div>${note}
@@ -10621,6 +10631,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       btn.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
+        if(btn.classList.contains('farm-recent-undo-legacy-v730')){
+          if(window.farmUndoLegacyRecentActionV730) window.farmUndoLegacyRecentActionV730(btn.dataset.actionId || '');
+          return;
+        }
         if(window.farmUndoRecentActionV729) window.farmUndoRecentActionV729(btn.dataset.undoId || '');
       });
     });
@@ -14221,6 +14235,161 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
     toastSafe('최근 반영 1건 취소됨');
   }
+
+  const UNIT_SEED_LEGACY_V730 = {Large:3456, Small:1728, Stack:64, Single:1};
+  function readFieldNum(id){ const el=byId(id); return Math.max(0, Math.trunc(Number(el && el.value || 0) || 0)); }
+  function writeFieldNum(id, value){ const el=byId(id); if(!el) return null; const next=String(Math.max(0, Math.trunc(Number(value)||0))); if(String(el.value ?? '') === next) return null; el.value=next; return el; }
+  function readSeedTotalLegacy(crop){ const p=EN[crop]; return readFieldNum(`farmSeed${p}Large`)*UNIT_SEED_LEGACY_V730.Large + readFieldNum(`farmSeed${p}Small`)*UNIT_SEED_LEGACY_V730.Small + readFieldNum(`farmSeed${p}Stack`)*UNIT_SEED_LEGACY_V730.Stack + readFieldNum(`farmSeed${p}Single`); }
+  function writeSeedTotalLegacy(crop,total){ const p=EN[crop]; let remain=Math.max(0,Math.trunc(Number(total)||0)); const changed=[]; const large=Math.floor(remain/UNIT_SEED_LEGACY_V730.Large); remain-=large*UNIT_SEED_LEGACY_V730.Large; const small=Math.floor(remain/UNIT_SEED_LEGACY_V730.Small); remain-=small*UNIT_SEED_LEGACY_V730.Small; const stack=Math.floor(remain/UNIT_SEED_LEGACY_V730.Stack); remain-=stack*UNIT_SEED_LEGACY_V730.Stack; [`farmSeed${p}Large`,`farmSeed${p}Small`,`farmSeed${p}Stack`,`farmSeed${p}Single`].forEach((id,idx)=>{ const value=[large,small,stack,remain][idx]; const el=writeFieldNum(id,value); if(el) changed.push(el); }); return changed; }
+  function readStackSingleLegacy(prefix){ return readFieldNum(prefix+'Stack')*64 + readFieldNum(prefix+'Single'); }
+  function writeStackSingleLegacy(prefix,total){ const value=Math.max(0,Math.trunc(Number(total)||0)); const stack=Math.floor(value/64), single=value%64; const changed=[]; const st=writeFieldNum(prefix+'Stack',stack); if(st) changed.push(st); const si=writeFieldNum(prefix+'Single',single); if(si) changed.push(si); return changed; }
+  function parseKoreanAmountLegacy(text){
+    const raw=String(text||'').replace(/,/g,'');
+    const signMatch=raw.match(/([+-])\s*(\d+)/);
+    if(!signMatch) return null;
+    const sign=signMatch[1]==='-'?-1:1;
+    return sign * Math.trunc(Number(signMatch[2])||0);
+  }
+  function canParseLegacyRecentAction(action){
+    if(!action || action.undoStatus==='canceled') return false;
+    const type=String(action.type||'');
+    if(/유통기한|공유|저장|초기화|삭제|취소/.test(type)) return false;
+    return !!parseLegacyRecentAction(action).changes.length;
+  }
+  function parseLegacyRecentAction(action){
+    const lines=Array.isArray(action&&action.lines)?action.lines:[];
+    const parsed={changes:[], crops:new Set(), correctionHintCount:0, chestHintCount:0, warnings:[]};
+    const note=String(action&&action.note||'');
+    const mNote=note.replace(/,/g,'').match(/실측\s*기록\s*(\d+)개/);
+    if(mNote) parsed.correctionHintCount=Math.max(0,Math.trunc(Number(mNote[1])||0));
+    if(/상자/.test(String(action&&action.type||''))) parsed.chestHintCount=1;
+    lines.forEach(line=>{
+      const text=String(line||'');
+      CROPS.forEach(crop=>{
+        if(!text.includes(crop)) return;
+        const amount=parseKoreanAmountLegacy(text);
+        if(!amount) return;
+        if(text.includes('씨앗')){ parsed.changes.push({kind:'seed', crop, delta:amount}); parsed.crops.add(crop); }
+        else if(text.includes('작물')){ parsed.changes.push({kind:'crop', crop, delta:amount}); parsed.crops.add(crop); }
+        else if(text.includes('베이스')){ parsed.changes.push({kind:'base', crop, delta:amount}); parsed.crops.add(crop); }
+      });
+      if(text.includes('사용 체력')){
+        const amount=parseKoreanAmountLegacy(text);
+        if(amount) parsed.changes.push({kind:'stamina', delta:amount});
+      }else if(text.includes('추가 체력')){
+        const amount=parseKoreanAmountLegacy(text);
+        if(amount) parsed.changes.push({kind:'extraStamina', delta:amount});
+      }
+    });
+    return parsed;
+  }
+  function previewLegacyUndo(action, parsed, candidates){
+    const lines=[];
+    parsed.changes.forEach(ch=>{
+      const inv=-ch.delta;
+      if(ch.kind==='seed') lines.push(`${ch.crop} 씨앗 ${inv>0?'+':''}${fmt(inv)}`);
+      if(ch.kind==='crop') lines.push(`${ch.crop} 작물 ${inv>0?'+':''}${fmt(inv)}`);
+      if(ch.kind==='base') lines.push(`${ch.crop} 베이스 ${inv>0?'+':''}${fmt(inv)}`);
+      if(ch.kind==='stamina') lines.push(`체력 ${(-ch.delta)>0?'+':''}${fmt(-ch.delta)}`);
+      if(ch.kind==='extraStamina') lines.push(`추가 체력 취소 ${(-ch.delta)>0?'+':''}${fmt(-ch.delta)}`);
+    });
+    if(candidates.correctionIds.length) lines.push(`연결 추정 실측 공유 대기 ${candidates.correctionIds.length}건 삭제`);
+    if(candidates.chestIds.length) lines.push(`연결 추정 상자 공유 대기 ${candidates.chestIds.length}건 삭제`);
+    return lines.join('\n') || '되돌릴 수량 없음';
+  }
+  function legacyCorrectionCandidates(action, parsed){
+    const fc=farmCorrectionStore();
+    const need=parsed.correctionHintCount||0;
+    if(!fc || !need) return [];
+    const time=Number(action.time||0);
+    const type=String(action.type||'');
+    const mode=type.includes('채집')?'채집':(type.includes('수확')?'수확':'');
+    const crops=parsed.crops||new Set();
+    return (fc.pendingRecent||[]).filter(rec=>{
+      if(!rec || !rec.id) return false;
+      const recTime=Date.parse(rec.createdAt||rec.time||'');
+      if(time && Number.isFinite(recTime) && Math.abs(recTime-time)>120000) return false;
+      const actionText=String(rec.action||rec.source||'');
+      if(mode && actionText && !actionText.includes(mode)) return false;
+      if(rec.crop && crops.size && !crops.has(rec.crop)) return false;
+      return true;
+    }).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0)).slice(0,need).map(r=>r.id);
+  }
+  function legacyChestCandidates(action, parsed){
+    const need=parsed.chestHintCount||0;
+    if(!need) return [];
+    const s=chestStore();
+    if(!s || !Array.isArray(s.records)) return [];
+    const time=Number(action.time||0);
+    return s.records.filter(r=>r&&!r.shareRequestedAt&&r.id).filter(r=>{
+      const rt=Date.parse(r.createdAt||r.recordedAt||r.updatedAt||'');
+      return !time || !Number.isFinite(rt) || Math.abs(rt-time)<=120000;
+    }).slice(-need).map(r=>r.id);
+  }
+  function legacyCandidates(action, parsed){ return {correctionIds:legacyCorrectionCandidates(action, parsed), chestIds:legacyChestCandidates(action, parsed)}; }
+  function applyLegacyChanges(parsed){
+    const changed=[];
+    for(const ch of parsed.changes){
+      if(ch.kind==='seed'){
+        const cur=readSeedTotalLegacy(ch.crop), next=cur-ch.delta;
+        if(next<0) throw new Error(`${ch.crop} 씨앗 현재 보유량이 부족해서 취소할 수 없음`);
+        changed.push(...writeSeedTotalLegacy(ch.crop,next));
+        if(ch.delta>0 && window.farmShelfLifeV710){};
+      }else if(ch.kind==='crop'){
+        const prefix='farmCrop'+EN[ch.crop]; const cur=readStackSingleLegacy(prefix), next=cur-ch.delta;
+        if(next<0) throw new Error(`${ch.crop} 작물 현재 보유량이 부족해서 취소할 수 없음`);
+        changed.push(...writeStackSingleLegacy(prefix,next));
+        if(ch.delta>0 && window.farmShelfLifeV710 && window.farmShelfLifeV710.consumeLot) window.farmShelfLifeV710.consumeLot(ch.crop, ch.delta);
+      }else if(ch.kind==='base'){
+        const prefix='farmBase'+EN[ch.crop]; const cur=readStackSingleLegacy(prefix), next=cur-ch.delta;
+        if(next<0) throw new Error(`${ch.crop} 베이스 현재 보유량이 부족해서 취소할 수 없음`);
+        changed.push(...writeStackSingleLegacy(prefix,next));
+        if(ch.delta>0 && window.farmShelfLifeV710 && window.farmShelfLifeV710.consumeLot) window.farmShelfLifeV710.consumeLot(ch.crop+' 베이스', ch.delta);
+      }else if(ch.kind==='stamina'){
+        const cur=readFieldNum('farmUseStamina'); const next=cur-ch.delta;
+        if(next<0) throw new Error('체력 값이 음수가 되어 취소할 수 없음');
+        const el=writeFieldNum('farmUseStamina', next); if(el) changed.push(el);
+      }else if(ch.kind==='extraStamina'){
+        const cur=readFieldNum('farmUseStamina'); const next=cur-ch.delta;
+        if(next<0) throw new Error('체력 값이 음수가 되어 취소할 수 없음');
+        const el=writeFieldNum('farmUseStamina', next); if(el) changed.push(el);
+      }
+    }
+    changed.forEach(el=>el.dispatchEvent(new Event('input',{bubbles:true})));
+    changed.forEach(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
+    return changed.length;
+  }
+  function markLegacyRecentCanceled(actionId){
+    const actions=readRecent();
+    let changed=false;
+    actions.forEach(a=>{ if(a && a.id===actionId){ a.undoStatus='canceled'; a.note=[a.note||'', '취소됨'].filter(Boolean).join(' · '); changed=true; } });
+    if(changed) writeRecent(actions);
+  }
+  function undoLegacyRecentAction(actionId){
+    const actions=readRecent();
+    const action=actions.find(a=>a&&a.id===actionId);
+    if(!action) return;
+    const parsed=parseLegacyRecentAction(action);
+    if(!parsed.changes.length){ alert('이전 기록에서 되돌릴 수량을 찾지 못했어.'); return; }
+    const candidates=legacyCandidates(action, parsed);
+    const preview=previewLegacyUndo(action, parsed, candidates);
+    const warn=[];
+    if(parsed.correctionHintCount && candidates.correctionIds.length<parsed.correctionHintCount) warn.push(`실측 공유 대기 ${parsed.correctionHintCount}건 중 ${candidates.correctionIds.length}건만 특정됨`);
+    const text=[`기록 기준으로 이 반영을 취소할까?`, '', preview, warn.length?'\n주의: '+warn.join(' · '):'', '', '전역 되돌리기가 아니라 이 기록에 적힌 증감량만 반대로 적용합니다.'].join('\n');
+    if(!confirm(text)) return;
+    try{ applyLegacyChanges(parsed); }
+    catch(e){ alert(e && e.message ? e.message : '취소 실패'); return; }
+    const removedCorrection=removeCorrectionRecords(candidates.correctionIds||[], true);
+    const removedChest=removeChestRecords(candidates.chestIds||[]);
+    markLegacyRecentCanceled(actionId);
+    refreshAll();
+    recentLog('최근 반영 취소', [`${action.type || '이전 반영'} 기록 기준 취소`], `실측 ${removedCorrection}건 · 상자 ${removedChest}건 연결 기록 정리`);
+    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
+    toastSafe('이전 최근 반영 1건 취소됨');
+  }
+  window.farmLegacyUndoCanParseV730 = canParseLegacyRecentAction;
+  window.farmUndoLegacyRecentActionV730 = undoLegacyRecentAction;
+
   window.farmUndoRecentActionV729 = undoRecord;
   window.farmUndoExistsV729 = function(id){ return !!id && readUndo().some(r=>r&&r.id===id); };
   function renderUndoPanel(){
