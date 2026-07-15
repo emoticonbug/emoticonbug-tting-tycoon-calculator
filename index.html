@@ -10592,10 +10592,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const listHtml = visibleActions.map(action => {
       const lines = Array.isArray(action.lines) ? action.lines : [];
       const lineHtml = lines.length ? lines.map(line => `<div>${escapeHtml(line)}</div>`).join('') : '<div>반영 수량 없음</div>';
-      const note = action.note ? `<div class="farm-recent-action-note-v116">${escapeHtml(action.note)}</div>` : '';
+      const undoCanceled = action.undoStatus === 'canceled';
+      const noteParts = [];
+      if(action.note) noteParts.push(escapeHtml(action.note));
+      if(undoCanceled) noteParts.push('취소됨');
+      const note = noteParts.length ? `<div class="farm-recent-action-note-v116">${noteParts.join(' · ')}</div>` : '';
       const typeClass = recentActionTypeClass(action.type);
-      return `<div class="farm-recent-action-item-v116 farm-recent-action-item-v433 ${typeClass}">
-        <div class="farm-recent-action-head-v116"><b>${escapeHtml(action.type || '반영')}</b><span>${escapeHtml(formatRecentTime(action.time))}</span></div>
+      const undoId = action.undoId || '';
+      const canUndo = undoId && !undoCanceled && (!window.farmUndoExistsV729 || window.farmUndoExistsV729(undoId));
+      const undoHtml = canUndo ? `<button class="farm-recent-undo-icon-v729" type="button" data-undo-id="${escapeHtml(undoId)}" title="이 반영 취소" aria-label="이 반영 취소">↩</button>` : '';
+      return `<div class="farm-recent-action-item-v116 farm-recent-action-item-v433 ${typeClass} ${undoCanceled ? 'farm-recent-action-canceled-v729' : ''}">
+        <div class="farm-recent-action-head-v116"><span class="farm-recent-action-title-v729"><b>${escapeHtml(action.type || '반영')}</b><span>${escapeHtml(formatRecentTime(action.time))}</span></span>${undoHtml}</div>
         <div class="farm-recent-action-lines-v116">${lineHtml}</div>${note}
       </div>`;
     }).join('');
@@ -10610,9 +10617,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         renderRecentActions();
       });
     }
+    Array.from(card.querySelectorAll('.farm-recent-undo-icon-v729')).forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(window.farmUndoRecentActionV729) window.farmUndoRecentActionV729(btn.dataset.undoId || '');
+      });
+    });
   }
+  window.farmRenderRecentActionsV729 = renderRecentActions;
   function addRecentAction(action){
     const next = Object.assign({time:Date.now(), lines:[]}, action || {});
+    if(!next.id) next.id = 'ra_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
     const actions = readRecentActions();
     actions.unshift(next);
     writeRecentActions(actions);
@@ -14082,11 +14098,50 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function readUndo(){ try{ const arr=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); return Array.isArray(arr)?arr.slice(0,MAX_UNDO):[]; }catch(e){ return []; } }
   function writeUndo(arr){ try{ localStorage.setItem(UNDO_KEY, JSON.stringify((arr||[]).slice(0,MAX_UNDO))); }catch(e){} }
+  function recentKey(){ return 'mtFarmRecentActionsV116'; }
+  function readRecent(){ try{ const raw=localStorage.getItem(recentKey()); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
+  function writeRecent(arr){ try{ localStorage.setItem(recentKey(), JSON.stringify((arr||[]).slice(0,12))); }catch(e){} }
+  function actionMatchesRecent(undo, action){
+    const ut=String(undo && undo.action || '');
+    const at=String(action && action.type || '');
+    if(!ut || !at) return false;
+    if(ut===at) return true;
+    return at.includes(ut) || ut.includes(at);
+  }
+  function linkUndoToRecent(undo){
+    if(!undo || !undo.id) return false;
+    const actions=readRecent();
+    if(!actions.length) return false;
+    if(actions.some(a=>a && a.undoId===undo.id)) return true;
+    const undoTime=Number(undo.time||Date.now());
+    let idx=actions.findIndex(a=>a && !a.undoId && actionMatchesRecent(undo,a) && Math.abs(Number(a.time||0)-undoTime)<15000);
+    if(idx<0) idx=actions.findIndex(a=>a && !a.undoId && actionMatchesRecent(undo,a));
+    if(idx<0) idx=actions.findIndex(a=>a && !a.undoId && Number(a.time||0)<=undoTime+15000);
+    if(idx<0) return false;
+    actions[idx].undoId=undo.id;
+    actions[idx].undoSummary=undo.summary||'';
+    writeRecent(actions);
+    return true;
+  }
+  function linkExistingUndoRecords(){ readUndo().forEach(linkUndoToRecent); }
+  function markRecentCanceled(undoId){
+    if(!undoId) return;
+    const actions=readRecent();
+    let changed=false;
+    actions.forEach(a=>{
+      if(a && a.undoId===undoId){ a.undoStatus='canceled'; delete a.undoId; changed=true; }
+    });
+    if(changed) writeRecent(actions);
+  }
   function pushUndo(record){
     const list=readUndo();
-    list.unshift(Object.assign({id:`${Date.now()}-${Math.random().toString(16).slice(2)}`, time:Date.now()}, record||{}));
+    const item=Object.assign({id:`${Date.now()}-${Math.random().toString(16).slice(2)}`, time:Date.now()}, record||{});
+    list.unshift(item);
     writeUndo(list);
+    linkUndoToRecent(item);
     renderUndoPanel();
+    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
+    return item;
   }
   function labelFromFields(before, after){
     const changed=diffFields(before, after);
@@ -14140,6 +14195,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(!changed.length && !newRecent.length && !newPending.length && !newChest.length) return;
       pushUndo({
         action:cur.action,
+        startedAt:cur.startedAt,
         beforeFields:cur.beforeFields,
         afterFields,
         correctionIds:newRecent,
@@ -14159,31 +14215,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const removedPendingOnly=removeCorrectionRecords((rec.pendingCorrectionIds||[]).filter(id=>!(rec.correctionIds||[]).includes(id)), false);
     const removedChest=removeChestRecords(rec.chestIds||[]);
     writeUndo(list.filter(r=>r&&r.id!==id));
+    markRecentCanceled(id);
     refreshAll();
     recentLog('최근 반영 취소', [`${rec.action || '반영'} 취소`, rec.summary || ''], `실측 ${removedCorrection+removedPendingOnly}건 · 상자 ${removedChest}건 연결 기록 정리`);
+    try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){}
     toastSafe('최근 반영 1건 취소됨');
   }
+  window.farmUndoRecentActionV729 = undoRecord;
+  window.farmUndoExistsV729 = function(id){ return !!id && readUndo().some(r=>r&&r.id===id); };
   function renderUndoPanel(){
-    const host=byId('farmRecentInnerV116');
-    if(!host) return;
-    let card=byId('farmUndoActionsCardV722');
-    if(!card){
-      card=document.createElement('div');
-      card.id='farmUndoActionsCardV722';
-      card.className='farm-undo-actions-card-v722';
-      host.appendChild(card);
-    }
-    const list=readUndo();
-    if(!list.length){
-      card.innerHTML='<h4>최근 반영 취소</h4><div class="farm-undo-empty-v722">취소 가능한 최근 반영 없음</div>';
-      return;
-    }
-    card.innerHTML='<h4>최근 반영 취소</h4><div class="farm-undo-list-v722">'+list.map(r=>{
-      const d=new Date(r.time||Date.now());
-      const time=`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-      return `<div class="farm-undo-item-v722"><div><b>${esc(r.action||'반영')}</b><span>${esc(time)}</span><em>${esc(r.summary||'')}</em></div><button class="btn danger farm-undo-one-v722" data-undo-id="${esc(r.id)}" type="button">이 반영 취소</button></div>`;
-    }).join('')+'</div>';
-    qa('.farm-undo-one-v722', card).forEach(btn=>btn.addEventListener('click',()=>undoRecord(btn.dataset.undoId)));
+    const old=byId('farmUndoActionsCardV722');
+    if(old) old.remove();
   }
 
   function renderPendingManager(forceOpen){
@@ -14304,24 +14346,26 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const style=document.createElement('style');
     style.id='farmPendingItemUndoStyleV722';
     style.textContent=`
-      #seedplan .farm-undo-actions-card-v722{border:1px solid rgba(255,209,106,.26);background:rgba(255,209,106,.06);border-radius:16px;padding:12px;margin-top:12px}
-      #seedplan .farm-undo-actions-card-v722 h4{margin:0 0 8px;font-size:14px;color:#ffe1a0}
-      #seedplan .farm-undo-empty-v722,.farm-pending-empty-v722{font-size:12px;color:var(--muted);padding:6px 0}
-      #seedplan .farm-undo-list-v722{display:grid;gap:8px}
-      #seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:12px;padding:8px}
-      #seedplan .farm-undo-item-v722 div,.farm-pending-item-v722 div{display:grid;gap:2px;min-width:0}
-      #seedplan .farm-undo-item-v722 span,.farm-pending-item-v722 span{font-size:11px;color:var(--muted)}
-      #seedplan .farm-undo-item-v722 em{font-style:normal;font-size:12px;color:#e9edf7}
+      #seedplan .farm-recent-action-head-v116{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+      #seedplan .farm-recent-action-title-v729{display:flex;align-items:center;gap:8px;min-width:0}
+      #seedplan .farm-recent-undo-icon-v729{border:1px solid rgba(130,246,201,.35);background:rgba(130,246,201,.12);color:#96ffe1;border-radius:10px;width:28px;height:28px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;flex:0 0 auto}
+      #seedplan .farm-recent-undo-icon-v729:hover{background:rgba(130,246,201,.22)}
+      #seedplan .farm-recent-action-canceled-v729{opacity:.65}
+      #seedplan .farm-recent-action-canceled-v729 .farm-recent-action-note-v116{color:#ffd166}
+      .farm-pending-empty-v722{font-size:12px;color:var(--muted);padding:6px 0}
+      .farm-pending-item-v722{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:12px;padding:8px}
+      .farm-pending-item-v722 div{display:grid;gap:2px;min-width:0}
+      .farm-pending-item-v722 span{font-size:11px;color:var(--muted)}
       .farm-pending-manager-v722{margin-top:10px;border:1px solid rgba(130,246,201,.24);background:rgba(12,18,28,.92);border-radius:16px;padding:12px;display:none}
       .farm-pending-head-v722{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
       .farm-pending-section-v722{display:grid;gap:6px;margin-top:8px}
       .farm-pending-section-v722 h5{margin:0;color:#cdeee4;font-size:13px}
       .farm-pending-actions-v722{margin-top:10px;display:flex;justify-content:flex-end}
-      @media(max-width:720px){#seedplan .farm-undo-item-v722,.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
+      @media(max-width:720px){.farm-pending-item-v722{display:grid}.farm-pending-head-v722{align-items:flex-start}}
     `;
     document.head.appendChild(style);
   }
-  function boot(){ installStyle(); bindPendingButtons(); renderUndoPanel(); renderPendingManager(false); }
+  function boot(){ installStyle(); bindPendingButtons(); linkExistingUndoRecords(); renderUndoPanel(); renderPendingManager(false); try{ if(window.farmRenderRecentActionsV729) window.farmRenderRecentActionsV729(); }catch(e){} }
   document.addEventListener('click', validateGatherBeforeClick, true);
   document.addEventListener('click', captureAction, true);
   window.addEventListener('load', boot);
