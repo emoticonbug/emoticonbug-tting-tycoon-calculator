@@ -6366,7 +6366,7 @@ function dataSyncFarmPlanForBackup(){
   }
 
   // 복구가 끝난 상태라면 현재 화면 값을 먼저 저장. 복구 전이면 0값 덮어쓰기 방지.
-  try{if(typeof window.farmSaveInputsV77==='function' && (!window.farmPlanRestoreReadyV77 || window.farmPlanRestoreReadyV77())) window.farmSaveInputsV77({force:true, intent:'apply'})}catch(e){}
+  try{if(typeof window.farmSaveInputsV78==='function') window.farmSaveInputsV78({intent:'backup'})}catch(e){}
 
   const values={};
   dataFields('#seedplan').forEach(el=>{
@@ -6375,9 +6375,9 @@ function dataSyncFarmPlanForBackup(){
   });
 
   if(Object.keys(values).length){
-    state.farmPlanInputs.values=dataMergePreferUseful(values, state.farmPlanInputs.values);
+    state.farmPlanInputs.values={...(state.farmPlanInputs.values||{}), ...values};
     state.farmPlanInputs.updatedAt=new Date().toISOString();
-    state.farmPlanSavedValues=dataMergePreferUseful(state.farmPlanInputs.values, state.farmPlanSavedValues);
+    state.farmPlanSavedValues={...(state.farmPlanSavedValues||{}), ...values};
   }
 }
 function dataSyncSettingsForBackup(){
@@ -6439,9 +6439,9 @@ function dataNormalizeFullBackup(obj){
 
   // farmPlanInputs.values와 farmPlanSavedValues가 서로 누락되지 않게 합침.
   // 0으로 자동 저장된 값이 실제 저장값을 덮어쓰지 않도록 non-zero 저장값을 우선 보존.
-  const merged=dataMergePreferUseful(obj.farmPlanInputs.values, obj.farmPlanSavedValues);
+  const merged={...(obj.farmPlanSavedValues||{}), ...(obj.farmPlanInputs.values||{})};
   obj.farmPlanInputs.values=merged;
-  obj.farmPlanSavedValues=dataMergePreferUseful(obj.farmPlanSavedValues, merged);
+  obj.farmPlanSavedValues={...(obj.farmPlanSavedValues||{}), ...merged};
 
   if(!Array.isArray(obj.farmRecentActionsV116)){
     obj.farmRecentActionsV116=[];
@@ -8057,8 +8057,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     changed.forEach(el => el.dispatchEvent(new Event('change', {bubbles:true})));
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -9288,15 +9288,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 })();
 </script>
 <script>
-/* 요리 재배 계획 저장/복구 통합 정리 v79 - 씨앗 legacy 잔재 차단 */
+/* 요리 재배 계획 저장/복구 근본 수정 v721 */
 (function(){
+  if(window.__farmStorageRootFixV721) return;
+  window.__farmStorageRootFixV721 = true;
+
   const ROOT_ID = 'seedplan';
   const SETTING_ROOT = '#settings';
-  let restoring = false;
-  let initializing = false;
-  let restoredOnce = false;
 
   const LEGACY_SINGLE_MAP = [
+    ['farmSeedTomato','farmSeedTomatoSingle'],
+    ['farmSeedOnion','farmSeedOnionSingle'],
+    ['farmSeedGarlic','farmSeedGarlicSingle'],
     ['farmCropTomato','farmCropTomatoSingle'],
     ['farmCropOnion','farmCropOnionSingle'],
     ['farmCropGarlic','farmCropGarlicSingle'],
@@ -9304,19 +9307,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     ['farmBaseOnion','farmBaseOnionSingle'],
     ['farmBaseGarlic','farmBaseGarlicSingle']
   ];
-  // 이전 실험용 seed-plan 입력키. 현재 보유 씨앗 입력칸으로 다시 복사하면
-  // 작은 상자 값이 임의로 되살아나는 문제가 생기므로 복구 대상에서 제외하고 정리만 한다.
   const LEGACY_SEED_KEY_MAP = [
     ['farmSeedTomatoLarge','planHaveTomatoLarge'],
     ['farmSeedTomatoSmall','planHaveTomatoSmall'],
     ['farmSeedTomatoStack','planHaveTomatoStack'],
     ['farmSeedTomatoSingle','planHaveTomatoSeed'],
-
     ['farmSeedOnionLarge','planHaveOnionLarge'],
     ['farmSeedOnionSmall','planHaveOnionSmall'],
     ['farmSeedOnionStack','planHaveOnionStack'],
     ['farmSeedOnionSingle','planHaveOnionSeed'],
-
     ['farmSeedGarlicLarge','planHaveGarlicLarge'],
     ['farmSeedGarlicSmall','planHaveGarlicSmall'],
     ['farmSeedGarlicStack','planHaveGarlicStack'],
@@ -9324,168 +9323,93 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   ];
   const LEGACY_SEED_KEYS = LEGACY_SEED_KEY_MAP.map(pair => pair[1]);
 
-  function root(){
-    return document.getElementById(ROOT_ID);
-  }
+  let restoring = false;
+
   function getState(){
-    try{
-      return (typeof state !== 'undefined') ? state : null;
-    }catch(e){
-      return null;
-    }
+    try{return (typeof state !== 'undefined') ? state : null;}catch(e){return null;}
   }
-  function valueIsUseful(v){
-    return v != null && v !== '' && Number(v) !== 0;
+  function root(){ return document.getElementById(ROOT_ID); }
+  function nowText(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
-  function valueIsBlankOrZero(v){
-    return v == null || v === '' || Number(v) === 0;
-  }
-  function mergePreferUseful(primary={}, fallback={}){
+  function hasOwn(obj, key){ return !!obj && Object.prototype.hasOwnProperty.call(obj, key); }
+  function isUseful(v){ return v != null && v !== '' && Number(v) !== 0; }
+  function fillMissing(primary={}, fallback={}){
     const out = {...(primary || {})};
-    Object.entries(fallback || {}).forEach(([id,value]) => {
-      const current = out[id];
-      if(valueIsBlankOrZero(current) && valueIsUseful(value)){
-        out[id] = value;
-      }else if(current == null){
-        out[id] = value;
-      }
+    Object.entries(fallback || {}).forEach(([key, value]) => {
+      if(!hasOwn(out, key)) out[key] = value;
     });
     return out;
   }
-  function copyUseful(fromObj, toObj){
+  function migrateUsefulWhenTargetBlank(values, mirror, oldId, newId){
     let changed = false;
-    Object.entries(fromObj || {}).forEach(([id,value]) => {
-      if(valueIsUseful(value) && valueIsBlankOrZero(toObj[id])){
-        toObj[id] = value;
-        changed = true;
-      }
-    });
+    const oldValue = hasOwn(values, oldId) ? values[oldId] : mirror[oldId];
+    const newExists = hasOwn(values, newId) || hasOwn(mirror, newId);
+    if(!newExists && isUseful(oldValue)){
+      values[newId] = oldValue;
+      mirror[newId] = oldValue;
+      changed = true;
+    }
+    if(hasOwn(values, oldId)){ delete values[oldId]; changed = true; }
+    if(hasOwn(mirror, oldId)){ delete mirror[oldId]; changed = true; }
     return changed;
   }
-  function firstUsefulValue(...values){
-    for(const value of values){
-      if(valueIsUseful(value)) return value;
-    }
-    return undefined;
-  }
-  function deleteKey(obj, key){
-    if(obj && Object.prototype.hasOwnProperty.call(obj, key)){
-      delete obj[key];
-      return true;
-    }
-    return false;
-  }
-  function cleanupLegacySeedResidue(st){
+  function cleanupLegacySeeds(st){
     const values = st.farmPlanInputs.values;
     const mirror = st.farmPlanSavedValues;
     let changed = false;
-    let hadLegacySeedValue = false;
-
-    LEGACY_SEED_KEY_MAP.forEach(([farmId, legacyId]) => {
-      const legacyValue = firstUsefulValue(values[legacyId], mirror[legacyId]);
-      if(valueIsUseful(legacyValue)) hadLegacySeedValue = true;
-
-      // 기존 버전에서 planHave...Small 값이 farmSeed...Small로 복사되어
-      // 작은 상자만 1개 살아나는 경우를 한 번 정리한다.
-      if(legacyId.endsWith('Small') && valueIsUseful(legacyValue)){
-        [values, mirror].forEach(store => {
-          if(store && Number(store[farmId]) === Number(legacyValue)){
-            store[farmId] = 0;
-            changed = true;
-          }
-        });
-      }
-    });
-
     LEGACY_SEED_KEYS.forEach(key => {
-      if(deleteKey(values, key)) changed = true;
-      if(deleteKey(mirror, key)) changed = true;
-      if(st.settings && deleteKey(st.settings, key)) changed = true;
-      if(st.settings && st.settings.farmPlanSavedValues && deleteKey(st.settings.farmPlanSavedValues, key)) changed = true;
+      if(hasOwn(values, key)){ delete values[key]; changed = true; }
+      if(hasOwn(mirror, key)){ delete mirror[key]; changed = true; }
+      if(st.settings && hasOwn(st.settings, key)){ delete st.settings[key]; changed = true; }
+      if(st.settings && st.settings.farmPlanSavedValues && hasOwn(st.settings.farmPlanSavedValues, key)){
+        delete st.settings.farmPlanSavedValues[key]; changed = true;
+      }
     });
-
-    if(hadLegacySeedValue && !st.__farmSeedLegacyCleanV79){
-      st.__farmSeedLegacyCleanV79 = true;
-      changed = true;
-    }
     return changed;
   }
-  function carry(values, mirror, from, to){
-    let changed = false;
-    if(valueIsUseful(values[from]) && valueIsBlankOrZero(values[to])){
-      values[to] = values[from];
-      changed = true;
-    }
-    if(valueIsUseful(mirror[from]) && valueIsBlankOrZero(values[to])){
-      values[to] = mirror[from];
-      changed = true;
-    }
-    if(valueIsUseful(values[to]) && valueIsBlankOrZero(mirror[to])){
-      mirror[to] = values[to];
-      changed = true;
-    }
-    if(valueIsUseful(values[from]) && valueIsBlankOrZero(mirror[from])){
-      mirror[from] = values[from];
-      changed = true;
-    }
-    return changed;
-  }
-  function applyLegacyMigration(st){
-    const values = st.farmPlanInputs.values;
-    const mirror = st.farmPlanSavedValues;
-    let changed = false;
-
-    LEGACY_SINGLE_MAP.forEach(([oldId,newId]) => {
-      if(carry(values, mirror, oldId, newId)) changed = true;
-    });
-
-    // planHave... 씨앗 저장키는 이전 실험 잔재라 현재 farmSeed... 입력칸으로 복사하지 않는다.
-    if(cleanupLegacySeedResidue(st)) changed = true;
-
-    if(copyUseful(values, mirror)) changed = true;
-    if(copyUseful(mirror, values)) changed = true;
-
-    return changed;
-  }
-  function ensureFarmStores(){
+  function ensureStores(){
     const st = getState();
     if(!st) return null;
-
-    if(!st.farmPlanInputs || typeof st.farmPlanInputs !== 'object'){
-      st.farmPlanInputs = {values:{}, updatedAt:''};
-    }
-    if(!st.farmPlanInputs.values || typeof st.farmPlanInputs.values !== 'object'){
-      st.farmPlanInputs.values = {};
-    }
-    if(!st.farmPlanSavedValues || typeof st.farmPlanSavedValues !== 'object'){
-      st.farmPlanSavedValues = {};
-    }
+    if(!st.farmPlanInputs || typeof st.farmPlanInputs !== 'object') st.farmPlanInputs = {values:{}, updatedAt:''};
+    if(!st.farmPlanInputs.values || typeof st.farmPlanInputs.values !== 'object') st.farmPlanInputs.values = {};
+    if(!st.farmPlanSavedValues || typeof st.farmPlanSavedValues !== 'object') st.farmPlanSavedValues = {};
 
     let changed = false;
+    const values = st.farmPlanInputs.values;
+    let mirror = st.farmPlanSavedValues;
 
-    // 이전 버전 호환: settings 안에 들어갔던 재배 계획 저장값을 새 저장 위치로 이동.
     if(st.settings && st.settings.farmPlanSavedValues && typeof st.settings.farmPlanSavedValues === 'object'){
-      st.farmPlanSavedValues = mergePreferUseful(st.farmPlanSavedValues, st.settings.farmPlanSavedValues);
+      // 이전 저장 위치에만 있던 값만 새 저장 위치로 이동한다. 0을 non-zero로 되살리지 않는다.
+      st.farmPlanSavedValues = fillMissing(st.farmPlanSavedValues, st.settings.farmPlanSavedValues);
+      mirror = st.farmPlanSavedValues;
       delete st.settings.farmPlanSavedValues;
       changed = true;
     }
 
-    if(applyLegacyMigration(st)) changed = true;
+    LEGACY_SINGLE_MAP.forEach(([oldId, newId]) => {
+      if(migrateUsefulWhenTargetBlank(values, mirror, oldId, newId)) changed = true;
+    });
+    if(cleanupLegacySeeds(st)) changed = true;
 
     if(changed && typeof save === 'function'){
       try{ save(false); }catch(e){}
     }
-
     return st;
   }
-  function fields(rootSelector){
-    const r = typeof rootSelector === 'string' ? document.querySelector(rootSelector) : rootSelector;
+  function farmFields(){
+    const r = root();
     if(!r) return [];
     return [...r.querySelectorAll('input[id], select[id], textarea[id]')]
       .filter(el => !el.disabled && !el.dataset.noFarmSave);
   }
-  function farmFields(){
-    return fields(root());
+  function fields(rootSelector){
+    const r = document.querySelector(rootSelector);
+    if(!r) return [];
+    return [...r.querySelectorAll('input[id], select[id], textarea[id]')]
+      .filter(el => !el.disabled && !el.dataset.noFarmSave);
   }
   function readValue(el){
     if(el.type === 'checkbox') return !!el.checked;
@@ -9499,7 +9423,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       return;
     }
     if(el.type === 'radio'){
-      el.checked = (el.value === value);
+      el.checked = (String(el.value) === String(value));
       return;
     }
     if(el.tagName === 'SELECT'){
@@ -9516,197 +9440,131 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     return values;
   }
-  const FARM_SAFE_GROUPS_V720 = {
-    seed:['farmSeedTomatoLarge','farmSeedTomatoSmall','farmSeedTomatoStack','farmSeedTomatoSingle','farmSeedOnionLarge','farmSeedOnionSmall','farmSeedOnionStack','farmSeedOnionSingle','farmSeedGarlicLarge','farmSeedGarlicSmall','farmSeedGarlicStack','farmSeedGarlicSingle'],
-    crop:['farmCropTomatoStack','farmCropTomatoSingle','farmCropOnionStack','farmCropOnionSingle','farmCropGarlicStack','farmCropGarlicSingle'],
-    base:['farmBaseTomatoStack','farmBaseTomatoSingle','farmBaseOnionStack','farmBaseOnionSingle','farmBaseGarlicStack','farmBaseGarlicSingle']
-  };
-  function numericValue(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
-  function groupUsefulCount(obj, ids){ return ids.reduce((sum,id)=>sum + (Math.abs(numericValue(obj && obj[id])) > 0 ? 1 : 0), 0); }
-  function groupPresentCount(obj, ids){ return ids.reduce((sum,id)=>sum + (obj && Object.prototype.hasOwnProperty.call(obj,id) ? 1 : 0), 0); }
-  function trustedFarmSaveIntent(options){
-    const intent = String(options && options.intent || '');
-    return ['manual','reset-owned','apply','convert','chest','shelflife','backup'].includes(intent);
-  }
-  function suspiciousFarmOverwrite(st, values, options){
-    if(trustedFarmSaveIntent(options)) return false;
-    const previous = Object.assign({}, st.farmPlanSavedValues || {}, (st.farmPlanInputs && st.farmPlanInputs.values) || {});
-    return Object.values(FARM_SAFE_GROUPS_V720).some(ids => {
-      const oldUseful = groupUsefulCount(previous, ids);
-      const newUseful = groupUsefulCount(values, ids);
-      const present = groupPresentCount(values, ids);
-      return oldUseful > 0 && present >= ids.length && newUseful === 0;
-    });
-  }
-  function allowSave(){
-    if(restoring || initializing) return false;
-    // 페이지 로드 초기에 기존 farmPlanInit이 먼저 돌면서 0값을 저장하는 것을 차단.
-    if(!restoredOnce) return false;
+  function saveField(el){
+    if(restoring || !el || !el.id || el.dataset.noFarmSave) return false;
+    if(window.__farmApplyBatchSuppressV221) return false;
+    const value = readValue(el);
+    if(value === undefined) return false;
+    const st = ensureStores();
+    if(!st) return false;
+    st.farmPlanInputs.values[el.id] = value;
+    st.farmPlanInputs.updatedAt = new Date().toISOString();
+    st.farmPlanSavedValues[el.id] = value;
+    try{ if(typeof save === 'function') save(); }catch(e){ console.error('farm field save failed', e); }
     return true;
   }
   function saveFarmInputs(options={}){
-    if(restoring || initializing) return false;
-    if(window.__farmApplyBatchSuppressV221 && !options.force) return false;
-    if(!options.force && !allowSave()) return false;
-
-    const st = ensureFarmStores();
+    if(restoring) return false;
+    const st = ensureStores();
     if(!st) return false;
-
     const values = collectFarmValues();
     if(!Object.keys(values).length) return false;
-    if(suspiciousFarmOverwrite(st, values, options)){
-      console.warn('farm autosave blocked: suspicious zero overwrite', values);
-      try{ if(typeof toast === 'function') toast('보유량 0 덮어쓰기 차단됨'); }catch(e){}
-      return false;
-    }
 
-    st.farmPlanInputs.values = values;
+    st.farmPlanInputs.values = {...(st.farmPlanInputs.values || {}), ...values};
     st.farmPlanInputs.updatedAt = new Date().toISOString();
     st.farmPlanSavedValues = {...(st.farmPlanSavedValues || {}), ...values};
 
-    try{
-      if(typeof save === 'function') save();
-    }catch(e){
-      console.error('farm autosave failed', e);
-    }
+    try{ if(typeof save === 'function') save(); }catch(e){ console.error('farm save failed', e); }
     return true;
   }
   function restoreFarmInputs(){
-    const st = ensureFarmStores();
+    const st = ensureStores();
     if(!st) return false;
-
-    const storeValues = st.farmPlanInputs.values || {};
-    const mirror = st.farmPlanSavedValues || {};
-    const merged = mergePreferUseful(storeValues, mirror);
-
+    const values = fillMissing(st.farmPlanInputs.values || {}, st.farmPlanSavedValues || {});
     restoring = true;
     try{
-      Object.entries(merged).forEach(([id, value]) => {
+      Object.entries(values).forEach(([id, value]) => {
         const el = document.getElementById(id);
-        if(!el) return;
-        writeValue(el, value);
+        if(el) writeValue(el, value);
       });
-      st.farmPlanInputs.values = merged;
-      st.farmPlanSavedValues = mergePreferUseful(st.farmPlanSavedValues || {}, merged);
-      restoredOnce = true;
-      return true;
     }finally{
       restoring = false;
     }
+    return true;
   }
   function bindFarmInputs(){
     farmFields().forEach(el => {
-      if(el.dataset.farmAutosaveV78 === '1') return;
-      el.dataset.farmAutosaveV78 = '1';
-      el.addEventListener('input', () => saveFarmInputs());
-      el.addEventListener('change', () => saveFarmInputs());
+      if(el.dataset.farmStorageRootV721 === '1') return;
+      el.dataset.farmStorageRootV721 = '1';
+      el.addEventListener('input', () => saveField(el));
+      el.addEventListener('change', () => saveField(el));
     });
-  }
-  function nowText(){
-    const d=new Date();
-    const pad=n=>String(n).padStart(2,'0');
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  }
-  function ensureSettingsStore(st){
-    if(!st.settings || typeof st.settings !== 'object') st.settings={};
   }
   function saveSettingsOnly(){
-    const st=getState();
+    const st = getState();
     if(!st) return false;
-
-    ensureSettingsStore(st);
-
-    fields(SETTING_ROOT).forEach(el=>{
-      const value=readValue(el);
-      if(value!==undefined) st.settings[el.id] = el.type==='number' ? Number(value||0) : value;
+    if(!st.settings || typeof st.settings !== 'object') st.settings = {};
+    fields(SETTING_ROOT).forEach(el => {
+      const value = readValue(el);
+      if(value !== undefined) st.settings[el.id] = el.type === 'number' ? Number(value || 0) : value;
     });
-
-    if(typeof save==='function') save();
-    try{ if(typeof renderCards==='function') renderCards(); }catch(e){}
-    try{ if(typeof farmPlanUpdate==='function') farmPlanUpdate(); }catch(e){}
+    try{ if(typeof save === 'function') save(); }catch(e){}
+    try{ if(typeof renderCards === 'function') renderCards(); }catch(e){}
+    try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
     return true;
   }
   function bindManualButtons(){
-    const settingBtn=document.getElementById('manualSaveBtnV73');
-    if(settingBtn && settingBtn.dataset.manualSaveV78 !== '1'){
-      settingBtn.dataset.manualSaveV78='1';
-      settingBtn.addEventListener('click',()=>{
-        const ok=saveSettingsOnly();
-        const status=document.getElementById('manualSaveStatusV73');
-        if(status) status.textContent=ok ? `개인 설정 저장됨 ${nowText()}` : '저장 실패';
-        try{ if(typeof toast==='function') toast(ok ? '개인 설정 저장됨' : '저장 실패'); }catch(e){}
+    const settingBtn = document.getElementById('manualSaveBtnV73');
+    if(settingBtn && settingBtn.dataset.manualSaveRootV721 !== '1'){
+      settingBtn.dataset.manualSaveRootV721 = '1';
+      settingBtn.addEventListener('click', () => {
+        const ok = saveSettingsOnly();
+        const status = document.getElementById('manualSaveStatusV73');
+        if(status) status.textContent = ok ? `개인 설정 저장됨 ${nowText()}` : '저장 실패';
+        try{ if(typeof toast === 'function') toast(ok ? '개인 설정 저장됨' : '저장 실패'); }catch(e){}
       });
     }
 
-    const farmBtn=document.getElementById('farmManualSaveBtnV74');
-    if(farmBtn && farmBtn.dataset.farmManualSaveV78 !== '1'){
-      farmBtn.dataset.farmManualSaveV78='1';
-      farmBtn.addEventListener('click',()=>{
-        restoredOnce = true;
-        const ok=saveFarmInputs({force:true, intent:'manual'});
-        const status=document.getElementById('farmManualSaveStatusV74');
-        if(status) status.textContent=ok ? `요리 재배 계획 저장됨 ${nowText()}` : '저장 실패';
-        try{ if(typeof toast==='function') toast(ok ? '요리 재배 계획 저장됨' : '저장 실패'); }catch(e){}
+    const farmBtn = document.getElementById('farmManualSaveBtnV74');
+    if(farmBtn && farmBtn.dataset.farmManualSaveRootV721 !== '1'){
+      farmBtn.dataset.farmManualSaveRootV721 = '1';
+      farmBtn.addEventListener('click', () => {
+        const ok = saveFarmInputs({intent:'manual'});
+        const status = document.getElementById('farmManualSaveStatusV74');
+        if(status) status.textContent = ok ? `요리 재배 계획 저장됨 ${nowText()}` : '저장 실패';
+        try{ if(typeof toast === 'function') toast(ok ? '요리 재배 계획 저장됨' : '저장 실패'); }catch(e){}
       });
     }
-  }
-
-  const oldUpdate = window.farmPlanUpdate;
-  if(typeof oldUpdate === 'function'){
-    window.farmPlanUpdate = function(){
-      const result = oldUpdate.apply(this, arguments);
-      saveFarmInputs();
-      return result;
-    };
   }
 
   const oldInit = window.farmPlanInit;
-  if(typeof oldInit === 'function'){
-    window.farmPlanInit = function(){
-      initializing = true;
-      try{
-        oldInit.apply(this, arguments);
-      }finally{
-        initializing = false;
-      }
-
+  if(typeof oldInit === 'function' && !oldInit.__farmStorageRootV721){
+    const wrappedInit = function(){
+      const result = oldInit.apply(this, arguments);
       restoreFarmInputs();
       bindFarmInputs();
       bindManualButtons();
-
-      if(typeof oldUpdate === 'function'){
-        try{ oldUpdate(); }catch(e){ console.error('farm restore recalculation failed', e); }
-      }
-      // 초기 복구 직후에는 화면값을 다시 저장하지 않는다.
+      try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
+      return result;
     };
+    wrappedInit.__farmStorageRootV721 = true;
+    window.farmPlanInit = wrappedInit;
   }
 
   const oldResetOwned = window.farmPlanResetOwned;
-  if(typeof oldResetOwned === 'function'){
-    window.farmPlanResetOwned = function(){
+  if(typeof oldResetOwned === 'function' && !oldResetOwned.__farmStorageRootV721){
+    const wrappedResetOwned = function(){
       const result = oldResetOwned.apply(this, arguments);
-      restoredOnce = true;
-      saveFarmInputs({force:true, intent:'reset-owned'});
+      saveFarmInputs({intent:'reset-owned'});
       return result;
     };
+    wrappedResetOwned.__farmStorageRootV721 = true;
+    window.farmPlanResetOwned = wrappedResetOwned;
   }
 
   const oldOpenTab = window.openTab;
-  if(typeof oldOpenTab === 'function' && !oldOpenTab.__farmStoreV78){
+  if(typeof oldOpenTab === 'function' && !oldOpenTab.__farmStorageRootV721){
     const wrappedOpenTab = function(tabName){
       const result = oldOpenTab.apply(this, arguments);
       bindManualButtons();
       if(tabName === 'seedplan'){
         restoreFarmInputs();
         bindFarmInputs();
-        if(typeof oldUpdate === 'function'){
-          try{ oldUpdate(); }catch(e){}
-        }
-        // 탭 진입은 복구/계산만 하고 저장값을 덮어쓰지 않는다.
+        try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
       }
       return result;
     };
-    wrappedOpenTab.__farmStoreV78 = true;
+    wrappedOpenTab.__farmStorageRootV721 = true;
     window.openTab = wrappedOpenTab;
   }
 
@@ -9715,19 +9573,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     restoreFarmInputs();
     bindFarmInputs();
     bindManualButtons();
-    if(typeof oldUpdate === 'function'){
-      try{ oldUpdate(); }catch(e){ console.error('farm autosave boot recalculation failed', e); }
-    }
-    // 부팅 시 0값으로 저장을 덮지 않기 위해 자동 저장은 하지 않는다.
+    try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
   }
 
   window.farmRestoreInputsV78 = restoreFarmInputs;
   window.farmSaveInputsV78 = saveFarmInputs;
+  window.farmRestoreInputsV721 = restoreFarmInputs;
+  window.farmSaveInputsV721 = saveFarmInputs;
   window.manualSaveSettingsV78 = saveSettingsOnly;
-  window.manualSaveFarmPlanV78 = () => saveFarmInputs({force:true, intent:'manual'});
-  window.farmPlanRestoreReadyV78 = () => restoredOnce;
+  window.manualSaveFarmPlanV78 = () => saveFarmInputs({intent:'manual'});
+  window.farmPlanRestoreReadyV78 = () => true;
   window.farmPlanStoredCountV78 = () => {
-    const st = ensureFarmStores();
+    const st = ensureStores();
     return st ? Object.keys(st.farmPlanInputs.values || {}).length : 0;
   };
 
@@ -10171,7 +10028,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   function saveFarm(){
-    try{ if(typeof farmSaveInputsV78==='function') farmSaveInputsV78({force:true, intent:'manual'}); }catch(e){}
+    try{ if(typeof farmSaveInputsV78==='function') farmSaveInputsV78({intent:'manual'}); }catch(e){}
     try{ if(typeof updateSaveStateStatusV83==='function') updateSaveStateStatusV83(); }catch(e){}
     try{ if(typeof updateFarmPlanReinforceV84==='function') updateFarmPlanReinforceV84(); }catch(e){}
   }
@@ -11088,21 +10945,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return el;
   }
   function writeGatherStaminaPlanV620(recommendedUsed, force){
-    const currentStamina = Math.max(0, readNum('farmUseStamina'));
-    const recommended = Math.max(0, Math.trunc(Number(recommendedUsed) || 0));
-    const remainingDefault = Math.max(0, currentStamina - recommended);
-    const changed = [];
-    const remainEl = gatherRemainStaminaInputV620();
-    const extraEl = gatherExtraStaminaInputV620();
-    if(remainEl && (force || !remainEl.dataset.userEditedV117)){
-      const next = String(remainingDefault);
-      if(remainEl.value !== next){ remainEl.value = next; changed.push(remainEl); }
-    }
-    if(extraEl && (force || !extraEl.dataset.userEditedV117)){
-      if(extraEl.value !== '0'){ extraEl.value = '0'; changed.push(extraEl); }
-    }
+    // 남은 체력/추가 체력은 실측값이라 자동으로 채우지 않는다.
+    // 사용자가 게임 화면을 보고 직접 입력한 값만 실제 채집 반영에 사용한다.
     updateGatherUsedStaminaComputedV620();
-    return changed;
+    return [];
   }
   function gatherStaminaNoteV620(info){
     const data = info || computeGatherUsedStaminaV620();
@@ -11355,7 +11201,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         btn.textContent = '\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601';
       }
       const hasDefault = totalDefault > 0 || staminaDefault > 0;
-      setGatherStatus(hasDefault ? '예상값 채움 · 수정 가능' : '채집 반영값 없음', hasDefault ? '' : 'warn');
+      setGatherStatus(hasDefault ? '예상값 채움 · 남은 체력 입력 후 반영' : '채집 반영값 없음', hasDefault ? '' : 'warn');
     }
   }
 
@@ -11483,8 +11329,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -11522,6 +11368,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function applyGatherResult(){
     const values = gatherInputValues();
     const total = gatherTotal(values);
+    const remainingInputV721 = readGatherRemainStaminaV620();
+    if(remainingInputV721 == null){
+      setGatherStatus('현재 남은 체력을 입력해주세요.', 'warn');
+      try{ if(typeof toast === 'function') toast('현재 남은 체력 입력 필요'); }catch(e){}
+      return;
+    }
     const staminaInfoV620 = updateGatherUsedStaminaComputedV620();
     const usedStaminaInput = Math.max(0, Math.floor(Number(staminaInfoV620.used || 0)));
     const sig = gatherSignature(values);
@@ -11579,8 +11431,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
 
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -11763,8 +11615,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveAndRefresh(){
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'});
     }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
@@ -12731,8 +12583,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveFarmInputs(){
     try{
-      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'apply'});
-      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({force:true, intent:'apply'});
+      if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'apply'});
+      else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'apply'});
     }catch(e){}
   }
   function toastSafe(text){ try{ if(typeof toast === 'function') toast(text); }catch(e){} }
@@ -13325,7 +13177,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function saveQuiet(){
     try{ const store=ensureStore(); if(store) store.updatedAt = new Date().toISOString(); }catch(e){}
-    try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({force:true, intent:'shelflife'}); }catch(e){}
+    try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'shelflife'}); }catch(e){}
     try{ if(typeof save === 'function') save(false); }catch(e){}
     try{ if(typeof renderCards === 'function') renderCards(); }catch(e){}
     try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
