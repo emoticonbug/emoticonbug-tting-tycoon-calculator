@@ -13224,9 +13224,28 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   const DISH_NAMES = new Set(((window.DATA && DATA.recipes) || []).map(d => d.name));
   let internalWrite = 0;
   let actionDepth = 0;
+  let expireTimerV737 = 0;
 
   function byId(id){ return document.getElementById(id); }
   function stateObj(){ try{ return (typeof state !== 'undefined') ? state : (window.state || null); }catch(e){ return window.state || null; } }
+  function dishStockMapV737(){
+    const st=stateObj();
+    if(!st) return {};
+    if(!st.farmDishStockV737 || typeof st.farmDishStockV737 !== 'object') st.farmDishStockV737 = {};
+    return st.farmDishStockV737;
+  }
+  function dishStockQtyV737(item){
+    const map=dishStockMapV737();
+    return truncQty(map && Object.prototype.hasOwnProperty.call(map,item) ? map[item] : 0);
+  }
+  function setDishStockQtyV737(item,total){
+    if(!DISH_NAMES.has(item)) return;
+    const map=dishStockMapV737();
+    const value=truncQty(total);
+    map[item]=value;
+    const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
+    if(linked && linked.name === item) writeSaleTotal(value);
+  }
   function ensureStore(){
     const st = stateObj();
     if(!st) return null;
@@ -13280,7 +13299,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(baseCrop) return readStackSingle('farmBase' + EN[baseCrop]);
     if(DISH_NAMES.has(item)){
       const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      return linked && linked.name === item ? readSaleTotal() : 0;
+      const linkedQty = linked && linked.name === item ? readSaleTotal() : 0;
+      return Math.max(dishStockQtyV737(item), linkedQty);
     }
     return 0;
   }
@@ -13289,8 +13309,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const baseCrop = CROPS.find(c => item === c + ' 베이스');
     if(baseCrop) return writeStackSingle('farmBase' + EN[baseCrop], total);
     if(DISH_NAMES.has(item)){
-      const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      if(linked && linked.name === item) return writeSaleTotal(total);
+      return setDishStockQtyV737(item, total);
     }
   }
   function expiryAt(createdAt){
@@ -13312,6 +13331,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     store.lots = Array.from(map.values()).sort((a,b)=> new Date(a.expiresAt||a.createdAt||0) - new Date(b.expiresAt||b.createdAt||0));
     store.updatedAt = new Date().toISOString();
+    scheduleNextExpiryCheckV737();
+  }
+  function scheduleNextExpiryCheckV737(){
+    try{ if(expireTimerV737) clearTimeout(expireTimerV737); }catch(e){}
+    expireTimerV737 = 0;
+    const store=ensureStore(); if(!store || !Array.isArray(store.lots)) return;
+    const now=Date.now();
+    const times=store.lots.map(lot=>truncQty(lot&&lot.qty)>0 ? new Date(lot.expiresAt||'').getTime() : NaN).filter(t=>Number.isFinite(t));
+    if(!times.length) return;
+    const target=Math.min(...times);
+    const delay = target <= now ? 60*60*1000 : Math.min(target - now + 1500, 2147480000);
+    expireTimerV737 = setTimeout(function(){ try{ checkExpired(); }catch(e){ console.error('shelf life scheduled check failed', e); } }, Math.max(1000, delay));
   }
   function addLot(item, qty, source, createdAt){
     const amount=truncQty(qty);
@@ -13351,6 +13382,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     CROPS.forEach(c => { crops[c] = readStackSingle('farmCrop' + EN[c]); bases[c] = readStackSingle('farmBase' + EN[c]); });
     const st = stateObj();
     const linked = st && st.view && st.view.lastLinkedCalcDish ? {...st.view.lastLinkedCalcDish} : null;
+    const dishStocks = st && st.farmDishStockV737 && typeof st.farmDishStockV737 === 'object' ? {...st.farmDishStockV737} : {};
     const selected = (function(){
       const el=byId('farmDishSelect');
       const raw=String(el && (el.value || (el.options && el.selectedIndex>=0 && el.options[el.selectedIndex].textContent) || '') || '');
@@ -13358,7 +13390,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const found=[...DISH_NAMES].find(name => name === clean || raw.includes(name));
       return found || clean;
     })();
-    return {crops,bases,sale:readSaleTotal(), linked, selected};
+    return {crops,bases,sale:readSaleTotal(), linked, selected, dishStocks};
   }
   function lineQty(q){
     const value=truncQty(q), sets=Math.floor(value/64), pieces=value%64;
@@ -13399,8 +13431,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         if(baseDelta < 0) consumeLots(c + ' 베이스', -baseDelta);
       });
       const saleDelta = after.sale - before.sale;
-      const dish = after.linked && after.linked.name || before.selected;
+      const dish = after.linked && after.linked.name || before.linked && before.linked.name || before.selected;
       if(saleDelta > 0 && dish && DISH_NAMES.has(dish)){
+        const prevStock = before.dishStocks && Object.prototype.hasOwnProperty.call(before.dishStocks,dish) ? truncQty(before.dishStocks[dish]) : ((before.linked && before.linked.name === dish) ? truncQty(before.sale) : 0);
+        setDishStockQtyV737(dish, prevStock + saleDelta);
         addLot(dish, saleDelta, '베이스 → 요리 변환', now);
         recent.push(dish + ' +' + lineQty(saleDelta) + ' 유통기한 추적');
       }
@@ -13419,8 +13453,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     expired.forEach(lot => {
       const current = itemCurrentQty(lot.item);
       const deduct = Math.min(current, truncQty(lot.qty));
-      lot.qty = 0;
       if(deduct > 0){
+        lot.qty = Math.max(0, truncQty(lot.qty) - deduct);
         setItemCurrentQty(lot.item, current - deduct);
         lines.push(lot.item + ' -' + lineQty(deduct));
       }
@@ -13441,7 +13475,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(m){ const crop=Object.keys(EN).find(k => EN[k] === m[1]); return crop ? crop + ' 베이스' : ''; }
     if(id === 'saleSets' || id === 'saleSingles'){
       const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      return linked && linked.name ? linked.name : '__all_dishes__';
+      return linked && linked.name ? linked.name : '';
     }
     return '';
   }
@@ -13453,12 +13487,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(!target || !target.id || internalWrite > 0 || actionDepth > 0) return;
       const item=manualInputItemFromId(target.id);
       if(!item) return;
-      if(item === '__all_dishes__'){
-        const store=ensureStore(); if(store){ store.lots.forEach(lot => { if(DISH_NAMES.has(lot.item)) lot.qty=0; }); compactLots(); saveQuiet(); }
-      }else{
-        clearLotsForItem(item);
-        saveQuiet();
-      }
+      clearLotsForItem(item);
+      if(DISH_NAMES.has(item)) setDishStockQtyV737(item, readSaleTotal());
+      saveQuiet();
     }, true));
   }
   function bindActionTracker(){
@@ -13494,6 +13525,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
           const after = readSaleTotal();
           const sold = Math.max(0, before - after);
           if(sold > 0 && name) consumeLots(name, sold);
+          if(name && DISH_NAMES.has(name)) setDishStockQtyV737(name, 0);
           saveQuiet();
           checkExpired();
         }catch(e){ console.error('shelf life sale consume failed', e); }
@@ -13521,6 +13553,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     wrapCompleteSale();
     wrapOpenTab();
     checkExpired();
+    scheduleNextExpiryCheckV737();
   }
   window.farmShelfLifeV710 = {check:checkExpired, addLot:addLot, consumeLot:consumeLots, clearItem:clearLotsForItem, store:ensureStore};
   window.farmShelfLifeCheckV710 = checkExpired;
@@ -13963,11 +13996,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 </script>
 
 
-<script id="farmPendingItemUndoScriptV732">
-/* 공유 대기 개별 관리 + 최근 반영 내역 아이콘 취소 v732 */
+<script id="farmPendingItemUndoScriptV737">
+/* 공유 대기 개별 관리 + 최근 반영 내역 아이콘 취소 v737 */
 (function(){
-  if(window.__farmPendingItemUndoV732) return;
-  window.__farmPendingItemUndoV732 = true;
+  if(window.__farmPendingItemUndoV737) return;
+  window.__farmPendingItemUndoV737 = true;
 
   const CROPS = ['토마토','양파','마늘'];
   const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
@@ -14002,9 +14035,26 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     try{ if(typeof window.farmRenderRecentActionsV116 === 'function') window.farmRenderRecentActionsV116(); }catch(e){}
     renderPendingManager(false);
   }
+  function stateObjV737(){ try{ return (typeof state !== 'undefined') ? state : (window.state || null); }catch(e){ return window.state || null; } }
+  function shelfSnapshotV737(){
+    try{
+      const st=stateObjV737();
+      let store=st && st[SHELF_KEY];
+      if(!store && window.farmShelfLifeV710 && typeof window.farmShelfLifeV710.store === 'function') store=window.farmShelfLifeV710.store();
+      return store ? JSON.stringify(store) : null;
+    }catch(e){ return null; }
+  }
+  function restoreShelfSnapshotV737(raw){
+    try{
+      const st=stateObjV737(); if(!st) return;
+      if(raw == null){ delete st[SHELF_KEY]; }
+      else{ st[SHELF_KEY]=JSON.parse(raw); }
+      if(window.farmShelfLifeV710 && typeof window.farmShelfLifeV710.store === 'function') window.farmShelfLifeV710.store();
+    }catch(e){ console.error('shelf rollback restore failed', e); }
+  }
 
   function ownedFieldIds(){
-    const ids=['farmUseStamina'];
+    const ids=['farmUseStamina','saleSets','saleSingles'];
     CROPS.forEach(crop=>{
       const p=EN[crop];
       ['Large','Small','Stack','Single'].forEach(u=>ids.push(`farmSeed${p}${u}`));
@@ -14046,6 +14096,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const stack=Math.floor(remain/64); remain-=stack*64;
     writeNum(prefix+'Stack', stack, changed);
     writeNum(prefix+'Single', remain, changed);
+  }
+  function saleTotalV737(){ return readNum('saleSets')*64 + readNum('saleSingles'); }
+  function writeSaleTotalV737(total, changed){
+    let remain=Math.max(0, Math.trunc(Number(total)||0));
+    const sets=Math.floor(remain/64); remain-=sets*64;
+    writeNum('saleSets', sets, changed);
+    writeNum('saleSingles', remain, changed);
+    const st=stateObjV737();
+    if(st){ st.settings=st.settings||{}; st.settings.saleSets=sets; st.settings.saleSingles=remain; }
   }
 
   function readRecentActions(){ try{ const arr=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
@@ -14125,7 +14184,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     const stamB=int((before||{}).farmUseStamina), stamA=int((after||{}).farmUseStamina);
     if(stamA!==stamB) pick.push(`체력 ${stamA>stamB?'+':''}${fmt(stamA-stamB)}`);
-    return pick.slice(0,5).join(' · ') || '보유량 변화';
+    const saleB=int((before||{}).saleSets)*64 + int((before||{}).saleSingles);
+    const saleA=int((after||{}).saleSets)*64 + int((after||{}).saleSingles);
+    if(saleA!==saleB) pick.push(`요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}`);
+    return pick.slice(0,6).join(' · ') || '보유량 변화';
   }
   function fieldTotalFromSnapshot(obj, kind, crop){
     const p=EN[crop]; obj=obj||{};
@@ -14144,7 +14206,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       beforePending:correctionIds(fc&&fc.pendingRecent),
       beforeChest:chestPendingIds(),
       beforeRecent:recentIds(),
-      beforeShelf:localStorage.getItem(SHELF_KEY),
+      beforeShelf:shelfSnapshotV737(),
       startedAt:Date.now()
     };
   }
@@ -14160,7 +14222,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const newPending=[...afterPending].filter(id=>!cur.beforePending.has(id));
       const newChest=[...afterChest].filter(id=>!cur.beforeChest.has(id));
       const newRecentActionIds=[...afterRecentActions].filter(id=>!cur.beforeRecent.has(id));
-      const afterShelf=localStorage.getItem(SHELF_KEY);
+      const afterShelf=shelfSnapshotV737();
       if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf) return;
       pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,summary:labelFromFields(cur.beforeFields, afterFields)});
     },350);
@@ -14174,8 +14236,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const removedLocal=removeCorrectionRecords([...(rec.correctionIds||[]), ...(rec.pendingCorrectionIds||[])], true);
     const removedChest=removeChestRecords(rec.chestIds||[]);
     if(Object.prototype.hasOwnProperty.call(rec,'beforeShelf')){
-      if(rec.beforeShelf == null) localStorage.removeItem(SHELF_KEY);
-      else localStorage.setItem(SHELF_KEY, rec.beforeShelf);
+      restoreShelfSnapshotV737(rec.beforeShelf);
     }
     markRecentCanceled(recentId, '취소됨');
     removeUndo(rec.id);
@@ -14183,18 +14244,31 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     toastSafe(`최근 반영 취소됨 · 실측 ${fmt(removedLocal)}건 · 상자 ${fmt(removedChest)}건`);
   }
 
+  function parseQtyTextV737(raw){
+    const s=String(raw||'').replace(/,/g,'');
+    let total=0, matched=false, m;
+    const setRe=/([+-]?\d+)\s*세트/g;
+    while((m=setRe.exec(s))){ total += int(m[1]) * 64; matched=true; }
+    const pieceRe=/([+-]?\d+)\s*개/g;
+    while((m=pieceRe.exec(s))){ total += int(m[1]); matched=true; }
+    if(!matched){ const n=int(s); if(n){ total=n; matched=true; } }
+    return matched ? total : 0;
+  }
+  function escapeRegExpV737(s){ return String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
   function parseLegacyAction(action){
     const type=String(action&&action.type||'');
     if(type.includes('유통기한')) return {changes:[], reason:'유통기한 추적/만료 기록은 보유량 취소 대상이 아님'};
-    const text=[type].concat(Array.isArray(action&&action.lines)?action.lines:[]).concat(action&&action.note?[action.note]:[]).join('\n');
+    const lines=Array.isArray(action&&action.lines)?action.lines:[];
+    const text=[type].concat(lines).concat(action&&action.note?[action.note]:[]).join('\n');
     const changes=[];
     const seen=new Set();
-    const itemRe=/(토마토|양파|마늘)(?:\s+(?:채집|수확))?\s+((?:추가\s+)?씨앗|작물|베이스)[^+\-\n]*([+\-])\s*([\d,]+)\s*개/g;
+    const itemRe=/(토마토|양파|마늘)(?:\s+(?:채집|수확))?\s+((?:추가\s+)?씨앗|작물|베이스)[^+\-\n]*([+\-])\s*([\d,]+\s*(?:세트)?(?:\s*[\d,]+\s*개)?|[\d,]+\s*개)/g;
     let m;
     while((m=itemRe.exec(text))){
       const crop=m[1];
       const kind=m[2].includes('씨앗') ? 'seed' : (m[2].includes('작물') ? 'crop' : 'base');
-      const delta=(m[3]==='-'?-1:1)*int(m[4]);
+      const qty=parseQtyTextV737(m[4]);
+      const delta=(m[3]==='-'?-1:1)*qty;
       if(!delta) continue;
       const key=[kind,crop,delta,m.index].join('|');
       if(seen.has(key)) continue;
@@ -14206,12 +14280,28 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const delta=(m[1]==='-'?-1:1)*int(m[2]);
       if(delta) changes.push({kind:'stamina',delta});
     }
+    const dishNames=((window.DATA&&DATA.recipes)||[]).map(d=>d&&d.name).filter(Boolean).sort((a,b)=>b.length-a.length);
+    lines.forEach(line=>{
+      const s=String(line||'');
+      const dish=dishNames.find(name=>s.includes(name));
+      if(!dish) return;
+      const dm=s.match(new RegExp(escapeRegExpV737(dish) + '\\s*([+\\-])\\s*([\\d,]+\\s*(?:세트)?(?:\\s*[\\d,]+\\s*개)?|[\\d,]+\\s*개)'));
+      if(dm){
+        const delta=(dm[1]==='-'?-1:1)*parseQtyTextV737(dm[2]);
+        if(delta) changes.push({kind:'dishSale', dish, delta});
+      }
+    });
+    const calcLineRe=/요리\s*계산\s*판매\s*수량\s*누적[^+\-\n]*([+\-])\s*([\d,]+\s*(?:세트)?(?:\s*[\d,]+\s*개)?|[\d,]+\s*개)\s*→/g;
+    while((m=calcLineRe.exec(text))){
+      const delta=(m[1]==='-'?-1:1)*parseQtyTextV737(m[2]);
+      if(delta && !changes.some(ch=>ch.kind==='dishSale')) changes.push({kind:'dishSale', dish:'요리 계산 판매 수량', delta});
+    }
     return {changes};
   }
   function combineChanges(changes){
     const map=new Map();
     (changes||[]).forEach(ch=>{
-      const key=ch.kind==='stamina'?'stamina':`${ch.kind}:${ch.crop}`;
+      const key=ch.kind==='stamina'?'stamina':(ch.kind==='dishSale'?`dish:${ch.dish||''}`:`${ch.kind}:${ch.crop}`);
       const old=map.get(key) || Object.assign({}, ch, {delta:0});
       old.delta += ch.delta;
       map.set(key, old);
@@ -14222,6 +14312,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return changes.map(ch=>{
       const inverse=-ch.delta;
       if(ch.kind==='stamina') return `체력 ${inverse>0?'+':''}${fmt(inverse)}`;
+      if(ch.kind==='dishSale') return `${ch.dish||'요리 수량'} ${inverse>0?'+':''}${fmt(inverse)}개`;
       const label=ch.kind==='seed'?'씨앗':(ch.kind==='crop'?'작물':'베이스');
       return `${ch.crop} ${label} ${inverse>0?'+':''}${fmt(inverse)}개`;
     });
@@ -14257,6 +14348,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         const next=cur+inverse;
         if(next<0){ alert('체력이 음수가 되어 취소할 수 없음'); return; }
         writeNum('farmUseStamina', next, changed);
+      }else if(ch.kind==='dishSale'){
+        const cur=saleTotalV737();
+        const next=cur+inverse;
+        if(next<0){ alert('요리 계산 판매 수량이 부족해서 취소할 수 없음'); return; }
+        writeSaleTotalV737(next, changed);
       }else{
         const cur=itemTotal(ch.kind, ch.crop);
         const next=cur+inverse;
