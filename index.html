@@ -13996,6 +13996,326 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 </script>
 
 
+<style id="farmPlantSessionStyleV739">
+#seedplan .farm-manual-plant-v739{margin-top:10px;border:1px solid rgba(130,246,201,.18);background:rgba(12,18,28,.72);border-radius:14px;padding:10px;}
+#seedplan .farm-manual-plant-v739 summary{cursor:pointer;font-weight:900;color:#dffef4;list-style:none;}
+#seedplan .farm-manual-plant-v739 summary::-webkit-details-marker{display:none;}
+#seedplan .farm-manual-plant-note-v739{margin:6px 0 10px;color:#9fb1c9;font-size:12px;line-height:1.45;}
+#seedplan .farm-manual-plant-grid-v739{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;}
+#seedplan .farm-manual-plant-crop-v739{border:1px solid rgba(148,163,184,.14);border-radius:12px;background:rgba(15,23,42,.55);padding:8px;}
+#seedplan .farm-manual-plant-crop-v739 h5{margin:0 0 8px;font-size:13px;color:#eef6ff;}
+#seedplan .farm-manual-plant-actions-v739{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;}
+#seedplan .farm-manual-plant-status-v739{font-size:12px;color:#9fb1c9;font-weight:800;line-height:1.45;}
+#seedplan .farm-manual-plant-status-v739.ok{color:#b7f7d4;}
+#seedplan .farm-manual-plant-status-v739.warn{color:#ffd6a5;}
+#seedplan .farm-harvest-session-v739{margin:8px 0 10px;border:1px solid rgba(125,211,252,.16);background:rgba(14,165,233,.06);border-radius:12px;padding:8px 10px;color:#dbeafe;font-size:12px;font-weight:800;line-height:1.45;}
+#seedplan .farm-harvest-session-v739 select{margin-top:6px;width:100%;min-height:34px;border-radius:10px;background:rgba(15,23,42,.8);color:#e5f6ff;border:1px solid rgba(148,163,184,.25);padding:6px 8px;font-weight:800;}
+@media(max-width:720px){#seedplan .farm-manual-plant-grid-v739{grid-template-columns:1fr;}}
+</style>
+<script id="farmPlantSessionScriptV739">
+/* 심기 기록 저장 + 직접 수량 심기 v739 */
+(function(){
+  if(window.__farmPlantSessionV739) return;
+  window.__farmPlantSessionV739 = true;
+
+  const KEY = 'farmPlantSessionsV739';
+  const CROPS = ['토마토','양파','마늘'];
+  const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
+  const UNIT = {Large:3456, Small:1728, Stack:64, Single:1};
+  const BONUS_SEED = {0:{chance:0,add:0},1:{chance:.01,add:1},2:{chance:.02,add:1},3:{chance:.03,add:1},4:{chance:.04,add:1},5:{chance:.05,add:1},6:{chance:.06,add:1},7:{chance:.07,add:1},8:{chance:.10,add:1},9:{chance:.20,add:1},10:{chance:.30,add:1}};
+  let applyCapture = null;
+  let harvestCapture = null;
+
+  function byId(id){ return document.getElementById(id); }
+  function qa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+  function esc(text){ return String(text ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function int(v){ const n=Number(String(v ?? '').replace(/,/g,'')); return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : 0; }
+  function stateObj(){ try{ return (typeof state !== 'undefined') ? state : (window.state || null); }catch(e){ return window.state || null; } }
+  function saveQuiet(){ try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'plant-session'}); else if(typeof window.farmSaveInputsV77 === 'function') window.farmSaveInputsV77({intent:'plant-session'}); }catch(e){} try{ if(typeof save === 'function') save(false); }catch(e){} }
+  function fmt(total){ const v=int(total); const s=Math.floor(v/64), p=v%64; if(s<=0) return `${p}개`; if(p<=0) return `${s}세트`; return `${s}세트 ${p}개`; }
+  function shortLine(obj){ const parts=CROPS.filter(c=>int(obj&&obj[c])>0).map(c=>`${c} ${fmt(obj[c])}`); return parts.length ? parts.join(' · ') : '없음'; }
+  function totalOf(obj){ return CROPS.reduce((sum,c)=>sum+int(obj&&obj[c]),0); }
+  function clone(obj){ return JSON.parse(JSON.stringify(obj || {})); }
+
+  function readRawLocal(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
+  function normalizeStore(store){
+    if(!store || typeof store !== 'object') store = {version:739, records:[]};
+    if(!Array.isArray(store.records)) store.records = [];
+    store.version = 739;
+    store.records = store.records.filter(Boolean).slice(0,50);
+    return store;
+  }
+  function readStore(){
+    const st=stateObj();
+    let store = st && st[KEY] && typeof st[KEY] === 'object' ? st[KEY] : null;
+    if(!store) store = readRawLocal();
+    store = normalizeStore(store);
+    if(st) st[KEY] = store;
+    try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){}
+    return store;
+  }
+  function writeStore(store){
+    store = normalizeStore(store);
+    store.updatedAt = new Date().toISOString();
+    const st=stateObj();
+    if(st) st[KEY] = store;
+    try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){}
+    saveQuiet();
+    return store;
+  }
+  function pendingRecords(){
+    return readStore().records
+      .filter(r => r && r.status === 'pending' && totalOf(r.plantedSeeds)>0)
+      .sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));
+  }
+  function selectedPendingId(){ return byId('farmHarvestSessionSelectV739')?.value || ''; }
+  function activePending(){
+    const list=pendingRecords();
+    if(!list.length) return null;
+    const selected=selectedPendingId();
+    return list.find(r=>r.id===selected) || list[0];
+  }
+  function updateRecord(id, patch){
+    const store=readStore();
+    const rec=store.records.find(r=>r && r.id===id);
+    if(!rec) return null;
+    Object.assign(rec, patch||{}, {updatedAt:new Date().toISOString()});
+    writeStore(store);
+    return rec;
+  }
+
+  function readNum(id){ return int(byId(id)?.value); }
+  function seedTotal(crop){ const p=EN[crop]; return readNum(`farmSeed${p}Large`)*UNIT.Large + readNum(`farmSeed${p}Small`)*UNIT.Small + readNum(`farmSeed${p}Stack`)*UNIT.Stack + readNum(`farmSeed${p}Single`); }
+  function seedSnapshot(){ const out={}; CROPS.forEach(c=>out[c]=seedTotal(c)); return out; }
+  function setInput(id, value, changed){ const el=byId(id); if(!el) return; const next=String(Math.max(0, Math.trunc(Number(value)||0))); if(el.value!==next){ el.value=next; if(changed) changed.push(el); } }
+  function setSeedTotal(crop,total,changed){
+    const p=EN[crop]; let remain=int(total);
+    const large=Math.floor(remain/UNIT.Large); remain-=large*UNIT.Large;
+    const small=Math.floor(remain/UNIT.Small); remain-=small*UNIT.Small;
+    const stack=Math.floor(remain/UNIT.Stack); remain-=stack*UNIT.Stack;
+    setInput(`farmSeed${p}Large`,large,changed); setInput(`farmSeed${p}Small`,small,changed); setInput(`farmSeed${p}Stack`,stack,changed); setInput(`farmSeed${p}Single`,remain,changed);
+  }
+  function dispatch(changed){ const unique=Array.from(new Set((changed||[]).filter(Boolean))); unique.forEach(el=>el.dispatchEvent(new Event('input',{bubbles:true}))); unique.forEach(el=>el.dispatchEvent(new Event('change',{bubbles:true}))); }
+  function writeStackSingle(prefix,total,force){
+    const stackEl=byId(`${prefix}Stack`), singleEl=byId(`${prefix}Single`);
+    const v=int(total), stack=Math.floor(v/64), single=v%64;
+    [[stackEl,stack],[singleEl,single]].forEach(([el,value])=>{ if(el && (force || !el.dataset.userEditedV113)) el.value=String(value); });
+  }
+
+  function parseSummary(id){
+    const raw=String(byId(id)?.textContent || '').replace(/,/g,'');
+    const out={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c=>{
+      let m=raw.match(new RegExp(c+'\\s*([-+]?\\d+)세트\\s*([-+]?\\d+)개'));
+      if(m){ out[c]=Math.max(0,Math.trunc(Number(m[1])*64+Number(m[2]))); return; }
+      m=raw.match(new RegExp(c+'\\s*([-+]?\\d+(?:\\.\\d+)?)\\s*개'));
+      out[c]=m?Math.max(0,Math.floor(Number(m[1])||0)):0;
+    });
+    return out;
+  }
+  function currentPlan(){ const src=window.__farmLastPlantPlanV111 || parseSummary('farmPlantSummary'); const out={토마토:0,양파:0,마늘:0}; CROPS.forEach(c=>out[c]=int(src&&src[c])); return out; }
+  function currentYieldMap(plan){
+    const out={토마토:0,양파:0,마늘:0};
+    const src=window.__farmExpectedYieldPerSeedV706 || {};
+    const expected=parseSummary('farmHarvestSummary');
+    CROPS.forEach(c=>{
+      let y=Number(src[c]);
+      if(!Number.isFinite(y) || y<=0){ const p=int(plan&&plan[c]); y=p>0 ? int(expected[c])/p : 0; }
+      out[c]=Number.isFinite(y) && y>0 ? y : 0;
+    });
+    return out;
+  }
+  function seedBonus(){ const lv=Math.max(0,Math.min(10,Math.floor(Number(byId('skillSeedBonus')?.value || (stateObj()?.settings && stateObj().settings.skillSeedBonus) || 0)))); return BONUS_SEED[lv] || BONUS_SEED[0]; }
+  function expectedFrom(planted, yieldMap){
+    const bonus=seedBonus();
+    const harvest={토마토:0,양파:0,마늘:0}, bonusSeed={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c=>{ const qty=int(planted&&planted[c]); const y=Number(yieldMap&&yieldMap[c])||0; harvest[c]=Math.max(0,Math.floor(qty*y)); bonusSeed[c]=Math.max(0,Math.floor(qty*bonus.chance*bonus.add + 1e-9)); });
+    return {harvest, bonusSeed};
+  }
+  function snapshotFromRecord(rec){
+    if(!rec || rec.status !== 'pending') return null;
+    const values={}; let total=0;
+    CROPS.forEach(c=>{ const crop=int(rec.expectedHarvest&&rec.expectedHarvest[c]); const seed=int(rec.expectedBonusSeed&&rec.expectedBonusSeed[c]); values[c]={crop, seed}; total += crop + seed; });
+    if(total<=0) return null;
+    return {values,total,source:'plant-applied',plantSessionId:rec.id,capturedAt:Date.now()};
+  }
+  function activatePendingForHarvest(forceFill){
+    const rec=activePending();
+    if(!rec) return null;
+    const snap=snapshotFromRecord(rec);
+    if(!snap) return null;
+    window.__farmHarvestDefaultsAfterPlantV114=snap;
+    window.__farmHarvestPlantAppliedV114=true;
+    window.__farmActivePlantSessionForHarvestV739=rec.id;
+    if(forceFill){
+      qa('#farmHarvestInputCardV113 input').forEach(input=>{ delete input.dataset.userEditedV113; });
+      CROPS.forEach(c=>{ const p=EN[c]; const row=snap.values[c]||{crop:0,seed:0}; writeStackSingle(`farmHarvestCrop${p}`, row.crop, true); writeStackSingle(`farmHarvestSeed${p}`, row.seed, true); });
+      const status=byId('farmHarvestStatusV113'); if(status){ status.textContent='심기 기록 기준값 채움 · 수정 가능'; status.classList.remove('warn'); }
+    }
+    return rec;
+  }
+  function clearHarvestSessionMemory(){ window.__farmHarvestDefaultsAfterPlantV114=null; window.__farmHarvestPlantAppliedV114=false; window.__farmActivePlantSessionForHarvestV739=''; }
+
+  function createRecord(source, label, plan, planted, yieldMap, shortSeeds){
+    if(totalOf(planted)<=0) return null;
+    const expected=expectedFrom(planted, yieldMap);
+    const rec={
+      id:'ps739_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),
+      version:739,
+      status:'pending',
+      source,
+      sourceLabel:label,
+      targetLabel:window.__farmTargetRightActiveV706 ? '목표 추천 심기' : label,
+      plannedSeeds:clone(plan),
+      plantedSeeds:clone(planted),
+      shortSeeds:clone(shortSeeds||{}),
+      expectedHarvest:expected.harvest,
+      expectedBonusSeed:expected.bonusSeed,
+      yieldMap:clone(yieldMap),
+      createdAt:new Date().toISOString()
+    };
+    const store=readStore();
+    store.records.unshift(rec);
+    store.records=store.records.slice(0,50);
+    writeStore(store);
+    activatePendingForHarvest(true);
+    renderSessionUi();
+    return rec;
+  }
+
+  function captureApplyPlantBefore(){
+    applyCapture={before:seedSnapshot(), plan:currentPlan(), yieldMap:currentYieldMap(currentPlan()), time:Date.now()};
+  }
+  function finishApplyPlantAfter(){
+    const cap=applyCapture; applyCapture=null;
+    if(!cap) return;
+    const status=String(byId('farmApplyPlantStatusV111')?.textContent || '');
+    if(!status.includes('반영 완료')) return;
+    const after=seedSnapshot();
+    const planted={토마토:0,양파:0,마늘:0}, shortSeeds={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c=>{ planted[c]=Math.max(0,int(cap.before[c])-int(after[c])); shortSeeds[c]=Math.max(0,int(cap.plan[c])-planted[c]); });
+    if(totalOf(planted)<=0) return;
+    createRecord('recommended','추천대로 심기',cap.plan,planted,cap.yieldMap,shortSeeds);
+  }
+
+  function readManualPlan(){ const out={토마토:0,양파:0,마늘:0}; CROPS.forEach(c=>{ const p=EN[c]; out[c]=readNum(`farmManualPlant${p}StackV739`)*64 + readNum(`farmManualPlant${p}SingleV739`); }); return out; }
+  function setManualStatus(text, mode){ const el=byId('farmManualPlantStatusV739'); if(!el) return; el.textContent=text||''; el.classList.remove('ok','warn'); if(mode) el.classList.add(mode); }
+  function applyManualPlant(){
+    const plan=readManualPlan();
+    if(totalOf(plan)<=0){ setManualStatus('심을 수량을 입력해주세요.', 'warn'); try{ if(typeof toast==='function') toast('직접 심기 수량 없음'); }catch(e){} return; }
+    const before=seedSnapshot();
+    const changed=[]; const planted={토마토:0,양파:0,마늘:0}, shortSeeds={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c=>{ const want=int(plan[c]); const use=Math.min(int(before[c]), want); planted[c]=use; shortSeeds[c]=Math.max(0,want-use); if(use>0) setSeedTotal(c, int(before[c])-use, changed); });
+    if(totalOf(planted)<=0){ setManualStatus('보유 씨앗이 부족해서 차감된 수량 없음', 'warn'); try{ if(typeof toast==='function') toast('차감 가능한 씨앗 없음'); }catch(e){} return; }
+    const first=byId('farmSeedTomatoLarge') || byId('farmSeedTomatoSingle'); if(first) first.dispatchEvent(new Event('focusin',{bubbles:true}));
+    dispatch(changed); saveQuiet();
+    const rec=createRecord('manual','직접 수량 심기',plan,planted,currentYieldMap(currentPlan()),shortSeeds);
+    try{ if(typeof window.farmPlanUpdate==='function') window.farmPlanUpdate(); }catch(e){}
+    try{ if(typeof window.farmAddRecentActionV116==='function'){
+      const lines=[]; CROPS.forEach(c=>{ if(planted[c]>0) lines.push(`${c} 씨앗 -${int(planted[c]).toLocaleString('ko-KR')}개`); });
+      CROPS.forEach(c=>{ if(rec && rec.expectedHarvest[c]>0) lines.push(`예상 ${c} +${int(rec.expectedHarvest[c]).toLocaleString('ko-KR')}개`); });
+      CROPS.forEach(c=>{ if(shortSeeds[c]>0) lines.push(`${c} 씨앗 부족 ${int(shortSeeds[c]).toLocaleString('ko-KR')}개`); });
+      window.farmAddRecentActionV116({type:'직접 수량 심기', lines:lines.length?lines:['직접 수량 심기 반영'], note:'심기 기록 저장 · 실제 수확 반영 시 자동 연결'});
+    }}catch(e){}
+    setManualStatus(`직접 심기 반영 완료: ${shortLine(planted)}${totalOf(shortSeeds)>0?' · 부족 '+shortLine(shortSeeds):''}`, totalOf(shortSeeds)>0?'warn':'ok');
+    try{ if(typeof toast==='function') toast('직접 수량 심기 반영됨'); }catch(e){}
+  }
+
+  function ensureManualUi(){
+    const row=document.querySelector('#seedplan .farm-apply-plant-row-v111');
+    if(!row || byId('farmManualPlantV739')) return;
+    const box=document.createElement('details');
+    box.id='farmManualPlantV739';
+    box.className='farm-manual-plant-v739';
+    box.innerHTML=`<summary>직접 수량으로 심기</summary>
+      <p class="farm-manual-plant-note-v739">추천 수량과 별개로 원하는 씨앗 수량을 직접 입력해서 차감하고, 수확 대기 기록으로 저장합니다.</p>
+      <div class="farm-manual-plant-grid-v739">${CROPS.map(c=>{ const p=EN[c]; return `<div class="farm-manual-plant-crop-v739"><h5>${c}</h5><div class="farm-inline-unit-row-v137"><div class="control"><label>세트</label><input id="farmManualPlant${p}StackV739" type="number" min="0" step="1" value="0"></div><div class="control"><label>낱개</label><input id="farmManualPlant${p}SingleV739" type="number" min="0" step="1" value="0"></div></div></div>`; }).join('')}</div>
+      <div class="farm-manual-plant-actions-v739"><button class="btn primary" id="farmManualPlantApplyBtnV739" type="button">직접 수량 심기 반영</button><span class="farm-manual-plant-status-v739" id="farmManualPlantStatusV739">수량 입력 후 사용</span></div>`;
+    row.insertAdjacentElement('afterend', box);
+    byId('farmManualPlantApplyBtnV739')?.addEventListener('click', applyManualPlant);
+  }
+  function ensureHarvestSessionUi(){
+    const card=byId('farmHarvestInputCardV113');
+    if(!card || byId('farmHarvestSessionV739')) return;
+    const note=card.querySelector('.farm-harvest-input-note-v113');
+    const box=document.createElement('div');
+    box.id='farmHarvestSessionV739';
+    box.className='farm-harvest-session-v739';
+    box.textContent='심기 기록 확인 중';
+    if(note) note.insertAdjacentElement('afterend', box); else card.insertBefore(box, card.firstChild);
+  }
+  function renderSessionUi(){
+    ensureHarvestSessionUi();
+    const box=byId('farmHarvestSessionV739');
+    if(!box) return;
+    const list=pendingRecords();
+    if(!list.length){ box.textContent='연결된 심기 기록 없음 · 실제 수확 반영 시 씨앗 차감 확인 문구가 표시됩니다.'; clearHarvestSessionMemory(); return; }
+    const current=activePending() || list[0];
+    let html=`수확 대기 기록 연결됨 · ${esc(current.targetLabel || current.sourceLabel || '심기 기록')}<br>심은 씨앗 ${esc(shortLine(current.plantedSeeds))}`;
+    if(list.length>1){
+      html += `<select id="farmHarvestSessionSelectV739">${list.map(r=>`<option value="${esc(r.id)}" ${r.id===current.id?'selected':''}>${esc(r.targetLabel||r.sourceLabel||'심기 기록')} · ${esc(shortLine(r.plantedSeeds))}</option>`).join('')}</select>`;
+    }
+    box.innerHTML=html;
+    byId('farmHarvestSessionSelectV739')?.addEventListener('change',()=>{ activatePendingForHarvest(true); renderSessionUi(); });
+    activatePendingForHarvest(false);
+  }
+
+  function beforeHarvestClick(){
+    const rec=activatePendingForHarvest(false);
+    harvestCapture={id:rec&&rec.id || '', time:Date.now()};
+  }
+  function afterHarvestClick(){
+    const cap=harvestCapture; harvestCapture=null;
+    if(!cap || !cap.id) return;
+    const status=String(byId('farmHarvestStatusV113')?.textContent || '');
+    if(!status.includes('반영 완료')) return;
+    updateRecord(cap.id, {status:'harvested', harvestedAt:new Date().toISOString()});
+    clearHarvestSessionMemory();
+    renderSessionUi();
+  }
+
+  function bindClicks(){
+    if(document.body && document.body.dataset.plantSessionClickV739 === '1') return;
+    if(document.body) document.body.dataset.plantSessionClickV739='1';
+    document.addEventListener('click', function(e){
+      const btn=e.target && e.target.closest ? e.target.closest('button') : null;
+      if(!btn) return;
+      if(btn.id==='farmApplyPlantBtnV111'){
+        captureApplyPlantBefore();
+        setTimeout(finishApplyPlantAfter, 220);
+      }else if(btn.id==='farmHarvestApplyBtnV113'){
+        beforeHarvestClick();
+        setTimeout(afterHarvestClick, 260);
+      }
+    }, true);
+  }
+  function boot(){
+    ensureManualUi();
+    ensureHarvestSessionUi();
+    renderSessionUi();
+    bindClicks();
+  }
+
+  window.farmPlantSessionsV739 = {readStore, writeStore, pending:pendingRecords, active:activePending, activate:activatePendingForHarvest, render:renderSessionUi};
+
+  const oldPlanUpdate=window.farmPlanUpdate;
+  if(typeof oldPlanUpdate === 'function' && !oldPlanUpdate.__plantSessionV739){
+    const wrapped=function(){ const ret=oldPlanUpdate.apply(this, arguments); setTimeout(boot,0); return ret; };
+    wrapped.__plantSessionV739=true;
+    window.farmPlanUpdate=wrapped;
+  }
+  const oldOpen=window.openTab;
+  if(typeof oldOpen === 'function' && !oldOpen.__plantSessionV739){
+    const wrapped=function(tabName){ const ret=oldOpen.apply(this, arguments); if(tabName==='seedplan') setTimeout(boot,0); return ret; };
+    wrapped.__plantSessionV739=true;
+    window.openTab=wrapped;
+  }
+  window.addEventListener('load', function(){ setTimeout(boot,0); });
+  setTimeout(boot,0);
+})();
+</script>
+
+
 <script id="farmPendingItemUndoScriptV737">
 /* 공유 대기 개별 관리 + 최근 반영 내역 아이콘 취소 v737 */
 (function(){
@@ -14007,11 +14327,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   const UNDO_KEY = 'mtFarmUndoRecordsV732';
   const RECENT_KEY = 'mtFarmRecentActionsV116';
   const SHELF_KEY = 'farmShelfLifeV710';
+  const PLANT_SESSION_KEY_V739 = 'farmPlantSessionsV739';
   const MAX_UNDO = 30;
   const ACTIONS = {
     farmGatherApplyBtnV117:'채집 반영',
     farmHarvestApplyBtnV113:'수확 반영',
     farmApplyPlantBtnV111:'추천대로 심기',
+    farmManualPlantApplyBtnV739:'직접 수량 심기',
     farmIslandChestApplyBtnV690:'상자 기록',
     farmCropToBaseBtnV410:'작물→베이스 변환',
     farmBaseToDishBtnV410:'베이스→요리 변환'
@@ -14051,6 +14373,30 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       else{ st[SHELF_KEY]=JSON.parse(raw); }
       if(window.farmShelfLifeV710 && typeof window.farmShelfLifeV710.store === 'function') window.farmShelfLifeV710.store();
     }catch(e){ console.error('shelf rollback restore failed', e); }
+  }
+
+  function plantSessionSnapshotV739(){
+    try{
+      const st=stateObjV737();
+      const store=st && st[PLANT_SESSION_KEY_V739];
+      if(store) return JSON.stringify(store);
+      const raw=localStorage.getItem(PLANT_SESSION_KEY_V739);
+      return raw || null;
+    }catch(e){ return null; }
+  }
+  function restorePlantSessionSnapshotV739(raw){
+    try{
+      const st=stateObjV737();
+      if(raw == null){
+        if(st) delete st[PLANT_SESSION_KEY_V739];
+        try{ localStorage.removeItem(PLANT_SESSION_KEY_V739); }catch(e){}
+      }else{
+        const obj=JSON.parse(raw);
+        if(st) st[PLANT_SESSION_KEY_V739]=obj;
+        try{ localStorage.setItem(PLANT_SESSION_KEY_V739, JSON.stringify(obj)); }catch(e){}
+      }
+      if(window.farmPlantSessionsV739 && typeof window.farmPlantSessionsV739.render === 'function') window.farmPlantSessionsV739.render();
+    }catch(e){ console.error('plant session rollback restore failed', e); }
   }
 
   function ownedFieldIds(){
@@ -14207,6 +14553,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       beforeChest:chestPendingIds(),
       beforeRecent:recentIds(),
       beforeShelf:shelfSnapshotV737(),
+      beforePlantSession:plantSessionSnapshotV739(),
       startedAt:Date.now()
     };
   }
@@ -14223,8 +14570,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const newChest=[...afterChest].filter(id=>!cur.beforeChest.has(id));
       const newRecentActionIds=[...afterRecentActions].filter(id=>!cur.beforeRecent.has(id));
       const afterShelf=shelfSnapshotV737();
-      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf) return;
-      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,summary:labelFromFields(cur.beforeFields, afterFields)});
+      const afterPlantSession=plantSessionSnapshotV739();
+      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforePlantSession===afterPlantSession) return;
+      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforePlantSession:cur.beforePlantSession,afterPlantSession,summary:labelFromFields(cur.beforeFields, afterFields)});
     },350);
   }
 
@@ -14237,6 +14585,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const removedChest=removeChestRecords(rec.chestIds||[]);
     if(Object.prototype.hasOwnProperty.call(rec,'beforeShelf')){
       restoreShelfSnapshotV737(rec.beforeShelf);
+    }
+    if(Object.prototype.hasOwnProperty.call(rec,'beforePlantSession')){
+      restorePlantSessionSnapshotV739(rec.beforePlantSession);
     }
     markRecentCanceled(recentId, '취소됨');
     removeUndo(rec.id);
