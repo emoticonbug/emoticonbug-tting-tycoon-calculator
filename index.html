@@ -6503,15 +6503,85 @@ function dataCurrentText(){try{dataSyncBeforeFullBackup();return JSON.stringify(
 function dataDownloadJson(filename,obj){const text=typeof obj==='string'?obj:JSON.stringify(obj,null,2); const box=document.getElementById('exportBox'); if(box)box.value=text; const blob=new Blob([text],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),0)}
 function dataDishPriceSnapshot(){const prices={}; (DATA.recipes||[]).forEach(d=>{prices[d.name]=num(state.dishPrices?.[d.name]??d.sellPrice)}); return {type:'meoriga_tting_dish_prices', exportedAt:new Date().toISOString(), dishPrices:prices, dishPriceMeta:state.dishPriceMeta||{}}}
 function dataApplyDishPrices(obj){const src=obj&&obj.dishPrices?obj.dishPrices:obj; if(!src||typeof src!=='object')throw new Error('dishPrices 없음'); const next={}; (DATA.recipes||[]).forEach(d=>{if(src[d.name]!=null&&Number.isFinite(Number(src[d.name])))next[d.name]=Number(src[d.name])}); state.dishPrices=next; if(obj&&obj.dishPriceMeta&&typeof obj.dishPriceMeta==='object')state.dishPriceMeta={...(state.dishPriceMeta||{}), ...obj.dishPriceMeta}; save(); renderDishEditor(); renderCards(); renderDataStatus()}
-function dataBulkDishNameKey(text){return String(text||'').replace(/^(커먼|노멀|레어|에픽)\s*[-·]\s*/,'').replace(/\s+/g,'').trim()}
+function dataBulkDishNameKey(text){
+  return String(text||'')
+    .replace(/^(커먼|노멀|레어|에픽)\s*[-·:：]?\s*/,'')
+    .replace(/[\u200B-\u200D\uFEFF]/g,'')
+    .replace(/[(){}\[\]<>〈〉《》「」『』.,·ㆍ:：;|/\\_\-~→←▲▼△▽]/g,'')
+    .replace(/\s+/g,'')
+    .trim();
+}
+function dataDishPriceBulkAliasNamesV741(name){
+  const aliases=[name];
+  if(name==='로스트 치킨 파이') aliases.push('로스트 치킨');
+  if(name==='트리플 소갈비 꼬치'){
+    aliases.push('트러플 소갈비 꼬치');
+    aliases.push('트리플 소갈비꼬치');
+    aliases.push('트러플 소갈비꼬치');
+  }
+  if(name==='갈릭 케이크') aliases.push('마늘 갈릭케이크');
+  if(name==='어니언 링') aliases.push('어니언링');
+  if(name==='양파 수프') aliases.push('양파수프');
+  return aliases;
+}
 function dataDishPriceBulkAliases(){
+  const seen=new Set();
   const rows=[];
   (DATA.recipes||[]).forEach(d=>{
-    rows.push({key:dataBulkDishNameKey(d.name), recipe:d.name});
-    if(d.name==='로스트 치킨 파이') rows.push({key:dataBulkDishNameKey('로스트 치킨'), recipe:d.name});
+    dataDishPriceBulkAliasNamesV741(d.name).forEach(alias=>{
+      const key=dataBulkDishNameKey(alias);
+      const id=`${d.name}::${key}`;
+      if(key && !seen.has(id)){
+        seen.add(id);
+        rows.push({key, recipe:d.name});
+      }
+    });
   });
   rows.sort((a,b)=>b.key.length-a.key.length);
   return rows;
+}
+function dataDishPriceBulkLineNameKeyV741(line){
+  return dataBulkDishNameKey(String(line||'').replace(/\d[\d,]*/g,' '));
+}
+function dataBulkDishNameDistanceV741(a,b){
+  a=String(a||''); b=String(b||'');
+  if(a===b) return 0;
+  if(!a) return b.length;
+  if(!b) return a.length;
+  const prev=Array.from({length:b.length+1},(_,i)=>i);
+  const cur=new Array(b.length+1);
+  for(let i=1;i<=a.length;i++){
+    cur[0]=i;
+    for(let j=1;j<=b.length;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      cur[j]=Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
+    }
+    for(let j=0;j<=b.length;j++) prev[j]=cur[j];
+  }
+  return prev[b.length];
+}
+function dataFindDishPriceBulkAliasV741(line, aliases){
+  const compact=dataBulkDishNameKey(line);
+  let found=aliases.find(row=>row.key && compact.includes(row.key));
+  if(found) return found;
+
+  const nameKey=dataDishPriceBulkLineNameKeyV741(line);
+  if(!nameKey) return null;
+
+  found=aliases.find(row=>row.key && (nameKey.includes(row.key) || row.key.includes(nameKey)));
+  if(found) return found;
+
+  let best=null;
+  aliases.forEach(row=>{
+    if(!row.key) return;
+    const distance=dataBulkDishNameDistanceV741(nameKey,row.key);
+    const len=Math.min(nameKey.length,row.key.length);
+    const limit=Math.max(1, Math.min(2, Math.floor(len*0.22)));
+    if(distance<=limit && (!best || distance<best.distance || row.key.length>best.key.length)){
+      best={...row, distance};
+    }
+  });
+  return best;
 }
 function dataParseDishPriceBulkText(text){
   const aliases=dataDishPriceBulkAliases();
@@ -6520,8 +6590,7 @@ function dataParseDishPriceBulkText(text){
   String(text||'').split(/\r?\n/).forEach(rawLine=>{
     const line=String(rawLine||'').trim();
     if(!line) return;
-    const compact=dataBulkDishNameKey(line);
-    const found=aliases.find(row=>row.key && compact.includes(row.key));
+    const found=dataFindDishPriceBulkAliasV741(line, aliases);
     if(!found){unmatched.push(line);return;}
     const nums=line.match(/\d[\d,]*/g)||[];
     const value=nums.length?Number(nums[0].replace(/,/g,'')):NaN;
