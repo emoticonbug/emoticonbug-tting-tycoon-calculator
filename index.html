@@ -13369,283 +13369,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 </script>
 
 
-<script id="farmTargetRightRecommendScriptV706">
-/* 목표 제작 추천 → 오른쪽 심을 씨앗 추천 연동 v706 */
-(function(){
-  if(window.__farmTargetRightRecommendV706) return;
-  window.__farmTargetRightRecommendV706 = true;
-
-  const CROPS = ['토마토','양파','마늘'];
-  const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
-  const GIANT_MULT = 7;
-  const BIG_CROP_CHANCE_BY_LEVEL = {0:0,1:0.005,2:0.01,3:0.03,4:0.05};
-  const GOOD_HARVEST = {0:{chance:0,add:0},1:{chance:0.01,add:1},2:{chance:0.02,add:1},3:{chance:0.03,add:1},4:{chance:0.04,add:1},5:{chance:0.05,add:2},6:{chance:0.07,add:2},7:{chance:0.10,add:3}};
-  const SET_KEY = 'farmSeedRecommendModeV706';
-
-  function byId(id){ return document.getElementById(id); }
-  function stateObj(){ try{ return (typeof state !== 'undefined') ? state : (window.state || {}); }catch(e){ return window.state || {}; } }
-  function readNum(id){
-    const value = Number(byId(id)?.value || 0);
-    return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
-  }
-  function setHtml(id, html){ const el = byId(id); if(el) el.innerHTML = html; }
-  function setText(id, text){ const el = byId(id); if(el) el.textContent = text; }
-  function cleanName(text){
-    return String(text || '').replace(/^[^\-·]+[\-·]\s*/, '').replace(/\s+/g, ' ').trim();
-  }
-  function esc(text){
-    return String(text ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  }
-  function dataObj(){ try{ if(typeof DATA !== 'undefined') return DATA || {}; }catch(e){} return window.DATA || {}; }
-  function selectedDishName(){
-    const select = byId('farmDishSelect');
-    if(!select) return '';
-    const opt = select.options && select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
-    return cleanName(select.value) || cleanName(opt ? opt.textContent : '');
-  }
-  function dishByName(name){
-    const recipes = dataObj().recipes || [];
-    const raw = String(name || '').trim();
-    const target = cleanName(raw);
-    return recipes.find(dish => dish.name === target) ||
-      recipes.find(dish => `${dish.grade} · ${dish.name}` === raw) ||
-      recipes.find(dish => `${dish.grade} - ${dish.name}` === raw) || null;
-  }
-  function addBaseNeed(out, item, qty){
-    CROPS.forEach(crop => { if(item === `${crop} 베이스`) out[crop] += Number(qty) || 0; });
-    const processed = (dataObj().processed && dataObj().processed[item]) || null;
-    if(processed && Array.isArray(processed.ingredients)){
-      processed.ingredients.forEach(ing => addBaseNeed(out, ing.name, (Number(qty) || 0) * (Number(ing.qty) || 0)));
-    }
-  }
-  function baseNeedPerDish(dish){
-    const out = {토마토:0, 양파:0, 마늘:0};
-    if(!dish || !Array.isArray(dish.ingredients)) return out;
-    dish.ingredients.forEach(ing => addBaseNeed(out, ing.name, ing.qty));
-    return out;
-  }
-  function targetCount(){ return readNum('farmTargetDishStackV400') * 64 + readNum('farmTargetDishSingleV400'); }
-  function targetKind(){ return byId('farmTargetKindV703')?.value || 'dish'; }
-  function cropOwned(crop){ const p = EN[crop]; return readNum(`farmCrop${p}Stack`) * 64 + readNum(`farmCrop${p}Single`); }
-  function baseOwned(crop){ const p = EN[crop]; return readNum(`farmBase${p}Stack`) * 64 + readNum(`farmBase${p}Single`); }
-  function seedOwned(crop){ const p = EN[crop]; return readNum(`farmSeed${p}Large`) * 3456 + readNum(`farmSeed${p}Small`) * 1728 + readNum(`farmSeed${p}Stack`) * 64 + readNum(`farmSeed${p}Single`); }
-  function settingNum(key){
-    const st = stateObj();
-    const saved = Number(st && st.settings ? st.settings[key] : NaN);
-    if(Number.isFinite(saved)) return saved;
-    const el = byId(key);
-    const value = Number(el && el.value);
-    return Number.isFinite(value) ? value : 0;
-  }
-  function yieldMode(){
-    let mode = byId('farmYieldMode')?.value || 'state';
-    if(mode === 'state') mode = (stateObj().settings && stateObj().settings.yieldMode) || byId('yieldMode')?.value || 'avg';
-    return ['min','avg','max'].includes(mode) ? mode : 'avg';
-  }
-  function baseYield(crop){
-    const table = {토마토:{min:1,avg:2,max:3}, 양파:{min:1,avg:1.5,max:2}, 마늘:{min:1,avg:2.5,max:4}};
-    const row = table[crop] || {min:1,avg:1,max:1};
-    return row[yieldMode()] || row.avg || 1;
-  }
-  function expectedYieldPerSeed(crop){
-    const base = baseYield(crop);
-    const kingLv = Math.max(0, Math.min(4, Math.floor(settingNum('skillKing'))));
-    const giant = BIG_CROP_CHANCE_BY_LEVEL[kingLv] || 0;
-    const bigExpected = base * ((1 - giant) + giant * GIANT_MULT);
-    const harvestLv = Math.max(0, Math.min(7, Math.floor(settingNum('skillHarvest'))));
-    const harvest = GOOD_HARVEST[harvestLv] || GOOD_HARVEST[0];
-    return Math.max(0.000001, bigExpected + harvest.chance * harvest.add);
-  }
-  function formatQty(total){
-    const value = Math.max(0, Math.trunc(Number(total) || 0));
-    const sets = Math.floor(value / 64);
-    const pieces = value % 64;
-    if(sets <= 0) return `${pieces}개`;
-    if(pieces <= 0) return `${sets}세트`;
-    return `${sets}세트 ${pieces}개`;
-  }
-  function formatDecimal(value, digits){
-    const n = Number(value || 0);
-    if(!Number.isFinite(n)) return '0';
-    return n.toFixed(digits).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
-  }
-  function getMode(){
-    const st = stateObj();
-    const saved = st && st.settings ? st.settings[SET_KEY] : '';
-    const value = saved || 'target';
-    return value === 'legacy' ? 'legacy' : 'target';
-  }
-  function saveMode(value){
-    const st = stateObj();
-    st.settings = st.settings || {};
-    st.settings[SET_KEY] = value === 'legacy' ? 'legacy' : 'target';
-    try{ if(typeof save === 'function') save(false); }catch(e){}
-    try{ if(typeof window.renderDataStatus === 'function') window.renderDataStatus(); }catch(e){}
-  }
-  function ensureSettingsControl(){
-    if(byId('farmSeedRecommendModeV706')){
-      const select = byId('farmSeedRecommendModeV706');
-      if(select.value !== getMode()) select.value = getMode();
-      return;
-    }
-    const groups = Array.from(document.querySelectorAll('#settings .settings-subgroup-v102'));
-    const group = groups.find(el => (el.textContent || '').includes('재배 / 씨앗'));
-    const grid = group ? group.querySelector('.settings-mini-grid-v102') : document.querySelector('#settings .settings-mini-grid-v102');
-    if(!grid) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'control settings-field-card-v108';
-    wrap.innerHTML = `<label>🌱 심기 추천 기준</label><select id="farmSeedRecommendModeV706"><option value="target">목표 제작 추천</option><option value="legacy">기존 추천</option></select><span class="skill-sub">오른쪽 추천 카드 기준</span>`;
-    grid.appendChild(wrap);
-    const select = byId('farmSeedRecommendModeV706');
-    if(select){
-      select.value = getMode();
-      select.addEventListener('change', function(){
-        saveMode(select.value);
-        syncRightTarget();
-        try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
-      });
-    }
-  }
-  function targetBaseNeed(total){
-    const kind = targetKind();
-    const out = {토마토:0, 양파:0, 마늘:0};
-    if(total <= 0) return null;
-    if(kind === 'dish'){
-      const dish = dishByName(selectedDishName());
-      if(!dish) return null;
-      const per = baseNeedPerDish(dish);
-      CROPS.forEach(crop => { out[crop] = Math.max(0, Math.trunc((Number(per[crop]) || 0) * total)); });
-      return {label:dish.name, total, baseNeed:out};
-    }
-    if(CROPS.includes(kind)){
-      out[kind] = total;
-      return {label:`${kind} 베이스`, total, baseNeed:out};
-    }
-    return null;
-  }
-  function calcTargetPlan(){
-    const total = targetCount();
-    const target = targetBaseNeed(total);
-    if(!target) return null;
-    const plan = {토마토:0, 양파:0, 마늘:0};
-    const expected = {토마토:0, 양파:0, 마늘:0};
-    const yieldMap = {토마토:0, 양파:0, 마늘:0};
-    const seedShort = {토마토:0, 양파:0, 마늘:0};
-    const cropNeed = {토마토:0, 양파:0, 마늘:0};
-    const baseShort = {토마토:0, 양파:0, 마늘:0};
-    CROPS.forEach(crop => {
-      const needBase = Math.max(0, Math.trunc(Number(target.baseNeed[crop]) || 0));
-      const shortBase = Math.max(0, needBase - baseOwned(crop));
-      const needCrop = Math.max(0, shortBase * 8 - cropOwned(crop));
-      const y = expectedYieldPerSeed(crop);
-      const needSeed = needCrop > 0 ? Math.ceil(needCrop / y) : 0;
-      baseShort[crop] = shortBase;
-      cropNeed[crop] = needCrop;
-      plan[crop] = needSeed;
-      expected[crop] = Math.floor(needSeed * y);
-      yieldMap[crop] = y;
-      seedShort[crop] = Math.max(0, needSeed - seedOwned(crop));
-    });
-    return {target, plan, expected, yieldMap, seedShort, cropNeed, baseShort};
-  }
-  function totalOf(obj){ return CROPS.reduce((sum, crop) => sum + (Number(obj && obj[crop]) || 0), 0); }
-  function updateApplyStatus(plan){
-    const btn = byId('farmApplyPlantBtnV111');
-    const status = byId('farmApplyPlantStatusV111');
-    const total = totalOf(plan);
-    if(btn) btn.disabled = total <= 0;
-    if(status) status.textContent = total > 0 ? `심기 예정 ${total.toLocaleString('ko-KR')}개` : '심을 씨앗 없음';
-  }
-  function syncRightTarget(){
-    ensureSettingsControl();
-    window.__farmSeedRecommendModeV706 = getMode();
-    window.__farmTargetRightActiveV706 = false;
-    if(getMode() !== 'target'){
-      window.__farmExpectedYieldPerSeedV706 = {토마토:expectedYieldPerSeed('토마토'), 양파:expectedYieldPerSeed('양파'), 마늘:expectedYieldPerSeed('마늘')};
-      updateApplyStatus(window.__farmLastPlantPlanV111 || {토마토:0, 양파:0, 마늘:0});
-      return;
-    }
-    const result = calcTargetPlan();
-    if(!result){
-      // 목표 수량이 비어 있으면 오른쪽 결과 카드는 기존 일반 추천 결과를 그대로 사용.
-      // oldFarmPlanUpdate가 먼저 실행되어 선택 요리 기준의 균일 심기 추천을 이미 표시함.
-      window.__farmExpectedYieldPerSeedV706 = {토마토:expectedYieldPerSeed('토마토'), 양파:expectedYieldPerSeed('양파'), 마늘:expectedYieldPerSeed('마늘')};
-      updateApplyStatus(window.__farmLastPlantPlanV111 || {토마토:0, 양파:0, 마늘:0});
-      return;
-    }
-    window.__farmTargetRightActiveV706 = true;
-    const plan = result.plan;
-    const used = totalOf(plan);
-    const shortTotal = totalOf(result.seedShort);
-    window.__farmLastPlantPlanV111 = {토마토:plan.토마토 || 0, 양파:plan.양파 || 0, 마늘:plan.마늘 || 0};
-    window.__farmLastExpectedHarvestV706 = result.expected;
-    window.__farmExpectedYieldPerSeedV706 = result.yieldMap;
-
-    setHtml('farmPlantSummary', CROPS.map(crop => `${esc(crop)} ${formatQty(plan[crop])}`).join(' · '));
-    setText('farmPlotSummary', `목표 추천 기준 · 총 ${formatQty(used)}${shortTotal > 0 ? ' · 부족 씨앗 ' + formatQty(shortTotal) : ''}`);
-    setHtml('farmHarvestSummary', CROPS.map(crop => `${esc(crop)} ${formatQty(result.expected[crop])}`).join(' · '));
-    const yieldText = CROPS.map(crop => `${crop} ${formatDecimal(result.yieldMap[crop], 2)}`).join(' · ');
-    setText('farmSkillSummary', `${result.target.label} ${formatQty(result.target.total)} 목표 · 수확량/씨앗 ${yieldText}`);
-    updateApplyStatus(plan);
-  }
-  function bindInputs(){
-    ensureSettingsControl();
-    const ids = ['farmTargetKindV703','farmTargetDishStackV400','farmTargetDishSingleV400','farmDishSelect','yieldMode','farmYieldMode','skillKing','skillHarvest'];
-    CROPS.forEach(crop => {
-      const p = EN[crop];
-      ids.push(`farmCrop${p}Stack`, `farmCrop${p}Single`, `farmBase${p}Stack`, `farmBase${p}Single`, `farmSeed${p}Large`, `farmSeed${p}Small`, `farmSeed${p}Stack`, `farmSeed${p}Single`);
-    });
-    ids.forEach(id => {
-      const el = byId(id);
-      if(!el || el.dataset.targetRightBoundV706 === '1') return;
-      el.dataset.targetRightBoundV706 = '1';
-      const handler = function(){ setTimeout(syncRightTarget, 0); };
-      el.addEventListener('input', handler);
-      el.addEventListener('change', handler);
-    });
-  }
-
-  const oldFarmPlanUpdate = window.farmPlanUpdate;
-  window.farmPlanUpdate = function(){
-    const ret = typeof oldFarmPlanUpdate === 'function' ? oldFarmPlanUpdate.apply(this, arguments) : undefined;
-    bindInputs();
-    syncRightTarget();
-    return ret;
-  };
-  const oldTargetUpdate = window.farmTargetPlanUpdateV400;
-  if(typeof oldTargetUpdate === 'function'){
-    window.farmTargetPlanUpdateV400 = function(){
-      const ret = oldTargetUpdate.apply(this, arguments);
-      bindInputs();
-      syncRightTarget();
-      return ret;
-    };
-  }
-  const oldRoll = window.farmPlanRoll;
-  if(typeof oldRoll === 'function'){
-    window.farmPlanRoll = function(){
-      const ret = oldRoll.apply(this, arguments);
-      bindInputs();
-      syncRightTarget();
-      return ret;
-    };
-  }
-  const oldOpenTab = window.openTab;
-  if(typeof oldOpenTab === 'function'){
-    window.openTab = function(tabName){
-      const ret = oldOpenTab.apply(this, arguments);
-      if(tabName === 'seedplan' || tabName === 'settings'){
-        bindInputs();
-        setTimeout(syncRightTarget, 0);
-      }
-      return ret;
-    };
-  }
-  window.addEventListener('load', function(){ bindInputs(); syncRightTarget(); });
-  bindInputs();
-  syncRightTarget();
-})();
-</script>
 
 
 <script id="farmShelfLifeSafeScriptV710">
@@ -14010,7 +13733,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 @media(max-width:720px){#seedplan .farm-target-base-row-v711{grid-template-columns:1fr 1fr;}#seedplan .farm-target-base-row-v711 b{grid-column:1 / -1;padding-bottom:0;}}
 </style>
 <script id="farmTargetMultiPendingScriptV711">
-/* 목표 제작 추천 다중 베이스 + 수확 대기 기록 v711 */
+/* 목표 제작 추천 다중 베이스 + 수확 대기 기록 v756
+   - 목표 수량이 있으면 오른쪽 심기 추천에 자동 반영
+   - 목표 수량이 없으면 일반 추천으로 자동 복귀
+*/
 (function(){
   if(window.__farmTargetMultiPendingV711) return;
   window.__farmTargetMultiPendingV711 = true;
@@ -14023,7 +13749,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   const BIG_CROP_CHANCE_BY_LEVEL = {0:0,1:0.005,2:0.01,3:0.03,4:0.05};
   const GOOD_HARVEST = {0:{chance:0,add:0},1:{chance:0.01,add:1},2:{chance:0.02,add:1},3:{chance:0.03,add:1},4:{chance:0.04,add:1},5:{chance:0.05,add:2},6:{chance:0.07,add:2},7:{chance:0.10,add:3}};
   const BONUS_SEED = {0:{chance:0,add:0},1:{chance:.01,add:1},2:{chance:.02,add:1},3:{chance:.03,add:1},4:{chance:.04,add:1},5:{chance:.05,add:1},6:{chance:.06,add:1},7:{chance:.07,add:1},8:{chance:.10,add:1},9:{chance:.20,add:1},10:{chance:.30,add:1}};
-  const MODE_KEY = 'farmSeedRecommendModeV706';
   const MULTI_STORE_KEY = 'farmTargetBaseTargetsV711';
   const PENDING_KEY = 'farmHarvestPendingV711';
 
@@ -14056,7 +13781,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function totalSeedsSnapshot(){ const out={}; CROPS.forEach(c => { out[c] = seedOwned(c); }); return out; }
   function totalOf(obj){ return CROPS.reduce((sum,c)=>sum+(Number(obj&&obj[c])||0),0); }
 
-  function getMode(){ const st=stateObj(); const saved=st && st.settings ? st.settings[MODE_KEY] : ''; return saved === 'legacy' ? 'legacy' : 'target'; }
   function getMultiValues(){ const out={토마토:0,양파:0,마늘:0}; CROPS.forEach(c => { const p=EN[c]; out[c] = readNum(`farmTargetBase${p}StackV711`) * 64 + readNum(`farmTargetBase${p}SingleV711`); }); return out; }
   function saveMultiValues(){ const values=getMultiValues(); try{ localStorage.setItem(MULTI_STORE_KEY, JSON.stringify(values)); }catch(e){} const st=stateObj(); if(st){ st.farmTargetBaseTargetsV711 = Object.assign({}, values); try{ if(typeof save === 'function') save(false); }catch(e){} } }
   function restoreMultiValues(){ let values=null; const st=stateObj(); if(st && st.farmTargetBaseTargetsV711 && typeof st.farmTargetBaseTargetsV711 === 'object') values=st.farmTargetBaseTargetsV711; if(!values){ try{ values=JSON.parse(localStorage.getItem(MULTI_STORE_KEY)||'null'); }catch(e){ values=null; } } if(!values) return; CROPS.forEach(c => { const p=EN[c]; const total=Math.max(0,Math.trunc(Number(values[c])||0)); const stack=Math.floor(total/64); const single=total%64; const stackEl=byId(`farmTargetBase${p}StackV711`); const singleEl=byId(`farmTargetBase${p}SingleV711`); if(stackEl) stackEl.value=String(stack); if(singleEl) singleEl.value=String(single); }); }
@@ -14169,13 +13893,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     </div>`;
   }
   function extraList(extras){ const filtered=(extras||[]).filter(x => Number(x.qty)>0); if(!filtered.length) return ''; return `<div class="target-section-title-v401">추가 준비 재료</div><div class="target-extra-list-v703">${filtered.map(x => `<span class="target-extra-pill-v703">${esc(x.name)} ${fmt(x.qty)}</span>`).join('')}</div>`; }
-  function renderTarget(){
+  function renderTarget(normalAlreadyRendered){
     ensureTargetUi();
     const box=byId('farmTargetResultV400');
     if(!box) return;
     const result=calcTargetPlan();
     window.__farmCurrentTargetPlanV711 = result || null;
-    if(!result){ box.innerHTML=''; syncRight(); return; }
+    if(!result){ box.innerHTML=''; syncRight(null, !!normalAlreadyRendered); return; }
     const cards=[];
     let enough=true;
     CROPS.forEach(c => {
@@ -14194,22 +13918,23 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       cards.push(cropCard(c,{needBase,haveBase,baseShort,extraCropNeed,plantNeed,haveSeed,seedShort,yieldPerSeed:y}));
     });
     const title=`<div class="farm-target-title-v401"><b>${esc(result.target.label)}</b><span>${result.target.type === 'bases' ? '직접 목표 기준' : fmt(result.target.total)+' 목표 기준'}</span></div>`;
-    if(!cards.length){ box.innerHTML=`${title}<div class="target-empty-v401">베이스 필요 없음</div>${extraList(result.target.extras)}`; syncRight(); return; }
+    if(!cards.length){ box.innerHTML=`${title}<div class="target-empty-v401">베이스 필요 없음</div>${extraList(result.target.extras)}`; syncRight(result, !!normalAlreadyRendered); return; }
     const okText=enough ? '<div class="target-all-ok-v401">목표 수량 충족 가능</div>' : '';
     const note='<div class="target-base-note-v703">보유 작물은 베이스 변환 가능 수량으로 계산.</div>';
     box.innerHTML=`${title}<div class="target-section-title-v401">심기 추천</div>${cards.join('')}${okText}${extraList(result.target.extras)}${note}`;
-    syncRight();
+    syncRight(result, !!normalAlreadyRendered);
   }
 
   function setHtml(id, html){ const el=byId(id); if(el) el.innerHTML=html; }
   function setText(id, text){ const el=byId(id); if(el) el.textContent=text; }
   function updateApplyStatus(plan){ const btn=byId('farmApplyPlantBtnV111'); const status=byId('farmApplyPlantStatusV111'); const total=totalOf(plan); if(btn) btn.disabled=total<=0; if(status) status.textContent = total>0 ? `심기 예정 ${total.toLocaleString('ko-KR')}개` : '심을 씨앗 없음'; }
-  function syncRight(){
-    if(getMode() !== 'target') return;
-    const result=calcTargetPlan();
+  function syncRight(result, normalAlreadyRendered){
+    result = result || calcTargetPlan();
     if(!result){
       window.__farmTargetRightActiveV706=false;
       window.__farmCurrentTargetPlanV711=null;
+      window.__farmTargetPlanMetaV711=null;
+      if(!normalAlreadyRendered && typeof oldFarmPlanUpdate === 'function') oldFarmPlanUpdate();
       updatePendingMini();
       return;
     }
@@ -14390,7 +14115,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   let scheduled=false;
-  function scheduleUpdate(){ if(scheduled) return; scheduled=true; setTimeout(()=>{ scheduled=false; renderTarget(); },0); }
+  function scheduleUpdate(){ if(scheduled) return; scheduled=true; setTimeout(()=>{ scheduled=false; renderTarget(false); },0); }
   function bindAll(){
     ensureTargetUi();
     const ids=['farmTargetKindV703','farmTargetDishStackV400','farmTargetDishSingleV400','farmDishSelect','yieldMode','farmYieldMode','skillKing','skillHarvest','skillSeedBonus'];
@@ -14401,28 +14126,28 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   const oldTargetUpdate=window.farmTargetPlanUpdateV400;
+  const oldFarmPlanUpdate=window.farmPlanUpdate;
   window.farmTargetPlanUpdateV400=function(){
     try{ if(typeof oldTargetUpdate === 'function') oldTargetUpdate.apply(this, arguments); }catch(e){}
-    renderTarget();
+    renderTarget(false);
   };
-  const oldFarmPlanUpdate=window.farmPlanUpdate;
   window.farmPlanUpdate=function(){
     const ret=typeof oldFarmPlanUpdate === 'function' ? oldFarmPlanUpdate.apply(this, arguments) : undefined;
     bindAll();
-    renderTarget();
+    renderTarget(true);
     return ret;
   };
   const oldOpenTab=window.openTab;
   if(typeof oldOpenTab === 'function'){
     window.openTab=function(tabName){
       const ret=oldOpenTab.apply(this, arguments);
-      if(tabName === 'seedplan' || tabName === 'settings') setTimeout(()=>{ bindAll(); renderTarget(); },0);
+      if(tabName === 'seedplan' || tabName === 'settings') setTimeout(()=>{ bindAll(); renderTarget(false); },0);
       return ret;
     };
   }
-  window.addEventListener('load', function(){ bindAll(); renderTarget(); restorePendingToHarvest(false); });
+  window.addEventListener('load', function(){ bindAll(); renderTarget(false); restorePendingToHarvest(false); });
   bindAll();
-  renderTarget();
+  renderTarget(false);
 })();
 </script>
 
