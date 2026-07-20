@@ -5221,7 +5221,6 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <h4>심을 씨앗 추천</h4>
 <div class="big" id="farmPlantSummary">계산 대기</div>
 <div class="line" id="farmPlotSummary">-</div>
-<div class="farm-target-right-detail-v756" id="farmTargetRightDetailV756"></div>
 <div class="farm-apply-plant-row-v111">
 <button class="btn primary" id="farmApplyPlantBtnV111" type="button">추천대로 심기 반영</button>
 <span class="farm-apply-plant-status-v111" id="farmApplyPlantStatusV111">계산 후 사용</span>
@@ -12596,7 +12595,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const seedShort = Math.max(0, plantNeed - haveSeed);
 
       if(extraCropNeed > 0 || seedShort > 0) enough = false;
-      cards.push(cropCard(crop, {baseShort, extraCropNeed, seedShort}));
+      cards.push(cropCard(crop, {needBase, haveBase, baseShort, extraCropNeed, plantNeed, haveSeed, seedShort, yieldPerSeed}));
     });
 
     const targetLabel = info.type === 'dish' ? `${esc(info.title)}` : `${esc(info.title)}`;
@@ -14008,29 +14007,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 #seedplan .farm-target-base-row-v711 label{display:block;font-size:11px;color:#9fb1c9;font-weight:800;}
 #seedplan .farm-target-base-row-v711 input{margin-top:4px;}
 #seedplan .farm-pending-mini-v711{margin-top:8px;border:1px solid rgba(125,211,252,.18);background:rgba(14,165,233,.07);border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.45;color:#dbeafe;font-weight:800;}
-#seedplan .farm-target-right-detail-v756{
-  margin-top:10px;
-  border:1px solid rgba(148,163,184,.18);
-  border-radius:14px;
-  background:rgba(11,19,32,.55);
-  padding:10px 11px;
-  color:#dbeafe;
-  font-size:12px;
-  line-height:1.5;
-  font-weight:750;
-}
-#seedplan .farm-target-right-detail-v756:empty{
-  display:none;
-}
-#seedplan .farm-target-right-detail-v756 .farm-target-title-v401{
-  margin-top:0;
-}
-#seedplan .farm-target-right-detail-v756 .target-crop-card-v401{
-  margin-top:7px;
-}
-#seedplan .farm-target-plan-block-v400 .farm-target-result-v400{
-  display:none;
-}
 @media(max-width:720px){#seedplan .farm-target-base-row-v711{grid-template-columns:1fr 1fr;}#seedplan .farm-target-base-row-v711 b{grid-column:1 / -1;padding-bottom:0;}}
 </style>
 <script id="farmTargetMultiPendingScriptV711">
@@ -14193,8 +14169,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     </div>`;
   }
   function extraList(extras){ const filtered=(extras||[]).filter(x => Number(x.qty)>0); if(!filtered.length) return ''; return `<div class="target-section-title-v401">추가 준비 재료</div><div class="target-extra-list-v703">${filtered.map(x => `<span class="target-extra-pill-v703">${esc(x.name)} ${fmt(x.qty)}</span>`).join('')}</div>`; }
-  function buildTargetDetail(result){
-    if(!result) return '';
+  function renderTarget(){
+    ensureTargetUi();
+    const box=byId('farmTargetResultV400');
+    if(!box) return;
+    const result=calcTargetPlan();
+    window.__farmCurrentTargetPlanV711 = result || null;
+    if(!result){ box.innerHTML=''; syncRight(); return; }
     const cards=[];
     let enough=true;
     CROPS.forEach(c => {
@@ -14210,22 +14191,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const plantNeed=extraCropNeed>0 ? Math.ceil(extraCropNeed/y) : 0;
       const seedShort=Math.max(0,plantNeed-haveSeed);
       if(extraCropNeed>0 || seedShort>0) enough=false;
-      cards.push(cropCard(c,{baseShort,extraCropNeed,seedShort}));
+      cards.push(cropCard(c,{needBase,haveBase,baseShort,extraCropNeed,plantNeed,haveSeed,seedShort,yieldPerSeed:y}));
     });
     const title=`<div class="farm-target-title-v401"><b>${esc(result.target.label)}</b><span>${result.target.type === 'bases' ? '직접 목표 기준' : fmt(result.target.total)+' 목표 기준'}</span></div>`;
-    if(!cards.length) return `${title}<div class="target-empty-v401">베이스 필요 없음</div>${extraList(result.target.extras)}`;
+    if(!cards.length){ box.innerHTML=`${title}<div class="target-empty-v401">베이스 필요 없음</div>${extraList(result.target.extras)}`; syncRight(); return; }
     const okText=enough ? '<div class="target-all-ok-v401">목표 수량 충족 가능</div>' : '';
     const note='<div class="target-base-note-v703">보유 작물은 베이스 변환 가능 수량으로 계산.</div>';
-    return `${title}<div class="target-section-title-v401">심기 추천</div>${cards.join('')}${okText}${extraList(result.target.extras)}${note}`;
-  }
-  function setRightDetail(html){ const el=byId('farmTargetRightDetailV756'); if(el) el.innerHTML=html || ''; }
-  function renderTarget(){
-    ensureTargetUi();
-    const box=byId('farmTargetResultV400');
-    const result=calcTargetPlan();
-    window.__farmCurrentTargetPlanV711 = result || null;
-    if(box) box.innerHTML='';
-    setRightDetail(result ? buildTargetDetail(result) : '');
+    box.innerHTML=`${title}<div class="target-section-title-v401">심기 추천</div>${cards.join('')}${okText}${extraList(result.target.extras)}${note}`;
     syncRight();
   }
 
@@ -14233,12 +14205,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function setText(id, text){ const el=byId(id); if(el) el.textContent=text; }
   function updateApplyStatus(plan){ const btn=byId('farmApplyPlantBtnV111'); const status=byId('farmApplyPlantStatusV111'); const total=totalOf(plan); if(btn) btn.disabled=total<=0; if(status) status.textContent = total>0 ? `심기 예정 ${total.toLocaleString('ko-KR')}개` : '심을 씨앗 없음'; }
   function syncRight(){
-    if(getMode() !== 'target'){ setRightDetail(''); return; }
+    if(getMode() !== 'target') return;
     const result=calcTargetPlan();
     if(!result){
       window.__farmTargetRightActiveV706=false;
       window.__farmCurrentTargetPlanV711=null;
-      setRightDetail('');
       updatePendingMini();
       return;
     }
@@ -14251,7 +14222,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     window.__farmExpectedYieldPerSeedV706=result.yieldMap;
     window.__farmCurrentTargetPlanV711=result;
     window.__farmTargetPlanMetaV711={label:result.target.label,type:result.target.type,total:result.target.total,baseNeed:Object.assign({},result.target.baseNeed)};
-    setRightDetail(buildTargetDetail(result));
     setHtml('farmPlantSummary', CROPS.map(c => `${esc(c)} ${fmt(plan[c])}`).join(' · '));
     setText('farmPlotSummary', `목표 제작 추천 기준 · 총 ${fmt(used)}${shortTotal>0?' · 부족 씨앗 '+fmt(shortTotal):''}`);
     setHtml('farmHarvestSummary', CROPS.map(c => `${esc(c)} ${fmt(result.expected[c])}`).join(' · '));
@@ -15395,5 +15365,4 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 })();
 </script>
 
-<!-- ddinghowa v758: target detail rows deleted, not hidden -->
 </body></html>
