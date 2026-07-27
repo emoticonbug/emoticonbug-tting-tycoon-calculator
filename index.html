@@ -3365,6 +3365,188 @@ header .title h1.app-logo-title{
   #prices .material-owned-group-flag-v747 span{display:none;}
   #prices .material-owned-group-flag-v747{padding:0 6px !important;}
 }
+
+
+/* 재료 가격 탭 카드 정렬 및 보유 수량 배치 v764 */
+#prices .price-list-v97{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+#prices .price-item{
+  background:#101620;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:11px;
+  min-width:0;
+}
+#prices .price-item h4.price-title-v52{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  height:68px !important;
+  min-height:68px !important;
+  margin:0 0 6px !important;
+  padding-right:0 !important;
+  position:static !important;
+  overflow:visible !important;
+}
+#prices .price-title-v52 .price-name-v52{
+  display:block !important;
+  min-width:0 !important;
+  flex:1 1 auto !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
+  line-height:1.2 !important;
+  word-break:keep-all !important;
+}
+#prices .price-item .tiny{margin-top:0 !important;}
+#prices .price-item > .tiny:first-of-type{
+  min-height:16px;
+  line-height:16px;
+}
+#prices .price-item .control{
+  margin-top:4px;
+}
+#prices .price-unit-row-v702{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 76px;
+  gap:6px;
+  align-items:center;
+}
+#prices .price-unit-row-v702 input,
+#prices .price-unit-row-v702 select{
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+}
+#prices .price-unit-row-v702 select{
+  height:39px;
+  padding:0 8px;
+  border-radius:12px;
+  font-size:12px;
+  font-weight:900;
+}
+#prices .price-unit-hint-v702,
+#prices .stamina-drink-unit-v501,
+#prices .auto-price-hint-v701{
+  display:block;
+  min-height:16px;
+  line-height:16px;
+}
+#prices .price-unit-hint-v702{
+  margin-top:6px;
+  color:#bcd0f0;
+  font-weight:850;
+}
+#prices .stamina-drink-unit-v501{
+  margin-top:6px;
+  color:#7dffd9;
+  font-weight:850;
+}
+#prices .price-meta-row-v763{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:4px;
+  height:26px;
+  min-height:26px;
+  margin-top:2px;
+}
+#prices .price-meta-left-v763{
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  height:26px;
+}
+#prices .price-meta-spacer-v763{min-height:16px;}
+#prices .auto-price-hint-v701{
+  color:#7dffd9;
+  font-weight:850;
+  white-space:nowrap;
+}
+#prices .material-owned-flag-v745{
+  position:static !important;
+  transform:none !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  height:24px !important;
+  padding:0 5px !important;
+  border:1px solid #27334a !important;
+  border-radius:999px !important;
+  background:#0e1724 !important;
+  color:#dfe8ff !important;
+  font-size:11px !important;
+  font-weight:850 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  flex:0 0 auto !important;
+}
+#prices .material-owned-flag-v745 input{
+  width:13px !important;
+  height:13px !important;
+  margin:0 !important;
+  accent-color:var(--accent);
+}
+#prices .material-owned-flag-v745 span{color:#e5f0ff;}
+#prices .material-owned-block-v712{
+  margin-top:8px;
+  border-top:1px dashed #2b3448;
+  padding-top:9px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+#prices .material-owned-title-v712{
+  min-height:14px;
+  font-size:11px;
+  line-height:14px;
+  color:var(--muted);
+  font-weight:850;
+}
+#prices .material-owned-row-v712{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 6px;
+}
+#prices .material-owned-control-v712{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+#prices .material-owned-control-v712 span{
+  min-height:14px;
+  font-size:11px;
+  line-height:14px;
+  color:#bcd0f0;
+  font-weight:850;
+  white-space:nowrap;
+}
+#prices .material-owned-control-v712 input{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  height:39px;
+  background:#0f131c;
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  outline:none;
+  font:inherit;
+}
+#prices .material-owned-control-v712 input:focus{border-color:var(--accent);}
+@media(max-width:1100px){
+  #prices .price-list-v97{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:720px){
+  #prices .price-list-v97{grid-template-columns:minmax(0,1fr);}
+}
 </style>
 <style id="farmRemoveResultSummaryStyleV1">
 /* 결과 요약 제거: 실제 결과 카드가 따로 있으므로 상단 중복 요약 칸은 만들지 않음 */
@@ -5489,13 +5671,42 @@ function userPrice(name){
   if(!(raw>0))return 0;
   return priceInputUnitV702(name)==='set'?raw/64:raw;
 }
+const OWNED_SET_QTY_V763=64;
+const OWNED_SMALL_CHEST_QTY_V763=27*OWNED_SET_QTY_V763;
+const OWNED_LARGE_CHEST_QTY_V763=54*OWNED_SET_QTY_V763;
+function ownedMaterialStoredQtyV763(row){
+  if(row&&Number.isFinite(Number(row.totalQty)))return Math.max(0,Math.floor(Number(row.totalQty)||0));
+  const large=Math.trunc(num(row&&row.largeChests)||0);
+  const small=Math.trunc(num(row&&row.smallChests)||0);
+  const sets=Math.trunc(num(row&&row.sets)||0);
+  const singles=Math.trunc(num(row&&row.singles)||0);
+  const total=large*OWNED_LARGE_CHEST_QTY_V763+small*OWNED_SMALL_CHEST_QTY_V763+sets*OWNED_SET_QTY_V763+singles;
+  return Math.max(0,Math.floor(total||0));
+}
+function ownedMaterialUnitsV763(totalQty){
+  let qty=Math.max(0,Math.floor(Number(totalQty)||0));
+  const largeChests=Math.floor(qty/OWNED_LARGE_CHEST_QTY_V763);
+  qty-=largeChests*OWNED_LARGE_CHEST_QTY_V763;
+  const smallChests=Math.floor(qty/OWNED_SMALL_CHEST_QTY_V763);
+  qty-=smallChests*OWNED_SMALL_CHEST_QTY_V763;
+  const sets=Math.floor(qty/OWNED_SET_QTY_V763);
+  qty-=sets*OWNED_SET_QTY_V763;
+  const singles=qty;
+  return {largeChests,smallChests,sets,singles,qty:Math.max(0,Math.floor(Number(totalQty)||0))};
+}
 function ownedMaterialRowV712(name){
   if(!state.ownedMaterials||typeof state.ownedMaterials!=='object')state.ownedMaterials={};
   const row=state.ownedMaterials[name]||{};
-  const sets=Math.max(0,Math.floor(num(row.sets)||0));
-  const singles=Math.max(0,Math.min(63,Math.floor(num(row.singles)||0)));
+  const units=ownedMaterialUnitsV763(ownedMaterialStoredQtyV763(row));
   const has=row.has===true || row.owned===true || row.checked===true;
-  return {sets,singles,qty:sets*64+singles,has};
+  return {...units,has};
+}
+function ownedMaterialWriteV763(name,totalQty,has){
+  if(!state.ownedMaterials||typeof state.ownedMaterials!=='object')state.ownedMaterials={};
+  const qty=Math.max(0,Math.floor(Number(totalQty)||0));
+  if(qty>0||has===true)state.ownedMaterials[name]={totalQty:qty,has:has===true};
+  else delete state.ownedMaterials[name];
+  return ownedMaterialUnitsV763(qty);
 }
 function hasOwnedMaterialFlagV745(name){
   const row=ownedMaterialRowV712(name);
@@ -5575,7 +5786,36 @@ function calcOwnedPurchaseV712(dish,info,totalSell){
 function ownedMaterialInputsHTMLV712(name){
   if(isStaminaDrinkNameV501(name))return '';
   const row=ownedMaterialRowV712(name);
-  return `<div class="material-owned-block-v712"><div class="material-owned-title-v712">보유 수량</div><div class="material-owned-row-v712"><label class="material-owned-control-v712"><span>세트</span><input data-owned-material-sets="${esc(name)}" type="number" min="0" step="1" value="${row.sets}"></label><label class="material-owned-control-v712"><span>낱개</span><input data-owned-material-singles="${esc(name)}" type="number" min="0" max="63" step="1" value="${row.singles}"></label></div></div>`;
+  return `<div class="material-owned-block-v712" data-owned-material-block-v763="${esc(name)}"><div class="material-owned-title-v712">보유 수량</div><div class="material-owned-row-v712"><label class="material-owned-control-v712"><span>큰 상자</span><input data-owned-material-large-v763="${esc(name)}" aria-label="${esc(name)} 큰 상자" type="number" step="1" value="${row.largeChests}"></label><label class="material-owned-control-v712"><span>작은 상자</span><input data-owned-material-small-v763="${esc(name)}" aria-label="${esc(name)} 작은 상자" type="number" step="1" value="${row.smallChests}"></label><label class="material-owned-control-v712"><span>세트</span><input data-owned-material-sets="${esc(name)}" aria-label="${esc(name)} 세트" type="number" step="1" value="${row.sets}"></label><label class="material-owned-control-v712"><span>낱개</span><input data-owned-material-singles="${esc(name)}" aria-label="${esc(name)} 낱개" type="number" step="1" value="${row.singles}"></label></div></div>`;
+}
+function ownedMaterialDraftV763(block){
+  const read=selector=>Math.trunc(num((block.querySelector(selector)||{}).value)||0);
+  const largeChests=read('[data-owned-material-large-v763]');
+  const smallChests=read('[data-owned-material-small-v763]');
+  const sets=read('[data-owned-material-sets]');
+  const singles=read('[data-owned-material-singles]');
+  const total=largeChests*OWNED_LARGE_CHEST_QTY_V763+smallChests*OWNED_SMALL_CHEST_QTY_V763+sets*OWNED_SET_QTY_V763+singles;
+  return {largeChests,smallChests,sets,singles,total};
+}
+function ownedMaterialFillBlockV763(block,units){
+  const pairs=[
+    ['[data-owned-material-large-v763]',units.largeChests],
+    ['[data-owned-material-small-v763]',units.smallChests],
+    ['[data-owned-material-sets]',units.sets],
+    ['[data-owned-material-singles]',units.singles]
+  ];
+  pairs.forEach(([selector,value])=>{const input=block.querySelector(selector);if(input)input.value=value;});
+}
+function ownedMaterialCommitBlockV763(block){
+  if(!block)return {changed:false,clamped:false};
+  const key=block.dataset.ownedMaterialBlockV763;
+  if(!key)return {changed:false,clamped:false};
+  const draft=ownedMaterialDraftV763(block);
+  const clamped=draft.total<0;
+  const current=ownedMaterialRowV712(key);
+  const units=ownedMaterialWriteV763(key,Math.max(0,draft.total),current.has);
+  ownedMaterialFillBlockV763(block,units);
+  return {changed:units.qty!==current.qty,clamped};
 }
 function ownedMaterialFlagHTMLV745(name){
   if(isStaminaDrinkNameV501(name))return '';
@@ -5585,14 +5825,8 @@ function ownedMaterialFlagHTMLV745(name){
 }
 
 function ownedMaterialSetHasV747(key,checked){
-  if(!state.ownedMaterials)state.ownedMaterials={};
-  const cur=state.ownedMaterials[key]||{sets:0,singles:0,has:false};
-  cur.sets=Math.max(0,Math.floor(num(cur.sets)||0));
-  cur.singles=Math.max(0,Math.min(63,Math.floor(num(cur.singles)||0)));
-  cur.has=!!checked;
-  delete cur.owned;
-  delete cur.checked;
-  if(cur.sets>0||cur.singles>0||cur.has===true)state.ownedMaterials[key]=cur; else delete state.ownedMaterials[key];
+  const row=ownedMaterialRowV712(key);
+  ownedMaterialWriteV763(key,row.qty,!!checked);
 }
 function ownedMaterialGroupItemsV747(items){
   return (items||[]).filter(n=>!isStaminaDrinkNameV501(n));
@@ -6250,8 +6484,9 @@ function priceGroupDefinitions(){
 function priceCardHTML(n, fixed=false){
  const value=fixed?DATA.fixedPrices[n]:(state.marketPrices[n]||'');
  const isDrink=isStaminaDrinkNameV501(n);
+ const ownedFlag=ownedMaterialFlagHTMLV745(n);
  if(fixed){
-  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span>${ownedMaterialFlagHTMLV745(n)}</h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div><div class="tiny price-unit-hint-v702" aria-hidden="true"></div><div class="tiny auto-price-hint-v701" aria-hidden="true"></div>${ownedMaterialInputsHTMLV712(n)}</div>`;
+  return `<div class="price-item price-fixed-v97" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">상점 구매 재료</div><div class="control"><label>개당 가격</label><div class="fixed-price-v97">${fmt(value)}</div></div><div class="tiny price-unit-hint-v702" aria-hidden="true"></div><div class="price-meta-row-v763"><div class="price-meta-left-v763"><div class="tiny price-meta-spacer-v763" aria-hidden="true"></div></div>${ownedFlag}</div>${ownedMaterialInputsHTMLV712(n)}</div>`;
  }
  const hint=isDrink?'0원/빈값이면 제외':'시세 입력';
  const placeholder=isDrink?'0원/빈값이면 제외':'비워두면 자동 환산';
@@ -6260,7 +6495,7 @@ function priceCardHTML(n, fixed=false){
  const drinkUnit=isDrink?`<div class="tiny stamina-drink-unit-v501" data-stamina-drink-unit="${esc(n)}"></div>`:'';
  const autoHint=`<div class="tiny auto-price-hint-v701" data-auto-price-hint-v701="${esc(n)}"></div>`;
  const unitHint=`<div class="tiny price-unit-hint-v702" data-price-unit-hint-v702="${esc(n)}"></div>`;
- return `<div class="price-item ${isDrink?'stamina-drink-price-v501':''}" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span>${ownedMaterialFlagHTMLV745(n)}</h4><div class="tiny">${hint}</div><div class="control"><label>가격</label><div class="price-unit-row-v702"><input data-price="${esc(n)}" type="number" step="0.1" placeholder="${placeholder}" value="${value}">${unitSelect}</div></div>${unitHint}${drinkUnit}${autoHint}${ownedMaterialInputsHTMLV712(n)}</div>`;
+ return `<div class="price-item ${isDrink?'stamina-drink-price-v501':''}" data-price-item="${esc(n)}"><h4 class="price-title-v52">${priceIcon(n)} <span class="price-name-v52">${priceDisplayName(n)}</span></h4><div class="tiny">${hint}</div><div class="control"><label>가격</label><div class="price-unit-row-v702"><input data-price="${esc(n)}" type="number" step="0.1" placeholder="${placeholder}" value="${value}">${unitSelect}</div></div>${unitHint}${drinkUnit}<div class="price-meta-row-v763"><div class="price-meta-left-v763">${autoHint}</div>${ownedFlag}</div>${ownedMaterialInputsHTMLV712(n)}</div>`;
 }
 function priceGroupCardHTML(g,index){
  const open=index<3?' open':'';
@@ -6296,16 +6531,23 @@ function renderPrices(){
   save();
   refreshPriceViews();
  }));
- document.querySelectorAll('[data-owned-material-sets],[data-owned-material-singles]').forEach(el=>el.addEventListener('input',e=>{
-  const key=e.target.dataset.ownedMaterialSets || e.target.dataset.ownedMaterialSingles;
-  if(!state.ownedMaterials)state.ownedMaterials={};
-  const cur=state.ownedMaterials[key]||{sets:0,singles:0,has:false};
-  if(e.target.dataset.ownedMaterialSets!=null)cur.sets=Math.max(0,Math.floor(num(e.target.value)||0));
-  if(e.target.dataset.ownedMaterialSingles!=null)cur.singles=Math.max(0,Math.min(63,Math.floor(num(e.target.value)||0)));
-  if((cur.sets||0)>0||(cur.singles||0)>0||cur.has===true)state.ownedMaterials[key]=cur; else delete state.ownedMaterials[key];
-  save();
-  refreshPriceViews();
- }));
+ document.querySelectorAll('[data-owned-material-block-v763]').forEach(block=>{
+  block.addEventListener('focusout',e=>{
+   if(e.relatedTarget&&block.contains(e.relatedTarget))return;
+   const result=ownedMaterialCommitBlockV763(block);
+   save();
+   if(result.changed)renderCards();
+   if(result.clamped)toast('총수량이 0 미만이라 0으로 정리됨');
+  });
+  block.querySelectorAll('input').forEach(input=>input.addEventListener('keydown',e=>{
+   if(e.key!=='Enter')return;
+   e.preventDefault();
+   const result=ownedMaterialCommitBlockV763(block);
+   save();
+   if(result.changed)renderCards();
+   if(result.clamped)toast('총수량이 0 미만이라 0으로 정리됨');
+  }));
+ });
  document.querySelectorAll('[data-owned-material-has]').forEach(el=>el.addEventListener('change',e=>{
   const key=e.target.dataset.ownedMaterialHas;
   ownedMaterialSetHasV747(key,!!e.target.checked);
