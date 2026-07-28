@@ -7712,20 +7712,26 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   const FARM_LEGACY_PENDING_KEY_V757='farmPlantSessionsV739';
   function pendingExpectedCropTotals(){
     const out={토마토:0,양파:0,마늘:0};
-    const seen=new Set();
-    function addRecords(records){
-      (Array.isArray(records)?records:[]).forEach(record=>{
+    const records=new Map();
+    let anonymousNo=0;
+    function stamp(record){
+      const values=[record&&record.completedAt,record&&record.harvestedAt,record&&record.updatedAt,record&&record.createdAt];
+      return values.reduce((max,v)=>{ const n=Date.parse(v||''); return Number.isFinite(n)?Math.max(max,n):max; },0);
+    }
+    function expectedTotal(record){ return CROPS.reduce((sum,c)=>sum+floorCount(record&&record.expectedHarvest&&record.expectedHarvest[c]),0); }
+    function addRecords(rows,source){
+      (Array.isArray(rows)?rows:[]).forEach(record=>{
         if(!record || record.status!=='pending') return;
-        const id=String(record.id||'');
-        if(id && seen.has(id)) return;
-        if(id) seen.add(id);
-        CROPS.forEach(c=>{ out[c]+=floorCount(record.expectedHarvest&&record.expectedHarvest[c]); });
+        const id=String(record.id||`${source}:anonymous:${anonymousNo++}`);
+        const prev=records.get(id);
+        if(!prev || expectedTotal(record)>expectedTotal(prev) || (expectedTotal(record)===expectedTotal(prev) && stamp(record)>stamp(prev))) records.set(id,record);
       });
     }
     const st=stateObj();
-    addRecords(st&&st[FARM_PENDING_KEY_V757]&&st[FARM_PENDING_KEY_V757].records);
-    try{ const saved=JSON.parse(localStorage.getItem(FARM_PENDING_KEY_V757)||'null'); addRecords(saved&&saved.records); }catch(e){}
-    try{ const legacy=JSON.parse(localStorage.getItem(FARM_LEGACY_PENDING_KEY_V757)||'null'); addRecords(legacy&&legacy.records); }catch(e){}
+    addRecords(st&&st[FARM_PENDING_KEY_V757]&&st[FARM_PENDING_KEY_V757].records,'state');
+    try{ const saved=JSON.parse(localStorage.getItem(FARM_PENDING_KEY_V757)||'null'); addRecords(saved&&saved.records,'local'); }catch(e){}
+    try{ const legacy=JSON.parse(localStorage.getItem(FARM_LEGACY_PENDING_KEY_V757)||'null'); addRecords(legacy&&legacy.records,'legacy'); }catch(e){}
+    records.forEach(record=>CROPS.forEach(c=>{ out[c]+=floorCount(record.expectedHarvest&&record.expectedHarvest[c]); }));
     return out;
   }
   window.farmPendingExpectedCropTotalsV757=pendingExpectedCropTotals;
@@ -7889,6 +7895,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const harvest=goodHarvestInfo();
     return bigExpected+harvest.chance*harvest.add;
   }
+  function expectedYieldMapV765(){
+    const out={토마토:0,양파:0,마늘:0};
+    CROPS.forEach(c=>{ const y=Number(expectedYieldPerSeed(c)); out[c]=Number.isFinite(y)&&y>0?y:0; });
+    return out;
+  }
+  window.farmExpectedYieldMapV765=expectedYieldMapV765;
   function rollInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
   function rollHarvestDetailed(crop,seeds){
     const rg=yieldRange(crop), giant=giantChance(), good=goodHarvestInfo(), seedBonus=bonusSeedInfo();
@@ -8176,8 +8188,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const totalSeeds={}; CROPS.forEach(c=>totalSeeds[c]=existingSeeds[c]+gathered[c]);
     const planted=allocatePlant(totalSeeds,need,ownedWithBaseBonus,plots);
     window.__farmLastPlantPlanV111={토마토:planted.토마토||0,양파:planted.양파||0,마늘:planted.마늘||0};
+    const expectedYieldMap=expectedYieldMapV765();
+    window.__farmExpectedYieldPerSeedV706=Object.assign({},expectedYieldMap);
 
-    const expectedHarvest={}; CROPS.forEach(c=>expectedHarvest[c]=floorCount(planted[c]*expectedYieldPerSeed(c)));
+    const expectedHarvest={}; CROPS.forEach(c=>expectedHarvest[c]=floorCount(planted[c]*expectedYieldMap[c]));
     const rollData={}; CROPS.forEach(c=>rollData[c]=isRoll?rollHarvestDetailed(c,planted[c]):{total:expectedHarvest[c],giantCount:0,goodCount:0,bonusSeed:0,bonusSeedCount:0});
     const actualHarvest={}; CROPS.forEach(c=>actualHarvest[c]=rollData[c].total);
     const harvestDisplay={}; CROPS.forEach(c=>harvestDisplay[c]=pendingExpected[c]+actualHarvest[c]);
@@ -8702,6 +8716,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const first = q('farmSeedTomatoLarge') || q('farmSeedTomatoSingle');
     if(first) first.dispatchEvent(new Event('focusin', {bubbles:true}));
 
+    const yieldMap = typeof window.farmExpectedYieldMapV765 === 'function'
+      ? window.farmExpectedYieldMapV765()
+      : Object.assign({}, window.__farmExpectedYieldPerSeedV706 || {});
     const changed = [];
     const planted = {토마토:0, 양파:0, 마늘:0};
     const shortSeeds = {토마토:0, 양파:0, 마늘:0};
@@ -8723,7 +8740,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     changed.forEach(el => el.dispatchEvent(new Event('input', {bubbles:true})));
     changed.forEach(el => el.dispatchEvent(new Event('change', {bubbles:true})));
 
-    const yieldMap = Object.assign({}, window.__farmExpectedYieldPerSeedV706 || {});
     const expectedHarvest = {토마토:0, 양파:0, 마늘:0};
     const lines = [];
     CROPS.forEach(crop => {
@@ -14328,14 +14344,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   function pendingStore(){
+    const bridge=window.farmPendingHarvestBridgeV740;
+    if(bridge && typeof bridge.readStore==='function') return bridge.readStore();
     const st=stateObj();
-    if(st){
-      if(!st[PENDING_KEY] || typeof st[PENDING_KEY] !== 'object') st[PENDING_KEY]={version:1,records:[]};
-      if(!Array.isArray(st[PENDING_KEY].records)) st[PENDING_KEY].records=[];
-      return st[PENDING_KEY];
-    }
-    try{ const obj=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); if(obj && Array.isArray(obj.records)) return obj; }catch(e){}
-    return {version:1,records:[]};
+    let stateStore=st&&st[PENDING_KEY]&&typeof st[PENDING_KEY]==='object'?st[PENDING_KEY]:null;
+    let localStore=null;
+    try{ const obj=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); if(obj&&Array.isArray(obj.records)) localStore=obj; }catch(e){}
+    const stateCount=stateStore&&Array.isArray(stateStore.records)?stateStore.records.length:0;
+    const localCount=localStore&&Array.isArray(localStore.records)?localStore.records.length:0;
+    const store=localCount>stateCount?localStore:(stateStore||localStore||{version:1,records:[]});
+    if(!Array.isArray(store.records)) store.records=[];
+    if(st) st[PENDING_KEY]=store;
+    return store;
   }
   function latestPending(){ const store=pendingStore(); const list=store.records.filter(r => r && r.status === 'pending'); list.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); return list[0] || null; }
   function shortSeedLine(obj){ return CROPS.filter(c => Number(obj&&obj[c])>0).map(c => `${c} ${fmt(obj[c])}`).join(' · ') || '없음'; }
@@ -15043,11 +15063,57 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(!store.version) store.version=740;
     return store;
   }
+  function recordStamp(record){
+    return [record&&record.completedAt,record&&record.harvestedAt,record&&record.updatedAt,record&&record.createdAt]
+      .reduce((max,v)=>Math.max(max,dateMs(v)),0);
+  }
+  function recordScore(record){
+    const status=String(record&&record.status||'');
+    const settled=(status==='completed'||status==='harvested')?100:0;
+    return settled + (totalOf(record&&record.expectedHarvest)>0?20:0) + (totalOf(record&&record.plantedSeeds)>0?10:0);
+  }
+  function mergePendingStores(a,b){
+    const left=normalizePending(clone(a));
+    const right=normalizePending(clone(b));
+    const records=new Map();
+    let anonymousNo=0;
+    [left,right].forEach((store,sourceIndex)=>(store.records||[]).forEach(record=>{
+      const id=String(record&&record.id||`anonymous:${sourceIndex}:${anonymousNo++}`);
+      const prev=records.get(id);
+      if(!prev || recordScore(record)>recordScore(prev) || (recordScore(record)===recordScore(prev)&&recordStamp(record)>recordStamp(prev))) records.set(id,record);
+    }));
+    const merged={
+      version:Math.max(Number(left.version)||0,Number(right.version)||0,740),
+      records:Array.from(records.values()).sort((x,y)=>recordStamp(y)-recordStamp(x)).slice(0,50)
+    };
+    const updated=[left.updatedAt,right.updatedAt].map(dateMs).reduce((max,v)=>Math.max(max,v),0);
+    if(updated>0) merged.updatedAt=new Date(updated).toISOString();
+    return merged;
+  }
+  function repairPendingRecordV765(record){
+    if(!record || record.status!=='pending' || totalOf(record.plantedSeeds)<=0 || totalOf(record.expectedHarvest)>0) return false;
+    const liveMap=typeof window.farmExpectedYieldMapV765==='function' ? window.farmExpectedYieldMapV765() : currentYieldMap(record.plantedSeeds);
+    const stored=record.yieldMap&&typeof record.yieldMap==='object'?record.yieldMap:{};
+    const yieldMap={};
+    CROPS.forEach(c=>{ const saved=Number(stored[c]); const live=Number(liveMap&&liveMap[c]); yieldMap[c]=Number.isFinite(saved)&&saved>0?saved:(Number.isFinite(live)&&live>0?live:0); });
+    const expected=expectedFrom(record.plantedSeeds,yieldMap);
+    if(totalOf(expected.expectedHarvest)<=0) return false;
+    record.yieldMap=clone(yieldMap);
+    record.expectedHarvest=expected.expectedHarvest;
+    if(totalOf(record.expectedBonusSeed)<=0) record.expectedBonusSeed=expected.expectedBonusSeed;
+    record.repairedAtV765=new Date().toISOString();
+    record.repairBasisV765=totalOf(stored)>0?'stored-yield':'current-settings';
+    return true;
+  }
   function readPendingStore(){
     const st=stateObj();
-    let store=st && st[PENDING_KEY] && typeof st[PENDING_KEY] === 'object' ? st[PENDING_KEY] : null;
-    if(!store){ try{ store=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); }catch(e){ store=null; } }
-    store=normalizePending(store);
+    const stateStore=st&&st[PENDING_KEY]&&typeof st[PENDING_KEY]==='object'?st[PENDING_KEY]:null;
+    let localStore=null;
+    try{ localStore=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); }catch(e){ localStore=null; }
+    const store=mergePendingStores(stateStore,localStore);
+    let repaired=false;
+    (store.records||[]).forEach(record=>{ repaired=repairPendingRecordV765(record)||repaired; });
+    if(repaired) store.updatedAt=new Date().toISOString();
     if(st) st[PENDING_KEY]=store;
     try{ localStorage.setItem(PENDING_KEY, JSON.stringify(store)); }catch(e){}
     return store;
@@ -15226,9 +15292,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function currentPlan(){ const src=window.__farmLastPlantPlanV111 || parseSummary('farmPlantSummary'); const out={토마토:0,양파:0,마늘:0}; CROPS.forEach(c=>out[c]=int(src&&src[c])); return out; }
   function currentYieldMap(plan){
     const out={토마토:0,양파:0,마늘:0};
+    const shared=typeof window.farmExpectedYieldMapV765==='function'?window.farmExpectedYieldMapV765():{};
     const src=window.__farmExpectedYieldPerSeedV706 || {};
     const expected=parseSummary('farmHarvestSummary');
-    CROPS.forEach(c=>{ let y=Number(src[c]); if(!Number.isFinite(y)||y<=0){ const p=int(plan&&plan[c]); y=p>0 ? int(expected[c])/p : 0; } out[c]=Number.isFinite(y)&&y>0 ? y : 0; });
+    CROPS.forEach(c=>{
+      let y=Number(shared&&shared[c]);
+      if(!Number.isFinite(y)||y<=0) y=Number(src[c]);
+      if(!Number.isFinite(y)||y<=0){ const p=int(plan&&plan[c]); y=p>0 ? int(expected[c])/p : 0; }
+      out[c]=Number.isFinite(y)&&y>0 ? y : 0;
+    });
     return out;
   }
   function seedBonus(){ const st=stateObj(); const lv=Math.max(0,Math.min(10,Math.floor(Number(byId('skillSeedBonus')?.value || (st&&st.settings&&st.settings.skillSeedBonus) || 0)))); return BONUS_SEED[lv] || BONUS_SEED[0]; }
