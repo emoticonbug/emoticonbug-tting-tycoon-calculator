@@ -11313,18 +11313,61 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     return {actions:arr, changed};
   }
-  function readRecentActions(){
+  function recentStateV766(){
     try{
-      const raw = localStorage.getItem(recentStorageKey());
-      const arr = raw ? JSON.parse(raw) : [];
-      const normalized = normalizeRecentActionsV732(arr);
-      if(normalized.changed) writeRecentActions(normalized.actions);
-      return normalized.actions;
-    }catch(e){ return []; }
+      const st=(typeof state!=='undefined')?state:(window.state||null);
+      return st&&typeof st==='object'?st:null;
+    }catch(e){ return window.state||null; }
+  }
+  function recentActionMergeV766(localActions,stateActions){
+    const rows=[];
+    const seen=new Set();
+    [...(Array.isArray(localActions)?localActions:[]), ...(Array.isArray(stateActions)?stateActions:[])].forEach((raw,idx)=>{
+      const action=raw&&typeof raw==='object'?raw:{type:'반영',lines:[String(raw||'')]};
+      if(!Array.isArray(action.lines)) action.lines=action.lines?[String(action.lines)]:[];
+      if(!action.id) action.id='ra-'+recentActionHashV732(action,idx);
+      if(seen.has(action.id)) return;
+      seen.add(action.id);
+      rows.push(action);
+    });
+    return rows.sort((a,b)=>Number(b&&b.time||0)-Number(a&&a.time||0)).slice(0,12);
+  }
+  function readRecentActions(){
+    let localActions=[];
+    try{
+      const raw=localStorage.getItem(recentStorageKey());
+      const parsed=raw?JSON.parse(raw):[];
+      localActions=Array.isArray(parsed)?parsed:[];
+    }catch(e){ console.error('recent action local read failed',e); }
+    const st=recentStateV766();
+    const stateActions=st&&Array.isArray(st.farmRecentActionsV116)?st.farmRecentActionsV116:[];
+    const merged=recentActionMergeV766(localActions,stateActions);
+    if(localActions.length!==merged.length || stateActions.length!==merged.length){
+      try{ writeRecentActions(merged); }catch(e){ console.error('recent action merge sync failed',e); }
+    }
+    return merged;
   }
   function writeRecentActions(actions){
-    try{ localStorage.setItem(recentStorageKey(), JSON.stringify(normalizeRecentActionsV732(actions || []).actions.slice(0, 12))); }catch(e){}
+    const normalized=normalizeRecentActionsV732(actions||[]).actions.slice(0,12);
+    let localOk=false, stateOk=false;
+    try{
+      localStorage.setItem(recentStorageKey(),JSON.stringify(normalized));
+      const verify=JSON.parse(localStorage.getItem(recentStorageKey())||'[]');
+      localOk=Array.isArray(verify) && verify.length===normalized.length && normalized.every((row,idx)=>verify[idx]&&verify[idx].id===row.id);
+    }catch(e){ console.error('recent action local write failed',e); }
+    try{
+      const st=recentStateV766();
+      if(st){
+        st.farmRecentActionsV116=normalized.map(row=>Object.assign({},row,{lines:[...(row.lines||[])]}));
+        stateOk=true;
+        if(!localOk && typeof save==='function') save(false);
+      }
+    }catch(e){ console.error('recent action state write failed',e); }
+    if(!localOk&&!stateOk) throw new Error('최근 반영 내역 저장 실패');
+    return normalized;
   }
+  window.farmReadRecentActionsV766=readRecentActions;
+  window.farmWriteRecentActionsV766=writeRecentActions;
   function formatRecentTime(ts){
     const d = new Date(ts || Date.now());
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -11404,10 +11447,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const next = Object.assign({time:Date.now(), lines:[]}, action || {});
     if(!next.id) next.id = `ra-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     if(!Array.isArray(next.lines)) next.lines = next.lines ? [String(next.lines)] : [];
-    const actions = readRecentActions();
+    const actions = readRecentActions().filter(row=>row&&row.id!==next.id);
     actions.unshift(next);
     writeRecentActions(actions);
-    renderRecentActions();
+    const verified=readRecentActions().some(row=>row&&row.id===next.id);
+    if(!verified) throw new Error('최근 반영 내역 검증 실패');
+    if(!byId('farmRecentActionsCardV116')) ensureRecentActionsCard();
+    else renderRecentActions();
     return next;
   }
   window.farmAddRecentActionV116 = addRecentAction;
@@ -12291,20 +12337,25 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(values[c].seed) historyLines.push(`${c} \uCC44\uC9D1 \uC528\uC557 +${numFmt(values[c].seed)}\uAC1C`);
       if(values[c].base) historyLines.push(`${c} \uBCA0\uC774\uC2A4 +${numFmt(values[c].base)}\uAC1C`);
     });
-    if(staminaToSubtract > 0) historyLines.push(`사용 체력 -${numFmt(staminaToSubtract)}`);
+    historyLines.push(staminaToSubtract > 0 ? `사용 체력 -${numFmt(staminaToSubtract)}` : '사용 체력 0');
     if(staminaInfoV620.extra > 0) historyLines.push(`추가 체력 +${numFmt(staminaInfoV620.extra)}`);
-    if(targetRemainingStaminaV620 !== currentStamina) historyLines.push(`남은 체력 ${numFmt(targetRemainingStaminaV620)}`);
+    historyLines.push(`남은 체력 ${numFmt(targetRemainingStaminaV620)}`);
 
     const noteParts = [];
     if(correctionRecordsV500.length) noteParts.push(`실측 기록 ${correctionRecordsV500.length}개 저장`);
     noteParts.push(staminaNoteV620);
+    let recentSavedV766=false;
     try{
-      if(typeof window.farmAddRecentActionV116 === 'function'){
-        window.farmAddRecentActionV116({type:'\uCC44\uC9D1 \uBC18\uC601', lines:historyLines, note:noteParts.join(' · ')});
-      }
-    }catch(e){}
-    const staminaText = staminaToSubtract > 0 ? ` · 사용 체력 ${numFmt(staminaToSubtract)} · 남은 체력 ${numFmt(targetRemainingStaminaV620)}` : ` · 남은 체력 ${numFmt(targetRemainingStaminaV620)}`;
-    setGatherStatus(`반영 완료: ${summary}${staminaText}`, 'ok');
+      if(typeof window.farmAddRecentActionV116 !== 'function') throw new Error('최근 반영 내역 기능을 찾지 못함');
+      const recentV766=window.farmAddRecentActionV116({type:'채집 반영', lines:historyLines, note:noteParts.join(' · ')});
+      recentSavedV766=!!(recentV766&&recentV766.id);
+      if(!recentSavedV766) throw new Error('최근 반영 내역 반환값 없음');
+    }catch(e){
+      console.error('gather recent action save failed',e);
+      try{ if(typeof toast==='function') toast('채집은 반영됐지만 내역 저장에 실패함'); }catch(ignore){}
+    }
+    const staminaText = staminaToSubtract > 0 ? ` · 사용 체력 ${numFmt(staminaToSubtract)} · 남은 체력 ${numFmt(targetRemainingStaminaV620)}` : ` · 사용 체력 0 · 남은 체력 ${numFmt(targetRemainingStaminaV620)}`;
+    setGatherStatus(`${recentSavedV766?'반영 완료':'주의: 내역 저장 실패'}: ${summary}${staminaText}`, recentSavedV766?'ok':'warn');
     gatherStatusHoldUntil = Date.now() + 8000;
     try{ if(typeof toast === 'function') toast('\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601\uB428'); }catch(e){}
   }
@@ -14564,8 +14615,14 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(st){ st.settings=st.settings||{}; st.settings.saleSets=sets; st.settings.saleSingles=remain; }
   }
 
-  function readRecentActions(){ try{ const arr=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
-  function writeRecentActions(actions){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify((actions||[]).slice(0,12))); }catch(e){} }
+  function readRecentActions(){
+    try{ if(typeof window.farmReadRecentActionsV766==='function') return window.farmReadRecentActionsV766(); }catch(e){ console.error('verified recent read failed',e); }
+    try{ const arr=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+  }
+  function writeRecentActions(actions){
+    try{ if(typeof window.farmWriteRecentActionsV766==='function'){ window.farmWriteRecentActionsV766(actions); return; } }catch(e){ console.error('verified recent write failed',e); }
+    try{ localStorage.setItem(RECENT_KEY, JSON.stringify((actions||[]).slice(0,12))); }catch(e){ console.error('recent fallback write failed',e); }
+  }
   function recentIds(){ return new Set(readRecentActions().map(a=>a&&a.id).filter(Boolean)); }
   function findRecent(id){ return readRecentActions().find(a=>a && a.id===id); }
   function markRecentCanceled(id, label){
@@ -14685,6 +14742,54 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforeHarvestPendingV740===afterHarvestPendingV740) return;
       pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforeHarvestPendingV740:cur.beforeHarvestPendingV740,afterHarvestPendingV740,summary:labelFromFields(cur.beforeFields, afterFields)});
     },350);
+  }
+
+  function recentLinesFromUndoV766(rec){
+    const before=rec&&rec.beforeFields||{}, after=rec&&rec.afterFields||{};
+    const lines=[];
+    CROPS.forEach(crop=>{
+      const sb=fieldTotalFromSnapshot(before,'seed',crop), sa=fieldTotalFromSnapshot(after,'seed',crop);
+      const cb=fieldTotalFromSnapshot(before,'crop',crop), ca=fieldTotalFromSnapshot(after,'crop',crop);
+      const bb=fieldTotalFromSnapshot(before,'base',crop), ba=fieldTotalFromSnapshot(after,'base',crop);
+      if(sa!==sb) lines.push(`${crop} 씨앗 ${sa>sb?'+':''}${fmt(sa-sb)}개`);
+      if(ca!==cb) lines.push(`${crop} 작물 ${ca>cb?'+':''}${fmt(ca-cb)}개`);
+      if(ba!==bb) lines.push(`${crop} 베이스 ${ba>bb?'+':''}${fmt(ba-bb)}개`);
+    });
+    const stamB=int(before.farmUseStamina), stamA=int(after.farmUseStamina);
+    if(stamA!==stamB) lines.push(`사용 체력 ${stamA-stamB>0?'+':''}${fmt(stamA-stamB)}`);
+    else if(String(rec&&rec.action||'').includes('채집')) lines.push('사용 체력 0');
+    const saleB=int(before.saleSets)*64+int(before.saleSingles), saleA=int(after.saleSets)*64+int(after.saleSingles);
+    if(saleA!==saleB) lines.push(`요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}개`);
+    return lines.length?lines:[rec&&rec.summary||'보유량 변화'];
+  }
+  function recoverOrphanUndoRecentActionsV766(){
+    const undo=readUndo();
+    if(!undo.length) return 0;
+    let actions=readRecentActions();
+    const existing=new Set(actions.map(a=>a&&a.id).filter(Boolean));
+    let recovered=0, undoChanged=false;
+    undo.forEach(rec=>{
+      if(!rec||rec.cancelled) return;
+      const originalRecentIds=Array.isArray(rec.recentIds)?rec.recentIds.filter(Boolean):[];
+      if(originalRecentIds.length) return;
+      const changed=diffFields(rec.beforeFields||{},rec.afterFields||{});
+      const hasSideEffects=(rec.correctionIds||[]).length||(rec.pendingCorrectionIds||[]).length||(rec.chestIds||[]).length||rec.beforeShelf!==rec.afterShelf||rec.beforeHarvestPendingV740!==rec.afterHarvestPendingV740;
+      if(!changed.length&&!hasSideEffects) return;
+      const id=`ra-recovered-${rec.id}`;
+      if(!existing.has(id)){
+        actions.push({id,time:Number(rec.time||Date.now()),type:rec.action||'반영',lines:recentLinesFromUndoV766(rec),note:'누락된 반영 내역 자동 복구'});
+        existing.add(id);
+        recovered++;
+      }
+      rec.recentIds=[id];
+      undoChanged=true;
+    });
+    if(recovered){
+      actions=actions.sort((a,b)=>Number(b&&b.time||0)-Number(a&&a.time||0)).slice(0,12);
+      writeRecentActions(actions);
+    }
+    if(undoChanged) writeUndo(undo);
+    return recovered;
   }
 
   function exactUndoForRecent(recentId){ return readUndo().find(r=>r && !r.cancelled && Array.isArray(r.recentIds) && r.recentIds.includes(recentId)); }
@@ -14946,7 +15051,14 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     `;
     document.head.appendChild(style);
   }
-  function boot(){ installStyle(); bindPendingButtons(); renderPendingManager(false); try{ if(typeof window.farmRenderRecentActionsV116==='function') window.farmRenderRecentActionsV116(); }catch(e){} }
+  function boot(){
+    installStyle();
+    bindPendingButtons();
+    const recoveredV766=recoverOrphanUndoRecentActionsV766();
+    renderPendingManager(false);
+    try{ if(typeof window.farmRenderRecentActionsV116==='function') window.farmRenderRecentActionsV116(); }catch(e){}
+    if(recoveredV766>0) toastSafe(`누락된 반영 내역 ${fmt(recoveredV766)}건 복구됨 · ↩ 버튼으로 취소 가능`);
+  }
   document.addEventListener('click', validateGatherBeforeClick, true);
   document.addEventListener('click', captureAction, true);
   window.addEventListener('load', boot);
@@ -15009,6 +15121,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
   function hashText(text){ let h=2166136261; const s=String(text||''); for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0).toString(36); }
   function readRecentActions(){
+    try{ if(typeof window.farmReadRecentActionsV766==='function') return window.farmReadRecentActionsV766(); }catch(e){ console.error('verified recent read failed',e); }
     try{
       const raw=localStorage.getItem(RECENT_KEY);
       const arr=raw?JSON.parse(raw):[];
@@ -15024,7 +15137,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }catch(e){ return []; }
   }
   function writeRecentActions(actions){
-    try{ localStorage.setItem(RECENT_KEY, JSON.stringify((Array.isArray(actions)?actions:[]).slice(0,12))); }catch(e){}
+    try{ if(typeof window.farmWriteRecentActionsV766==='function') window.farmWriteRecentActionsV766(actions); else localStorage.setItem(RECENT_KEY,JSON.stringify((Array.isArray(actions)?actions:[]).slice(0,12))); }catch(e){ console.error('recent action write failed',e); }
     try{ if(typeof window.farmRenderRecentActionsV116==='function') window.farmRenderRecentActionsV116(); }catch(e){}
   }
   function actionNumber(text){ const m=String(text||'').replace(/,/g,'').match(/([+-]?\d+)/); return m?Math.max(0,Math.trunc(Math.abs(Number(m[1])||0))):0; }
