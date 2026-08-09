@@ -13778,7 +13778,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   if(window.__farmShelfLifeSafeV710) return;
   window.__farmShelfLifeSafeV710 = true;
 
-  const VERSION = 759;
+  const VERSION = 760;
   const STORE_KEY = 'farmShelfLifeV710';
   const CROPS = ['토마토','양파','마늘'];
   const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
@@ -14023,7 +14023,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(recent.length) addRecent('유통기한 추적', recent, '새로 생성된 수량만 추적');
     saveQuiet();
   }
+  function farmInventoryRestoreReadyV760(){
+    try{
+      if(typeof window.farmPlanRestoreReadyV78 === 'function') return !!window.farmPlanRestoreReadyV78();
+    }catch(e){}
+    return true;
+  }
   function checkExpired(){
+    // 저장된 작물/베이스가 화면에 복구되기 전에 초기값 0으로 lot를 정리하지 않는다.
+    if(!farmInventoryRestoreReadyV760()) return;
     const store=ensureStore(); if(!store) return;
     compactLots();
 
@@ -14153,7 +14161,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   window.farmShelfLifeCheckV710 = checkExpired;
   window.addEventListener('load', boot);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkExpired(); });
-  setTimeout(boot,0);
 })();
 </script>
 
