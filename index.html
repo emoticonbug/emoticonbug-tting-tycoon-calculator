@@ -3148,6 +3148,37 @@ header .title h1.app-logo-title{
 }
 #seedplan .farm-harvest-crop-box-v113 .control{margin-bottom:8px}
 #seedplan .farm-harvest-crop-box-v113 .control:last-child{margin-bottom:0}
+#seedplan .farm-gather-gold-row-v907{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(120px,180px);
+  gap:10px;
+  align-items:end;
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid rgba(255,205,84,.28);
+  border-radius:14px;
+  background:linear-gradient(90deg,rgba(111,73,10,.18),#101823 58%);
+}
+#seedplan .farm-gather-gold-row-v907 h5{margin:0;align-self:center;font-size:14px;color:#ffe39a}
+#seedplan .farm-gather-gold-row-v907 .control{margin:0}
+#seedplan .farm-owned-gold-v907{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(92px,120px);
+  gap:8px;
+  align-items:end;
+  margin-top:8px;
+  padding:7px 8px;
+  border:1px solid rgba(255,205,84,.26);
+  border-radius:12px;
+  background:linear-gradient(90deg,rgba(111,73,10,.16),#101620 62%);
+}
+#seedplan .farm-owned-gold-v907 h4{margin:0!important;align-self:center;color:#ffe39a;font-size:13px!important}
+#seedplan .farm-owned-gold-v907 .control{margin:0}
+#seedplan .farm-owned-gold-v907 input{min-height:32px!important;padding:6px 8px!important}
+@media(max-width:900px){
+  #seedplan .farm-gather-gold-row-v907,#seedplan .farm-owned-gold-v907{grid-template-columns:1fr}
+}
 #seedplan .farm-inline-unit-row-v137{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -5390,6 +5421,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 </div>
 </div>
 </div>
+<div class="farm-owned-gold-v907"><h4>보유 금 가루</h4><div class="control"><label>개수</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div></div>
 </div><div class="farm-section farm-input-compact-v240 farm-step3-seeds-v250">
 <h3>보유 씨앗</h3>
 <div class="farm-owned-grid">
@@ -10358,7 +10390,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     'farmCropGarlicStack','farmCropGarlicSingle','farmBaseGarlicStack','farmBaseGarlicSingle',
     'farmSeedTomatoLarge','farmSeedTomatoSmall','farmSeedTomatoStack','farmSeedTomatoSingle',
     'farmSeedOnionLarge','farmSeedOnionSmall','farmSeedOnionStack','farmSeedOnionSingle',
-    'farmSeedGarlicLarge','farmSeedGarlicSmall','farmSeedGarlicStack','farmSeedGarlicSingle'
+    'farmSeedGarlicLarge','farmSeedGarlicSmall','farmSeedGarlicStack','farmSeedGarlicSingle',
+    'farmOwnedGoldPowderV907'
   ];
 
   function q(id){ return document.getElementById(id); }
@@ -11463,6 +11496,38 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }
   }
   function numFmt(v){ return Math.trunc(Number(v)||0).toLocaleString('ko-KR'); }
+  function ownedGoldPowderQtyV907(){
+    try{
+      return typeof ownedMaterialRowV712 === 'function' ? Math.max(0, Math.floor(Number(ownedMaterialRowV712('금 가루').qty)||0)) : 0;
+    }catch(e){ return 0; }
+  }
+  function writeOwnedGoldPowderV907(qty){
+    const value=Math.max(0,Math.floor(Number(qty)||0));
+    try{
+      if(typeof ownedMaterialWriteV763 === 'function'){
+        const current=typeof ownedMaterialRowV712 === 'function' ? ownedMaterialRowV712('금 가루') : {has:false};
+        ownedMaterialWriteV763('금 가루',value,!!current.has||value>0);
+      }
+    }catch(e){ console.error('gold powder owned write failed',e); }
+    const input=byId('farmOwnedGoldPowderV907');
+    if(input&&input.value!==String(value))input.value=String(value);
+    return value;
+  }
+  function bindOwnedGoldPowderV907(){
+    const input=byId('farmOwnedGoldPowderV907');
+    if(!input)return;
+    if(input.dataset.goldOwnedBoundV907!=='1'){
+      input.dataset.goldOwnedBoundV907='1';
+      const commit=()=>{
+        writeOwnedGoldPowderV907(readNum('farmOwnedGoldPowderV907'));
+        try{if(typeof save==='function')save(false);}catch(e){}
+      };
+      input.addEventListener('input',commit);
+      input.addEventListener('change',commit);
+    }
+    const saved=ownedGoldPowderQtyV907();
+    if(document.activeElement!==input&&input.value!==String(saved))input.value=String(saved);
+  }
 
   function sectionByTitle(title){
     return qa('#seedplan .farm-section').find(sec => clean(q('h3', sec)?.textContent) === title) || null;
@@ -11732,7 +11797,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     card.className = 'farm-harvest-input-card-v113';
     card.innerHTML = `
       <h4>\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601</h4>
-      <p class="farm-harvest-input-note-v113">\uC528\uC557\uC744 \uCC44\uC9D1\uD560 \uB54C \uBC18\uC601\uB418\uB294 \uCC44\uC9D1 \uC528\uC557\uACFC \uB4DC\uB86D \uBCA0\uC774\uC2A4\uB97C \uC785\uB825\uD569\uB2C8\uB2E4. \uC218\uD655 \uC791\uBB3C\uC740 \uC774\uACF3\uC5D0\uC11C \uB298\uB9AC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.</p>
+      <p class="farm-harvest-input-note-v113">\uC528\uC557\uC744 \uCC44\uC9D1\uD560 \uB54C \uBC18\uC601\uB418\uB294 \uCC44\uC9D1 \uC528\uC557, \uB4DC\uB86D \uBCA0\uC774\uC2A4, \uAE08 \uAC00\uB8E8\uB97C \uC785\uB825\uD569\uB2C8\uB2E4. \uC218\uD655 \uC791\uBB3C\uC740 \uC774\uACF3\uC5D0\uC11C \uB298\uB9AC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.</p>
       <div class="farm-inline-unit-row-v137 farm-gather-used-stamina-row-v510">
         <div class="control"><label>현재 남은 체력</label><input data-no-farm-save="1" id="farmGatherRemainStaminaV620" min="0" type="number" step="1" value="" placeholder="남은 체력"></div>
         <div class="control"><label>중간에 추가된 체력</label><input data-no-farm-save="1" id="farmGatherExtraStaminaV620" min="0" type="number" step="1" value="0"></div>
@@ -11753,6 +11818,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
             </div>
           </div>`).join('')}
       </div>
+      <div class="farm-gather-gold-row-v907"><h5>금 가루</h5><div class="control"><label>실제 획득 개수</label><input data-no-farm-save="1" id="farmGatherGoldPowderV907" min="0" type="number" step="1" value="0"></div></div>
       <div class="farm-harvest-actions-v113">
         <button class="btn" type="button" id="farmGatherReloadBtnV117">\uC608\uC0C1\uAC12 \uB2E4\uC2DC \uCC44\uC6B0\uAE30</button>
         <button class="btn primary" type="button" id="farmGatherApplyBtnV117">\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601</button>
@@ -12467,6 +12533,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return ctx;
   }
 
+  function gatherExpectedGoldPowderV907(){
+    const text=clean(byId('farmStaminaSummary')?.textContent||'');
+    const match=text.match(/금\s*가루\s*기대\s*([\d,.]+)/);
+    return match?Math.max(0,Math.floor(Number(match[1].replace(/,/g,''))||0)):0;
+  }
   function gatherDefaultsFromResult(){
     const data = tableData();
     const summarySeed = splitCardCropValues('farmSeedGatherCardV12');
@@ -12485,7 +12556,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       total += seedDefault + baseDefault;
       usedStamina += staminaDefault;
     });
-    return {values, total, stamina, usedStamina, source:'current'};
+    const goldPowder=gatherExpectedGoldPowderV907();
+    total+=goldPowder;
+    return {values, total, stamina, usedStamina, goldPowder, source:'current'};
   }
 
   function currentPlantHarvestSnapshot(){
@@ -12577,6 +12650,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       writeStackSingleInputs(`farmGatherSeed${p}`, seedDefault, force, 'userEditedV117');
       writeStackSingleInputs(`farmGatherBase${p}`, baseDefault, force, 'userEditedV117');
     });
+    const goldDefault=Math.max(0,Math.floor(Number(snapshot.goldPowder||0)));
+    totalDefault+=goldDefault;
+    const goldInput=byId('farmGatherGoldPowderV907');
+    if(goldInput&&(force||!goldInput.dataset.userEditedV117))goldInput.value=String(goldDefault);
     const staminaDefault = Math.max(0, Math.floor(Number(snapshot.usedStamina || 0)));
     writeGatherStaminaPlanV620(staminaDefault, force);
     const holdActive = Date.now() < gatherStatusHoldUntil;
@@ -12612,6 +12689,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         base: totalStackSingle(`farmGatherBase${p}`)
       };
     });
+    out.goldPowder=Math.max(0,readNum('farmGatherGoldPowderV907'));
     return out;
   }
   function harvestSignature(values){ return JSON.stringify(values || harvestInputValues()); }
@@ -12620,7 +12698,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return CROPS.reduce((sum,c) => sum + Math.abs(values[c].crop||0) + Math.abs(values[c].seed||0), 0);
   }
   function gatherTotal(values){
-    return CROPS.reduce((sum,c) => sum + Math.abs(values[c].seed||0) + Math.abs(values[c].base||0), 0);
+    return CROPS.reduce((sum,c) => sum + Math.abs(values[c].seed||0) + Math.abs(values[c].base||0), Math.abs(values.goldPowder||0));
   }
   function setHarvestStatus(text, mode){
     const el = byId('farmHarvestStatusV113');
@@ -12759,6 +12837,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function applyGatherResult(){
     const values = gatherInputValues();
     const total = gatherTotal(values);
+    const goldPowderAddedV907=Math.max(0,Math.floor(Number(values.goldPowder)||0));
     const remainingInputV721 = readGatherRemainStaminaV620();
     if(remainingInputV721 == null){
       setGatherStatus('현재 남은 체력을 입력해주세요.', 'warn');
@@ -12787,6 +12866,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       `사용 체력 ${numFmt(usedStaminaInput)}`,
       `남은 체력 ${numFmt(staminaInfoV620.remaining)}`,
       staminaInfoV620.extra > 0 ? `추가 체력 ${numFmt(staminaInfoV620.extra)}` : '',
+      goldPowderAddedV907 > 0 ? `금 가루 ${numFmt(goldPowderAddedV907)}개` : '',
       '이대로 반영할까?'
     ].filter(Boolean).join('\n');
     if(!confirm(confirmTextV720)){
@@ -12809,6 +12889,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       changed.push(...setSeedTotal(crop, totalSeed(crop) + values[crop].seed));
       changed.push(...setStackSingle(`farmBase${p}`, totalStackSingle(`farmBase${p}`) + values[crop].base));
     });
+    if(goldPowderAddedV907>0)writeOwnedGoldPowderV907(ownedGoldPowderQtyV907()+goldPowderAddedV907);
 
     const currentStamina = Math.max(0, readNum('farmUseStamina'));
     const targetRemainingStaminaV620 = Math.max(0, Math.floor(Number(staminaInfoV620.remaining || 0)));
@@ -12832,12 +12913,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     gatherAppliedLocked = true;
     const btn = byId('farmGatherApplyBtnV117');
     if(btn) btn.disabled = true;
-    const summary = CROPS.map(c => `${c} \uC528\uC557 +${numFmt(values[c].seed)} \u00B7 \uBCA0\uC774\uC2A4 +${numFmt(values[c].base)}`).join(' / ');
+    const summary = [CROPS.map(c => `${c} \uC528\uC557 +${numFmt(values[c].seed)} \u00B7 \uBCA0\uC774\uC2A4 +${numFmt(values[c].base)}`).join(' / '),goldPowderAddedV907>0?`금 가루 +${numFmt(goldPowderAddedV907)}`:''].filter(Boolean).join(' / ');
     const historyLines = [];
     CROPS.forEach(c => {
       if(values[c].seed) historyLines.push(`${c} \uCC44\uC9D1 \uC528\uC557 +${numFmt(values[c].seed)}\uAC1C`);
       if(values[c].base) historyLines.push(`${c} \uBCA0\uC774\uC2A4 +${numFmt(values[c].base)}\uAC1C`);
     });
+    if(goldPowderAddedV907>0)historyLines.push(`금 가루 +${numFmt(goldPowderAddedV907)}개`);
     historyLines.push(staminaToSubtract > 0 ? `사용 체력 -${numFmt(staminaToSubtract)}` : '사용 체력 0');
     if(staminaInfoV620.extra > 0) historyLines.push(`추가 체력 +${numFmt(staminaInfoV620.extra)}`);
     historyLines.push(`남은 체력 ${numFmt(targetRemainingStaminaV620)}`);
@@ -12886,6 +12968,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     ensureGatherCard();
     ensureRecentActionsCard();
     moveCardsIntoGroups();
+    bindOwnedGoldPowderV907();
     markUserEditedBinding();
     capturePlantHarvestSnapshot();
     if(options.forceFill){
