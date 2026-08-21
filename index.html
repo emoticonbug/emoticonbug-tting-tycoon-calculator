@@ -3150,7 +3150,7 @@ header .title h1.app-logo-title{
 #seedplan .farm-harvest-crop-box-v113 .control:last-child{margin-bottom:0}
 #seedplan .farm-gather-gold-row-v907{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(120px,180px);
+  grid-template-columns:minmax(0,1fr) minmax(52px,32%);
   gap:10px;
   align-items:end;
   margin-top:10px;
@@ -3160,11 +3160,14 @@ header .title h1.app-logo-title{
   background:linear-gradient(90deg,rgba(111,73,10,.18),#101823 58%);
 }
 #seedplan .farm-gather-gold-row-v907 h5{margin:0;align-self:center;font-size:14px;color:#ffe39a}
-#seedplan .farm-gather-gold-row-v907 .control{margin:0}
+#seedplan .farm-gather-gold-label-v908{display:flex;flex-direction:column;gap:3px;min-width:0;align-self:center}
+#seedplan .farm-gather-gold-expected-v908{color:var(--muted);font-size:11px;font-weight:800;line-height:1.3;white-space:normal;word-break:keep-all}
+#seedplan .farm-gather-gold-row-v907 .control{width:100%;max-width:120px;min-width:0;margin:0;justify-self:end}
+#seedplan .farm-gather-gold-row-v907 input{width:100%;min-width:0}
 #seedplan .farm-owned-gold-v907{
   flex:0 0 auto;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(92px,120px);
+  grid-template-columns:minmax(0,1fr) minmax(52px,32%);
   gap:8px;
   align-items:end;
   margin-top:8px;
@@ -3174,7 +3177,7 @@ header .title h1.app-logo-title{
   background:linear-gradient(90deg,rgba(111,73,10,.16),#101620 62%);
 }
 #seedplan .farm-owned-gold-v907 h4{margin:0!important;align-self:center;color:#ffe39a;font-size:13px!important}
-#seedplan .farm-owned-gold-v907 .control{margin:0}
+#seedplan .farm-owned-gold-v907 .control{width:100%;max-width:120px;min-width:0;margin:0;justify-self:end}
 #seedplan .farm-owned-gold-v907 input{min-height:32px!important;padding:6px 8px!important}
 @media(max-width:900px){
   #seedplan .farm-gather-gold-row-v907,#seedplan .farm-owned-gold-v907{grid-template-columns:1fr}
@@ -5384,7 +5387,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <div><span>공유 보정 갱신</span><b id="farmCorrectionSharedFetchedFarmV545">아직 없음</b></div>
 </div>
 <div class="farm-correction-privacy-v520">
-<div><b>공유됨</b><span>작물 종류 · 채집/수확 결과 · 공식 예상값 · 보정률 · 설정 상태 · 익명 ID</span></div>
+<div><b>공유됨</b><span>작물 종류 · 채집/수확 결과 · 금 가루 실측 · 괭이/각인 설정 · 공식 예상값 · 보정률 · 익명 ID</span></div>
 <div><b>공유 안 됨</b><span>닉네임 · 이메일 · 구글 계정 · IP · 개인 메모 · 전체 저장 데이터</span></div>
 </div>
 <div class="row farm-correction-share-row-v520"><button class="btn primary" id="farmCorrectionShareBtnFarmV520" type="button">실측 데이터 공유</button><button class="btn" id="farmCorrectionFetchSharedBtnFarmV545" type="button">공유 보정 새로고침</button><button class="btn danger" id="farmCorrectionClearPendingBtnFarmV720" type="button">공유 대기 관리</button></div>
@@ -5646,7 +5649,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <button class="btn" id="farmCorrectionFetchSharedBtnV545" type="button">공유 보정 새로고침</button>
 <button class="btn danger" id="farmCorrectionClearPendingBtnV720" type="button">공유 대기 관리</button>
 </div>
-<div class="notice farm-correction-share-status-v500" id="farmCorrectionShareStatusV500">개인 보정 데이터는 이 브라우저에 저장됨. 공유 시 익명 ID와 실측 통계만 전송됨.</div>
+<div class="notice farm-correction-share-status-v500" id="farmCorrectionShareStatusV500">개인 보정 데이터는 이 브라우저에 저장됨. 공유 시 익명 ID와 실측 통계·금 가루 기록만 전송됨.</div>
 <div class="farm-correction-shared-status-v545" id="farmCorrectionSharedStatusV545">공유 보정은 새로고침하거나 사이트를 열 때 불러옵니다.</div>
 </div></div>
 <div class="panel danger-zone-v20"><div class="inner">
@@ -5751,7 +5754,7 @@ const GOLDEN_DISH_PRICE_RANGES_V900={
 DATA.goldenDishPriceRanges=GOLDEN_DISH_PRICE_RANGES_V900;
 DATA.processed['버터 조각']={outputQty:1,ingredients:[{name:'요리용 우유',qty:8},{name:'오일',qty:6}]};
 const LS='ddingCookingCalcV01';
-const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
+const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,goldRecords:[],shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
 const HARD_DIRECT_ITEMS=[];
 const FIXED_SHOP_ITEMS=Object.keys(DATA.fixedPrices);
 const FARM_RAW_ITEMS=new Set(['토마토','양파','마늘','당근','감자','비트','호박','수박','달콤한 열매','사탕수수','밀','파인애플','코코넛']);
@@ -7733,6 +7736,7 @@ function dataEnsureFarmCorrection(){
   if(!Array.isArray(fc.recent)) fc.recent=[];
   if(!fc.pendingStats || typeof fc.pendingStats!=='object') fc.pendingStats={};
   if(!Array.isArray(fc.pendingRecent)) fc.pendingRecent=[];
+  if(!Array.isArray(fc.goldRecords)) fc.goldRecords=[];
   if(!Number.isFinite(Number(fc.pendingCount))) fc.pendingCount=0;
   if(!fc.shareMeta || typeof fc.shareMeta!=='object') fc.shareMeta={lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0};
   if(!fc.sharedStats || typeof fc.sharedStats!=='object') fc.sharedStats={};
@@ -7762,6 +7766,73 @@ function dataFarmCorrectionPendingCount(){
   const count=Object.values(pendingStats).reduce((sum,item)=>sum+Number(item&&item.count||0),0);
   fc.pendingCount=count;
   return count;
+}
+function dataGoldPendingRecordsV909(){
+  const fc=dataEnsureFarmCorrection();
+  return fc.goldRecords.filter(record=>record && !record.shareRequestedAt);
+}
+function dataGoldPendingCountV909(){ return dataGoldPendingRecordsV909().length; }
+function dataGoldEngravingNameV909(level){ return ['none','I','II','III','IV'][Math.max(0,Math.min(4,Math.floor(Number(level)||0)))] || 'none'; }
+function dataGoldEngravingMinHoeV909(engraving){ return ({none:1,I:7,II:9,III:11,IV:13})[engraving] || 1; }
+window.farmGoldPowderQueueRecordV909=function(input){
+  const row=input && typeof input==='object' ? input : {};
+  const hoeLevel=Math.floor(Number(row.hoeLevel)||0);
+  const engraving=dataGoldEngravingNameV909(row.engraving);
+  const usedStamina=Math.floor(Number(row.usedStamina)||0);
+  const actualGold=Math.max(0,Math.floor(Number(row.actualGold)||0));
+  if(hoeLevel<1 || hoeLevel>15) return {ok:false,reason:'세이지 괭이 1강 이상에서만 금 가루 실측을 공유할 수 있음'};
+  if(hoeLevel<dataGoldEngravingMinHoeV909(engraving)) return {ok:false,reason:`현재 괭이 강화로 금 가루 탐색 ${engraving} 각인을 사용할 수 없음`};
+  if(usedStamina<1 || usedStamina%5!==0) return {ok:false,reason:'금 가루 실측 공유는 사용 체력이 5의 배수일 때만 가능'};
+  const fc=dataEnsureFarmCorrection();
+  const now=new Date().toISOString();
+  const record={
+    id:`gold-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    hoeLevel,
+    engraving,
+    usedStamina,
+    actualGold,
+    note:String(row.note||'').slice(0,500),
+    createdAt:now,
+    shareRequestedAt:''
+  };
+  fc.goldRecords.unshift(record);
+  fc.goldRecords=fc.goldRecords.slice(0,200);
+  fc.updatedAt=now;
+  return {ok:true,record};
+};
+function dataGoldSharePayloadV909(record){
+  const fc=dataEnsureFarmCorrection();
+  return {
+    version:1,
+    source:'ddingho-gold-powder-record',
+    anonymousId:fc.anonymousId,
+    sentAt:new Date().toISOString(),
+    gold:{
+      hoeLevel:record.hoeLevel,
+      engraving:record.engraving,
+      usedStamina:record.usedStamina,
+      actualGold:record.actualGold,
+      note:record.note||''
+    }
+  };
+}
+async function dataShareGoldPendingV909(){
+  const fc=dataEnsureFarmCorrection();
+  const pending=dataGoldPendingRecordsV909();
+  let sent=0;
+  for(const record of pending){
+    await fetch(FARM_CORRECTION_SHARE_URL_V500, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(dataGoldSharePayloadV909(record))
+    });
+    record.shareRequestedAt=new Date().toISOString();
+    sent+=1;
+    try{save(false)}catch(e){}
+  }
+  fc.updatedAt=new Date().toISOString();
+  return {sent,total:pending.length};
 }
 function dataFarmCorrectionEscapeV520(text){
   return String(text == null ? '' : text).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -7806,6 +7877,7 @@ function dataRenderFarmCorrectionStatus(){
   const totalCount=dataFarmCorrectionTotalCount();
   const pendingCount=dataFarmCorrectionPendingCount();
   const chestPendingCount = (typeof window.farmIslandChestPendingCountV690 === 'function') ? window.farmIslandChestPendingCountV690() : 0;
+  const goldPendingCount=dataGoldPendingCountV909();
   const lastShare = fc.shareMeta&&fc.shareMeta.lastSharedAt ? dataDateText(fc.shareMeta.lastSharedAt) : '아직 없음';
   const sharedStats = fc.sharedStats && typeof fc.sharedStats==='object' ? fc.sharedStats : {};
   const sharedStatsCount = Object.keys(sharedStats).length;
@@ -7814,9 +7886,10 @@ function dataRenderFarmCorrectionStatus(){
   const statsText = `${statsCount.toLocaleString('ko-KR')}개`;
   const recentText = `${recentCount.toLocaleString('ko-KR')}개 / 200개`;
   const totalText = `${totalCount.toLocaleString('ko-KR')}회`;
-  const pendingText = chestPendingCount
-    ? `${pendingCount.toLocaleString('ko-KR')}회 · 상자 ${chestPendingCount.toLocaleString('ko-KR')}건`
-    : `${pendingCount.toLocaleString('ko-KR')}회`;
+  const pendingParts=[`${pendingCount.toLocaleString('ko-KR')}회`];
+  if(chestPendingCount) pendingParts.push(`상자 ${chestPendingCount.toLocaleString('ko-KR')}건`);
+  if(goldPendingCount) pendingParts.push(`금 가루 ${goldPendingCount.toLocaleString('ko-KR')}건`);
+  const pendingText=pendingParts.join(' · ');
   const sharedText = sharedStatsCount ? `${sharedTotalCount.toLocaleString('ko-KR')}회` : '불러오기 전';
   set('farmCorrectionStatsCountV500', statsText);
   set('farmCorrectionRecentCountV500', recentText);
@@ -7832,8 +7905,10 @@ function dataRenderFarmCorrectionStatus(){
   set('farmCorrectionLastShareFarmV520', lastShare);
   set('farmCorrectionSharedCountFarmV545', sharedText);
   set('farmCorrectionSharedFetchedFarmV545', sharedFetched);
-  const chestSummary = chestPendingCount ? ` · 상자 대기 ${chestPendingCount.toLocaleString('ko-KR')}건` : '';
-  set('farmCorrectionSummaryMetaV520', `개인 ${totalCount.toLocaleString('ko-KR')}회 · 공유 ${sharedTotalCount.toLocaleString('ko-KR')}회 · 대기 ${pendingCount.toLocaleString('ko-KR')}회${chestSummary}`);
+  const pendingSummary=[`대기 ${pendingCount.toLocaleString('ko-KR')}회`];
+  if(chestPendingCount) pendingSummary.push(`상자 ${chestPendingCount.toLocaleString('ko-KR')}건`);
+  if(goldPendingCount) pendingSummary.push(`금 가루 ${goldPendingCount.toLocaleString('ko-KR')}건`);
+  set('farmCorrectionSummaryMetaV520', `개인 ${totalCount.toLocaleString('ko-KR')}회 · 공유 ${sharedTotalCount.toLocaleString('ko-KR')}회 · ${pendingSummary.join(' · ')}`);
   setHtml('farmCorrectionGatherSummaryV520', dataFarmCorrectionMiniHtmlV520('gather'));
   setHtml('farmCorrectionHarvestSummaryV520', dataFarmCorrectionMiniHtmlV520('harvest'));
 }
@@ -7876,7 +7951,8 @@ async function dataShareFarmCorrection(){
   const pendingCount=Number(payload.pendingCount||0);
   const hasCorrectionPending = !!(statsCount || recentCount || pendingCount);
   const chestPendingCount = (typeof window.farmIslandChestPendingCountV690 === 'function') ? window.farmIslandChestPendingCountV690() : 0;
-  if(!hasCorrectionPending && !chestPendingCount){
+  const goldPendingCount=dataGoldPendingCountV909();
+  if(!hasCorrectionPending && !chestPendingCount && !goldPendingCount){
     setStatus('공유할 새 데이터 없음. 새로 반영/기록 후 다시 공유 가능.', 'warn');
     dataAddCorrectionShareRecentLogV533('데이터 공유', ['공유할 새 데이터 없음', '이미 전송된 기록은 다시 보내지 않음'], '새로 반영/기록하면 공유 대기 기록이 생김');
     try{toast('공유할 새 데이터 없음')}catch(e){}
@@ -7885,13 +7961,14 @@ async function dataShareFarmCorrection(){
   const confirmLines = [
     '새로 쌓인 공유 대기 데이터만 구글 시트로 공유할까?',
     `실측 ${pendingCount.toLocaleString('ko-KR')}회 · 조건 ${statsCount.toLocaleString('ko-KR')}개 · 최근 원본 ${recentCount.toLocaleString('ko-KR')}개`,
-    `상자 기록 ${chestPendingCount.toLocaleString('ko-KR')}건`
+    `상자 기록 ${chestPendingCount.toLocaleString('ko-KR')}건 · 금 가루 기록 ${goldPendingCount.toLocaleString('ko-KR')}건`
   ];
   if(!confirm(confirmLines.join('\n'))) return;
   buttons.forEach(btn=>{btn.disabled=true;});
   setStatus('새 공유 대기 데이터를 구글 시트로 전송 중...', 'warn');
   let correctionSent = 0;
   let chestSent = 0;
+  let goldSent = 0;
   try{
     if(hasCorrectionPending){
       await fetch(FARM_CORRECTION_SHARE_URL_V500, {
@@ -7909,16 +7986,22 @@ async function dataShareFarmCorrection(){
       fc.pendingRecent=[];
       fc.pendingCount=0;
       correctionSent = pendingCount;
+      try{save(false)}catch(e){}
     }
     if(chestPendingCount && typeof window.farmIslandChestSharePendingV690 === 'function'){
       const result = await window.farmIslandChestSharePendingV690();
       chestSent = Number(result && result.sent || 0);
+    }
+    if(goldPendingCount){
+      const result=await dataShareGoldPendingV909();
+      goldSent=Number(result&&result.sent||0);
     }
     try{save(false)}catch(e){}
     dataRenderFarmCorrectionStatus();
     const statusParts = [];
     if(hasCorrectionPending) statusParts.push(`실측 ${correctionSent.toLocaleString('ko-KR')}회`);
     if(chestPendingCount) statusParts.push(`상자 ${chestSent.toLocaleString('ko-KR')}건`);
+    if(goldPendingCount) statusParts.push(`금 가루 ${goldSent.toLocaleString('ko-KR')}건`);
     setStatus(`전송 요청 완료 · ${statusParts.join(' · ')} 공유 · 대기 목록 비움`, 'ok');
     const logLines = [];
     if(hasCorrectionPending){
@@ -7926,16 +8009,22 @@ async function dataShareFarmCorrection(){
       logLines.push(`조건 ${statsCount.toLocaleString('ko-KR')}개 · 최근 원본 ${recentCount.toLocaleString('ko-KR')}개`);
     }
     if(chestPendingCount) logLines.push(`상자 기록 ${chestSent.toLocaleString('ko-KR')}건 전송 요청`);
+    if(goldPendingCount) logLines.push(`금 가루 기록 ${goldSent.toLocaleString('ko-KR')}건 전송 요청`);
     logLines.push('공유 대기 0으로 정리');
     dataAddCorrectionShareRecentLogV533('데이터 공유 완료', logLines, '구글 시트 전송 요청 완료');
     try{toast('공유 대기 데이터 전송 요청 완료')}catch(e){}
   }catch(err){
     console.error(err);
-    setStatus('공유 실패 · 새 데이터는 대기 목록에 유지됨', 'bad');
+    setStatus('공유 실패 · 전송되지 않은 데이터는 대기 목록에 유지됨', 'bad');
+    const correctionRemaining=dataFarmCorrectionPendingCount();
+    const chestRemaining=(typeof window.farmIslandChestPendingCountV690==='function')?window.farmIslandChestPendingCountV690():0;
+    const goldRemaining=dataGoldPendingCountV909();
     dataAddCorrectionShareRecentLogV533('데이터 공유 실패', [
       '구글 시트 전송 실패',
-      `실측 ${pendingCount.toLocaleString('ko-KR')}회 · 상자 ${chestPendingCount.toLocaleString('ko-KR')}건은 공유 대기에 유지됨`
+      `남은 공유 대기 · 실측 ${correctionRemaining.toLocaleString('ko-KR')}회 · 상자 ${chestRemaining.toLocaleString('ko-KR')}건 · 금 가루 ${goldRemaining.toLocaleString('ko-KR')}건`
     ], '인터넷 연결 또는 수신 주소를 확인');
+    try{save(false)}catch(e){}
+    dataRenderFarmCorrectionStatus();
     try{toast('데이터 공유 실패')}catch(e){}
   }finally{
     buttons.forEach(btn=>{btn.disabled=false;});
@@ -11818,7 +11907,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
             </div>
           </div>`).join('')}
       </div>
-      <div class="farm-gather-gold-row-v907"><h5>금 가루</h5><div class="control"><label>실제 획득 개수</label><input data-no-farm-save="1" id="farmGatherGoldPowderV907" min="0" type="number" step="1" value="0"></div></div>
+      <div class="farm-gather-gold-row-v907"><div class="farm-gather-gold-label-v908"><h5>금 가루</h5><span class="farm-gather-gold-expected-v908" id="farmGatherGoldExpectedV908">예상 채집 수 0개</span></div><div class="control"><label>실제 획득 개수</label><input data-no-farm-save="1" id="farmGatherGoldPowderV907" min="0" type="number" step="1" value="0"></div></div>
       <div class="farm-harvest-actions-v113">
         <button class="btn" type="button" id="farmGatherReloadBtnV117">\uC608\uC0C1\uAC12 \uB2E4\uC2DC \uCC44\uC6B0\uAE30</button>
         <button class="btn primary" type="button" id="farmGatherApplyBtnV117">\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601</button>
@@ -12533,10 +12622,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return ctx;
   }
 
-  function gatherExpectedGoldPowderV907(){
+  function gatherExpectedGoldPowderRawV908(){
     const text=clean(byId('farmStaminaSummary')?.textContent||'');
     const match=text.match(/금\s*가루\s*기대\s*([\d,.]+)/);
-    return match?Math.max(0,Math.floor(Number(match[1].replace(/,/g,''))||0)):0;
+    return match?Math.max(0,Number(match[1].replace(/,/g,''))||0):0;
   }
   function gatherDefaultsFromResult(){
     const data = tableData();
@@ -12556,9 +12645,10 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       total += seedDefault + baseDefault;
       usedStamina += staminaDefault;
     });
-    const goldPowder=gatherExpectedGoldPowderV907();
+    const goldPowderExpected=gatherExpectedGoldPowderRawV908();
+    const goldPowder=Math.floor(goldPowderExpected);
     total+=goldPowder;
-    return {values, total, stamina, usedStamina, goldPowder, source:'current'};
+    return {values, total, stamina, usedStamina, goldPowder, goldPowderExpected, source:'current'};
   }
 
   function currentPlantHarvestSnapshot(){
@@ -12652,6 +12742,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     const goldDefault=Math.max(0,Math.floor(Number(snapshot.goldPowder||0)));
     totalDefault+=goldDefault;
+    const goldExpected=Math.max(0,Number(snapshot.goldPowderExpected??gatherExpectedGoldPowderRawV908())||0);
+    const goldExpectedEl=byId('farmGatherGoldExpectedV908');
+    if(goldExpectedEl)goldExpectedEl.textContent=`예상 채집 수 ${goldExpected.toLocaleString('ko-KR',{maximumFractionDigits:2})}개`;
     const goldInput=byId('farmGatherGoldPowderV907');
     if(goldInput&&(force||!goldInput.dataset.userEditedV117))goldInput.value=String(goldDefault);
     const staminaDefault = Math.max(0, Math.floor(Number(snapshot.usedStamina || 0)));
@@ -12846,6 +12939,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }
     const staminaInfoV620 = updateGatherUsedStaminaComputedV620();
     const usedStaminaInput = Math.max(0, Math.floor(Number(staminaInfoV620.used || 0)));
+    const goldHoeLevelV909=Math.max(0,Math.floor(Number(byId('sageHoe')?.value ?? state?.settings?.sageHoe)||0));
+    const goldEngravingLevelV909=Math.max(0,Math.floor(Number(byId('sageEngraveGoldPowder')?.value ?? state?.settings?.sageEngraveGoldPowder)||0));
+    const goldRecordWantedV909=(goldHoeLevelV909>=1&&usedStaminaInput>0)||goldPowderAddedV907>0;
     const sig = gatherSignature(values);
     if(!staminaInfoV620.valid){
       setGatherStatus('현재 남은 체력이 계산 가능한 체력보다 큽니다. 체력 증가/회복량을 확인해주세요.', 'warn');
@@ -12866,7 +12962,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       `사용 체력 ${numFmt(usedStaminaInput)}`,
       `남은 체력 ${numFmt(staminaInfoV620.remaining)}`,
       staminaInfoV620.extra > 0 ? `추가 체력 ${numFmt(staminaInfoV620.extra)}` : '',
-      goldPowderAddedV907 > 0 ? `금 가루 ${numFmt(goldPowderAddedV907)}개` : '',
+      goldRecordWantedV909 || goldPowderAddedV907 > 0 ? `금 가루 ${numFmt(goldPowderAddedV907)}개` : '',
       '이대로 반영할까?'
     ].filter(Boolean).join('\n');
     if(!confirm(confirmTextV720)){
@@ -12900,6 +12996,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
     dispatchEdited(changed);
     const correctionRecordsV500 = total > 0 ? correctionRecordBatchV500('gather', correctionExpectedValuesV500 || {}, values, correctionDetailContextV560) : [];
+    const goldQueueV909=goldRecordWantedV909&&typeof window.farmGoldPowderQueueRecordV909==='function'
+      ? window.farmGoldPowderQueueRecordV909({
+          hoeLevel:goldHoeLevelV909,
+          engraving:goldEngravingLevelV909,
+          usedStamina:usedStaminaInput,
+          actualGold:goldPowderAddedV907,
+          note:staminaNoteV620
+        })
+      : {ok:false,reason:''};
     try{ if(typeof dataRenderFarmCorrectionStatus === 'function') dataRenderFarmCorrectionStatus(); }catch(e){}
 
     try{
@@ -12919,13 +13024,15 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(values[c].seed) historyLines.push(`${c} \uCC44\uC9D1 \uC528\uC557 +${numFmt(values[c].seed)}\uAC1C`);
       if(values[c].base) historyLines.push(`${c} \uBCA0\uC774\uC2A4 +${numFmt(values[c].base)}\uAC1C`);
     });
-    if(goldPowderAddedV907>0)historyLines.push(`금 가루 +${numFmt(goldPowderAddedV907)}개`);
+    if(goldRecordWantedV909||goldPowderAddedV907>0)historyLines.push(`금 가루 +${numFmt(goldPowderAddedV907)}개`);
     historyLines.push(staminaToSubtract > 0 ? `사용 체력 -${numFmt(staminaToSubtract)}` : '사용 체력 0');
     if(staminaInfoV620.extra > 0) historyLines.push(`추가 체력 +${numFmt(staminaInfoV620.extra)}`);
     historyLines.push(`남은 체력 ${numFmt(targetRemainingStaminaV620)}`);
 
     const noteParts = [];
     if(correctionRecordsV500.length) noteParts.push(`실측 기록 ${correctionRecordsV500.length}개 저장`);
+    if(goldQueueV909.ok) noteParts.push('금 가루 실측 공유 대기 1건');
+    else if(goldRecordWantedV909&&goldQueueV909.reason) noteParts.push(`금 가루 공유 제외 · ${goldQueueV909.reason}`);
     noteParts.push(staminaNoteV620);
     let recentSavedV766=false;
     try{
@@ -12938,7 +13045,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       try{ if(typeof toast==='function') toast('채집은 반영됐지만 내역 저장에 실패함'); }catch(ignore){}
     }
     const staminaText = staminaToSubtract > 0 ? ` · 사용 체력 ${numFmt(staminaToSubtract)} · 남은 체력 ${numFmt(targetRemainingStaminaV620)}` : ` · 사용 체력 0 · 남은 체력 ${numFmt(targetRemainingStaminaV620)}`;
-    setGatherStatus(`${recentSavedV766?'반영 완료':'주의: 내역 저장 실패'}: ${summary}${staminaText}`, recentSavedV766?'ok':'warn');
+    const gatherStatusOkV909=recentSavedV766&&(!goldRecordWantedV909||goldQueueV909.ok);
+    const goldStatusV909=goldRecordWantedV909&&!goldQueueV909.ok&&goldQueueV909.reason?` · ${goldQueueV909.reason}`:'';
+    setGatherStatus(`${gatherStatusOkV909?'반영 완료':'주의'}: ${summary}${staminaText}${goldStatusV909}`, gatherStatusOkV909?'ok':'warn');
     gatherStatusHoldUntil = Date.now() + 8000;
     try{ if(typeof toast === 'function') toast('\uC2E4\uC81C \uCC44\uC9D1 \uBC18\uC601\uB428'); }catch(e){}
   }
@@ -15153,7 +15262,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   function ownedFieldIds(){
-    const ids=['farmUseStamina','saleSets','saleSingles'];
+    const ids=['farmUseStamina','farmOwnedGoldPowderV907','saleSets','saleSingles'];
     CROPS.forEach(crop=>{
       const p=EN[crop];
       ['Large','Small','Stack','Single'].forEach(u=>ids.push(`farmSeed${p}${u}`));
@@ -15232,6 +15341,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       if(!Array.isArray(fc.recent)) fc.recent=[];
       if(!fc.pendingStats || typeof fc.pendingStats!=='object') fc.pendingStats={};
       if(!Array.isArray(fc.pendingRecent)) fc.pendingRecent=[];
+      if(!Array.isArray(fc.goldRecords)) fc.goldRecords=[];
       return fc;
     }catch(e){ return null; }
   }
@@ -15272,6 +15382,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     s.updatedAt=nowIso();
     return before-s.records.length;
   }
+  function goldPendingIds(){
+    const fc=farmCorrectionStore();
+    return new Set(((fc&&Array.isArray(fc.goldRecords))?fc.goldRecords:[]).filter(record=>record&&!record.shareRequestedAt).map(record=>record.id).filter(Boolean));
+  }
+  function removeGoldRecords(ids){
+    const fc=farmCorrectionStore();
+    if(!fc||!Array.isArray(fc.goldRecords)||!ids||!ids.length) return 0;
+    const set=new Set(ids), before=fc.goldRecords.length;
+    fc.goldRecords=fc.goldRecords.filter(record=>!(record&&set.has(record.id)&&!record.shareRequestedAt));
+    fc.updatedAt=nowIso();
+    return before-fc.goldRecords.length;
+  }
 
   function readUndo(){ try{ const arr=JSON.parse(localStorage.getItem(UNDO_KEY)||'[]'); return Array.isArray(arr)?arr.slice(0,MAX_UNDO):[]; }catch(e){ return []; } }
   function writeUndo(arr){ try{ localStorage.setItem(UNDO_KEY, JSON.stringify((arr||[]).slice(0,MAX_UNDO))); }catch(e){} }
@@ -15289,6 +15411,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });
     const stamB=int((before||{}).farmUseStamina), stamA=int((after||{}).farmUseStamina);
     if(stamA!==stamB) pick.push(`체력 ${stamA>stamB?'+':''}${fmt(stamA-stamB)}`);
+    const goldB=int((before||{}).farmOwnedGoldPowderV907), goldA=int((after||{}).farmOwnedGoldPowderV907);
+    if(goldA!==goldB) pick.push(`금 가루 ${goldA>goldB?'+':''}${fmt(goldA-goldB)}`);
     const saleB=int((before||{}).saleSets)*64 + int((before||{}).saleSingles);
     const saleA=int((after||{}).saleSets)*64 + int((after||{}).saleSingles);
     if(saleA!==saleB) pick.push(`요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}`);
@@ -15310,6 +15434,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       beforeCorrection:correctionIds(fc&&fc.recent),
       beforePending:correctionIds(fc&&fc.pendingRecent),
       beforeChest:chestPendingIds(),
+      beforeGold:goldPendingIds(),
       beforeRecent:recentIds(),
       beforeShelf:shelfSnapshotV737(),
       beforeHarvestPendingV740:pendingHarvestSnapshotV740(),
@@ -15323,15 +15448,16 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const fc=farmCorrectionStore();
       const afterFields=snapshotFields();
       const changed=diffFields(cur.beforeFields, afterFields);
-      const afterRecent=correctionIds(fc&&fc.recent), afterPending=correctionIds(fc&&fc.pendingRecent), afterChest=chestPendingIds(), afterRecentActions=recentIds();
+      const afterRecent=correctionIds(fc&&fc.recent), afterPending=correctionIds(fc&&fc.pendingRecent), afterChest=chestPendingIds(), afterGold=goldPendingIds(), afterRecentActions=recentIds();
       const newRecent=[...afterRecent].filter(id=>!cur.beforeCorrection.has(id));
       const newPending=[...afterPending].filter(id=>!cur.beforePending.has(id));
       const newChest=[...afterChest].filter(id=>!cur.beforeChest.has(id));
+      const newGold=[...afterGold].filter(id=>!cur.beforeGold.has(id));
       const newRecentActionIds=[...afterRecentActions].filter(id=>!cur.beforeRecent.has(id));
       const afterShelf=shelfSnapshotV737();
       const afterHarvestPendingV740=pendingHarvestSnapshotV740();
-      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforeHarvestPendingV740===afterHarvestPendingV740) return;
-      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforeHarvestPendingV740:cur.beforeHarvestPendingV740,afterHarvestPendingV740,summary:labelFromFields(cur.beforeFields, afterFields)});
+      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newGold.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforeHarvestPendingV740===afterHarvestPendingV740) return;
+      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,goldIds:newGold,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforeHarvestPendingV740:cur.beforeHarvestPendingV740,afterHarvestPendingV740,summary:labelFromFields(cur.beforeFields, afterFields)});
     },350);
   }
 
@@ -15390,6 +15516,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     restoreFields(rec.beforeFields||{});
     const removedLocal=removeCorrectionRecords([...(rec.correctionIds||[]), ...(rec.pendingCorrectionIds||[])], true);
     const removedChest=removeChestRecords(rec.chestIds||[]);
+    const removedGold=removeGoldRecords(rec.goldIds||[]);
     if(Object.prototype.hasOwnProperty.call(rec,'beforeShelf')){
       restoreShelfSnapshotV737(rec.beforeShelf);
     }
@@ -15399,7 +15526,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     markRecentCanceled(recentId, '취소됨');
     removeUndo(rec.id);
     refreshAll();
-    toastSafe(`최근 반영 취소됨 · 실측 ${fmt(removedLocal)}건 · 상자 ${fmt(removedChest)}건`);
+    toastSafe(`최근 반영 취소됨 · 실측 ${fmt(removedLocal)}건 · 상자 ${fmt(removedChest)}건 · 금 가루 ${fmt(removedGold)}건`);
   }
 
   function parseQtyTextV737(raw){
@@ -15548,6 +15675,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const fc=farmCorrectionStore();
     const pending=(fc&&Array.isArray(fc.pendingRecent)?fc.pendingRecent:[]).slice(0,100);
     const chest=(()=>{ const s=chestStore(); return ((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).slice(0,100); })();
+    const gold=((fc&&Array.isArray(fc.goldRecords))?fc.goldRecords:[]).filter(record=>record&&!record.shareRequestedAt).slice(0,100);
     const correctionHtml=pending.length?pending.map(rec=>{
       const name=[rec.crop, rec.typeLabel||rec.type].filter(Boolean).join(' ');
       const actual=fmt(rec.actual); const expected=fmt(rec.expected);
@@ -15560,7 +15688,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       ['I','II','III','IV','V'].forEach(d=>{ if(int(drinks[d])>0) lines.push(`드링크 ${d} ${fmt(drinks[d])}`); });
       return `<div class="farm-pending-item-v732"><div><b>상자 · ${esc(rec.grade||'루키')}</b><span>${esc(lines.join(' · ') || '추적 아이템 없음')}</span></div><button class="btn danger farm-pending-del-v732" data-kind="chest" data-id="${esc(rec.id)}" type="button">삭제</button></div>`;
     }).join(''):'<div class="farm-pending-empty-v732">상자 공유 대기 없음</div>';
-    const html=`<div class="farm-pending-head-v732"><b>공유 대기 관리</b><button class="btn farm-pending-close-v732" type="button">닫기</button></div><div class="farm-pending-section-v732"><h5>실측</h5>${correctionHtml}</div><div class="farm-pending-section-v732"><h5>상자</h5>${chestHtml}</div><div class="farm-pending-actions-v732"><button class="btn danger farm-pending-clear-all-v732" type="button">전체 삭제</button></div>`;
+    const goldHtml=gold.length?gold.map(record=>`<div class="farm-pending-item-v732"><div><b>금 가루 · 괭이 ${fmt(record.hoeLevel)}강 · ${esc(record.engraving==='none'?'각인 없음':`각인 ${record.engraving}`)}</b><span>사용 체력 ${fmt(record.usedStamina)} · 실제 ${fmt(record.actualGold)}개</span></div><button class="btn danger farm-pending-del-v732" data-kind="gold" data-id="${esc(record.id)}" type="button">삭제</button></div>`).join(''):'<div class="farm-pending-empty-v732">금 가루 공유 대기 없음</div>';
+    const html=`<div class="farm-pending-head-v732"><b>공유 대기 관리</b><button class="btn farm-pending-close-v732" type="button">닫기</button></div><div class="farm-pending-section-v732"><h5>실측</h5>${correctionHtml}</div><div class="farm-pending-section-v732"><h5>상자</h5>${chestHtml}</div><div class="farm-pending-section-v732"><h5>금 가루</h5>${goldHtml}</div><div class="farm-pending-actions-v732"><button class="btn danger farm-pending-clear-all-v732" type="button">전체 삭제</button></div>`;
     panels.forEach(panel=>{
       const shouldOpen=forceOpen || panel.dataset.open==='1';
       panel.dataset.open=shouldOpen?'1':'0'; panel.style.display=shouldOpen?'block':'none';
@@ -15574,7 +15703,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function deletePendingOne(kind, id){
     if(!id) return;
     if(!confirm('이 공유 대기 기록 1건만 삭제할까?')) return;
-    const removed=kind==='correction' ? removeCorrectionRecords([id], false) : removeChestRecords([id]);
+    const removed=kind==='correction' ? removeCorrectionRecords([id], false) : (kind==='gold' ? removeGoldRecords([id]) : removeChestRecords([id]));
     saveQuiet();
     try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
     renderPendingManager(true);
@@ -15584,10 +15713,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const fc=farmCorrectionStore();
     const correctionCount=(fc&&Array.isArray(fc.pendingRecent))?fc.pendingRecent.length:0;
     const chestCount=(()=>{ const s=chestStore(); return ((s&&Array.isArray(s.records))?s.records:[]).filter(r=>r&&!r.shareRequestedAt).length; })();
-    if(!correctionCount && !chestCount){ toastSafe('삭제할 공유 대기 없음'); return; }
-    if(!confirm(`모든 공유 대기 기록을 삭제할까?\n실측 ${fmt(correctionCount)}건 · 상자 ${fmt(chestCount)}건`)) return;
+    const goldCount=((fc&&Array.isArray(fc.goldRecords))?fc.goldRecords:[]).filter(record=>record&&!record.shareRequestedAt).length;
+    if(!correctionCount && !chestCount && !goldCount){ toastSafe('삭제할 공유 대기 없음'); return; }
+    if(!confirm(`모든 공유 대기 기록을 삭제할까?\n실측 ${fmt(correctionCount)}건 · 상자 ${fmt(chestCount)}건 · 금 가루 ${fmt(goldCount)}건`)) return;
     if(!confirm('정상 데이터도 전부 삭제됩니다. 정말 전체 삭제할까요?')) return;
     if(fc){ fc.pendingRecent=[]; fc.pendingStats={}; fc.pendingCount=0; }
+    if(fc&&Array.isArray(fc.goldRecords)) fc.goldRecords=fc.goldRecords.filter(record=>record&&record.shareRequestedAt);
     const s=chestStore(); if(s&&Array.isArray(s.records)){ s.records=s.records.filter(r=>r&&r.shareRequestedAt); s.updatedAt=nowIso(); }
     saveQuiet();
     try{ if(typeof dataRenderFarmCorrectionStatus==='function') dataRenderFarmCorrectionStatus(); }catch(e){}
