@@ -3167,7 +3167,7 @@ header .title h1.app-logo-title{
 #seedplan .farm-owned-gold-v907{
   flex:0 0 auto;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(52px,32%);
+  grid-template-columns:minmax(70px,1fr) repeat(2,minmax(62px,88px));
   gap:8px;
   align-items:end;
   margin-top:8px;
@@ -3177,7 +3177,7 @@ header .title h1.app-logo-title{
   background:linear-gradient(90deg,rgba(111,73,10,.16),#101620 62%);
 }
 #seedplan .farm-owned-gold-v907 h4{margin:0!important;align-self:center;color:#ffe39a;font-size:13px!important}
-#seedplan .farm-owned-gold-v907 .control{width:100%;max-width:120px;min-width:0;margin:0;justify-self:end}
+#seedplan .farm-owned-gold-v907 .control{width:100%;max-width:88px;min-width:0;margin:0;justify-self:end}
 #seedplan .farm-owned-gold-v907 input{min-height:32px!important;padding:6px 8px!important}
 @media(max-width:900px){
   #seedplan .farm-gather-gold-row-v907,#seedplan .farm-owned-gold-v907{grid-template-columns:1fr}
@@ -4381,13 +4381,21 @@ header .title h1.app-logo-title{
 }
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-convert-actions-v410{
   display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   gap:8px !important;
 }
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-convert-actions-v410 .btn{
   width:100% !important;
   min-height:34px !important;
   white-space:nowrap !important;
+}
+#farmSeedMainV220 .farm-step3-result-v250 #farmRegularToGoldenBtnV911{
+  border-color:rgba(255,205,84,.72) !important;
+  background:linear-gradient(135deg,#ffe891,#f5b72d) !important;
+  color:#3b2700 !important;
+  box-shadow:0 0 14px rgba(245,183,45,.22) !important;
+  white-space:normal !important;
+  line-height:1.25 !important;
 }
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-convert-status-v410{
   color:#c8d6ea !important;
@@ -4399,7 +4407,7 @@ header .title h1.app-logo-title{
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-convert-status-v410.warn{color:#ffd6a5 !important;}
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-convert-preview-v440{
   display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   gap:8px !important;
   margin-top:2px !important;
 }
@@ -4410,6 +4418,39 @@ header .title h1.app-logo-title{
   border-radius:12px !important;
   padding:9px 10px !important;
 }
+#farmSeedMainV220 .farm-step3-result-v250 .farm-auto-preview-box-v440:last-child{
+  border-color:rgba(255,205,84,.28) !important;
+}
+#farmSeedMainV220 .farm-step3-result-v250 .farm-gold-swap-check-v911{
+  display:flex !important;
+  align-items:flex-start !important;
+  gap:6px !important;
+  margin-top:7px !important;
+  padding-top:7px !important;
+  border-top:1px dashed rgba(255,205,84,.25) !important;
+  color:#ffe59a !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  line-height:1.35 !important;
+  cursor:pointer !important;
+}
+#farmSeedMainV220 .farm-step3-result-v250 .farm-gold-swap-check-v911 input{
+  width:15px !important;
+  height:15px !important;
+  min-height:15px !important;
+  margin:0 !important;
+  accent-color:#f5b72d !important;
+  flex:0 0 auto !important;
+}
+#calc .golden-sale-inputs-v911{
+  margin-top:10px !important;
+  padding:10px !important;
+  border:1px solid rgba(255,205,84,.34) !important;
+  border-radius:12px !important;
+  background:linear-gradient(135deg,rgba(255,205,84,.08),rgba(245,183,45,.025)) !important;
+}
+#calc .golden-sale-inputs-v911 label{color:#ffe59a !important;}
+#calc .golden-sale-inputs-v911 input{border-color:rgba(255,205,84,.30) !important;}
 #farmSeedMainV220 .farm-step3-result-v250 .farm-auto-preview-title-v440{
   color:#eaf3ff !important;
   font-size:12px !important;
@@ -5424,7 +5465,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 </div>
 </div>
 </div>
-<div class="farm-owned-gold-v907"><h4>보유 금 가루</h4><div class="control"><label>개수</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div></div>
+<div class="farm-owned-gold-v907"><h4>보유 황금 재료</h4><div class="control"><label>금 가루</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div><div class="control"><label>식용 금</label><input data-no-farm-save="1" id="farmOwnedEdibleGoldPowderV911" min="0" step="1" type="number" value="0"/></div></div>
 </div><div class="farm-section farm-input-compact-v240 farm-step3-seeds-v250">
 <h3>보유 씨앗</h3>
 <div class="farm-owned-grid">
@@ -5513,6 +5554,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <div class="farm-auto-convert-actions-v410">
 <button class="btn" id="farmCropToBaseBtnV410" type="button">작물 → 베이스 변환</button>
 <button class="btn primary" id="farmBaseToDishBtnV410" type="button">베이스 → 요리 변환</button>
+<button class="btn" id="farmRegularToGoldenBtnV911" type="button">선택 요리 → 황금 변환</button>
 </div>
 <div class="farm-auto-convert-preview-v440" id="farmAutoConvertPreviewV440"></div>
 <div class="farm-auto-convert-status-v410" id="farmAutoConvertStatusV410">계산 후 사용</div>
@@ -5523,7 +5565,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <details class="sort-explain-v67">
 <summary>정렬 기준 설명</summary>
 <div class="sort-explain-body-v67">
-<div><strong>추천순</strong><span>수익성 50% · 재료 수급 20% · 가공시간 20% · 재료 경쟁 10% 종합. 자기 가격범위 중간보다 낮은 주간 시세는 최대 25%까지 감점.</span></div>
+<div><strong>추천순</strong><span>실제 순이익 50% · 내 설정 기준 재료 수급 20% · 가공시간 20% · 재료 경쟁 10% 종합. 세이지 괭이·각인·수확·반짝임 유지 설정을 반영하고, 황금 요리는 10개 일괄 변환 기준. 자기 가격범위 중간보다 낮은 주간 시세는 최대 25%까지 감점.</span></div>
 <div><strong>현재가 높은 순</strong><span>현재 판매가가 높은 순. 원가나 수급 부담은 제외.</span></div>
 <div><strong>보유 재료 기준 수익순</strong><span>보유 재료를 먼저 쓰고 부족분만 산다고 가정한 수익 순.</span></div>
 <div><strong>재료 효율순</strong><span>판매가를 원재료 총 소모량으로 나눈 값이 높은 순.</span></div>
@@ -5531,7 +5573,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <div><strong>이름순</strong><span>요리 이름 가나다순.</span></div>
 </div>
 </details>
-<div class="two"><div class="control"><label>판매 세트 수</label><input id="saleSets" min="0" step="1" type="number" value="1"/></div><div class="control"><label>판매 낱개 수</label><input id="saleSingles" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="notice">1세트는 64개 기준. 총 판매 수량 = 세트×64 + 낱개. 한 솥 가득은 세트 수가 3 이상일 때만 자동 적용.</div><div class="row" style="margin-top:12px"><button class="btn danger" id="resetView">보기 초기화</button><button class="btn favorite-accent-v23" id="showFavOnly">☆ 즐겨찾기만</button><button class="btn golden-mode-toggle-v900" id="goldenModeToggleV900" type="button" aria-pressed="false">✦ 황금</button></div></div></aside><section><div class="cards" id="cards"></div></section></div></section>
+<div class="two"><div class="control"><label>일반 요리 세트 수</label><input id="saleSets" min="0" step="1" type="number" value="1"/></div><div class="control"><label>일반 요리 낱개 수</label><input id="saleSingles" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="two golden-sale-inputs-v911"><div class="control"><label>황금 요리 세트 수</label><input id="goldenSaleSetsV911" min="0" step="1" type="number" value="0"/></div><div class="control"><label>황금 요리 낱개 수</label><input id="goldenSaleSinglesV911" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="notice">1세트는 64개 기준. 일반·황금 요리 수량은 따로 계산됩니다. 한 솥 가득은 해당 요리 세트 수가 3 이상일 때만 자동 적용.</div><div class="row" style="margin-top:12px"><button class="btn danger" id="resetView">보기 초기화</button><button class="btn favorite-accent-v23" id="showFavOnly">☆ 즐겨찾기만</button><button class="btn golden-mode-toggle-v900" id="goldenModeToggleV900" type="button" aria-pressed="false">✦ 황금</button></div></div></aside><section><div class="cards" id="cards"></div></section></div></section>
 <section class="tabpage hidden" id="prices"><div class="panel"><div class="inner"><div class="price-title-row-v109"><h2 class="section-title"><span aria-hidden="true" class="section-mini-icon emoji-icon">💵</span>재료 가격 / 시세 설정</h2><div class="price-title-actions-v109"><button class="btn primary" id="savePrices">저장</button><button class="btn danger" id="materialPriceResetBtn" type="button">재료 가격 초기화</button></div></div><div class="price-groups-v97" id="priceList" style="margin-top:14px"></div></div></div></section>
 <section class="tabpage hidden" id="settings">
 <div class="panel settings-panel-v102">
@@ -5753,8 +5795,12 @@ const GOLDEN_DISH_PRICE_RANGES_V900={
 };
 DATA.goldenDishPriceRanges=GOLDEN_DISH_PRICE_RANGES_V900;
 DATA.processed['버터 조각']={outputQty:1,ingredients:[{name:'요리용 우유',qty:8},{name:'오일',qty:6}]};
+['당근 묶음','감자 묶음','비트 묶음'].forEach(name=>{if(DATA.processed[name])DATA.processed[name].outputQty=7;});
+['호박 묶음','수박 묶음'].forEach(name=>{if(DATA.processed[name])DATA.processed[name].outputQty=14;});
+['달콤한 열매 묶음','설탕 큐브'].forEach(name=>{if(DATA.processed[name])DATA.processed[name].outputQty=10;});
+DATA.processed['식용 금 가루']={outputQty:10,ingredients:[{name:'금 가루',qty:1}]};
 const LS='ddingCookingCalcV01';
-const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,goldRecords:[],shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
+const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0,goldenSaleSetsV911:0,goldenSaleSinglesV911:0,goldPowderSwapV911:false}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,goldRecords:[],shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
 const HARD_DIRECT_ITEMS=[];
 const FIXED_SHOP_ITEMS=Object.keys(DATA.fixedPrices);
 const FARM_RAW_ITEMS=new Set(['토마토','양파','마늘','당근','감자','비트','호박','수박','달콤한 열매','사탕수수','밀','파인애플','코코넛']);
@@ -6403,7 +6449,12 @@ function saleInfoFromValues(setsValue,singlesValue,minOne=false){
  const rawQty=sets*64+singles;
  return {sets,singles,qty:minOne?Math.max(1,rawQty):rawQty};
 }
-function saleInfo(){return saleInfoFromValues(document.getElementById('saleSets')?.value??state.settings.saleSets??1, document.getElementById('saleSingles')?.value??state.settings.saleSingles??0, true);}
+function saleInfo(){
+ const golden=!!(state.view&&state.view.goldenMode);
+ const setId=golden?'goldenSaleSetsV911':'saleSets', singleId=golden?'goldenSaleSinglesV911':'saleSingles';
+ const setKey=golden?'goldenSaleSetsV911':'saleSets', singleKey=golden?'goldenSaleSinglesV911':'saleSingles';
+ return saleInfoFromValues(document.getElementById(setId)?.value??state.settings[setKey]??(golden?0:1),document.getElementById(singleId)?.value??state.settings[singleKey]??0,true);
+}
 function saleLabel(info){return `${info.sets}세트 + ${info.singles}개 = 총 ${info.qty}개`;}
 function saleQtyLabel(info){return info.sets>0?`${info.sets}세트 ${info.singles}개`:`${info.singles}개`;}
 function sellBonusForSaleInfo(info){return DATA.sellSkill[state.settings.skillSell||0] + num(state.settings.equipSell) + num(state.settings.otherSell) + (info.sets>=3?DATA.potSkill[state.settings.skillPot||0]:0);}
@@ -6521,9 +6572,10 @@ function normalizeSortByV742(value){
   const v=legacy[value]||value;
   return ['recommend','price','ownedProfit','materialEff','burden','name'].includes(v)?v:'recommend';
 }
-// 종합 추천순 v800
-// 기본 원칙: 현재 보유 재고는 제외하고, 요리 자체의 반복 생산 효율을 비교한다.
-// 수익성 50% + 재료 수급 20% + 가공시간 20% + 재료 경쟁 10%.
+// 개인 설정 반영 추천순 v910
+// 현재 보유 재고는 별도 정렬에서 다루고, 여기서는 현재 가격과 개인 설정으로 반복 생산 효율을 비교한다.
+// 실제 순이익 50% + 개인 수급 20% + 가공시간 20% + 재료 경쟁 10%.
+// 황금 요리는 금 가루 1개로 10개를 일괄 변환하는 기준을 사용한다.
 // 주간 시세가 해당 요리 가격범위의 중간값보다 낮을 때만 최대 25% 감점한다.
 const RECOMMEND_GENERAL_CROP_BURDEN_V800={
   '감자':0.40,
@@ -6539,8 +6591,64 @@ const RECOMMEND_FRUIT_BURDEN_V800=2.50; // 파인애플/코코넛: 이동 채집
 const RECOMMEND_MEAT_BURDEN_V800=1.00;  // 부위별 드랍률 차이는 두지 않고 소비 경쟁에서 차이를 반영
 const RECOMMEND_COOKING_PROCESSED_V800=new Set(['치즈 조각','밀가루 반죽','버터 조각','요리용 소금']);
 const RECOMMEND_BUNDLES_V800=new Set(['감자 묶음','호박 묶음','당근 묶음','수박 묶음','비트 묶음','달콤한 열매 묶음','설탕 큐브']);
-const RECOMMEND_DOUBLE_BUNDLES_V800=new Set(['호박 묶음','수박 묶음']);
-const RECOMMEND_TEN_BUNDLES_V800=new Set(['달콤한 열매 묶음','설탕 큐브']);
+const RECOMMEND_GIANT_CHANCE_V910=[0,0.005,0.01,0.03,0.05];
+const RECOMMEND_GOOD_HARVEST_V910=[
+  {chance:0,add:0},{chance:0.01,add:1},{chance:0.02,add:1},{chance:0.03,add:1},
+  {chance:0.04,add:1},{chance:0.05,add:2},{chance:0.07,add:2},{chance:0.10,add:3}
+];
+const RECOMMEND_SEED_REFUND_V910=[0,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.10,0.20,0.30];
+const RECOMMEND_GATHER_POWER_V910=[0,0.15,0.25,0.40];
+const RECOMMEND_SEED_LUCK_V910=[0,0.5,1,1.5,2];
+const RECOMMEND_CROP_BOX_V910=[0,0.255,0.51,0.765,1.02,1.275];
+const RECOMMEND_ROULETTE_V910=[0,0.231,0.462,0.693,0.924,1.155];
+const RECOMMEND_GOLD_BONUS_PP_V910=[0,1,2,3,5];
+const RECOMMEND_SERENITY_DAYS_V910=[7,8,10,12,14];
+
+function recommendSettingV910(name,max=Infinity){
+  const n=Math.floor(Number(state&&state.settings&&state.settings[name])||0);
+  return Math.max(0,Math.min(max,n));
+}
+function recommendRecipeInputsV910(dish){
+  if(!dish)return [];
+  const base=dish.isGolden?(dish.regularDish||dish):dish;
+  const rows=(base.ingredients||[]).map(ing=>({name:ing.name,qty:Number(ing.qty)||0}));
+  if(dish.isGolden)rows.push({name:'금 가루',qty:1/GOLDEN_BATCH_DISH_QTY_V906});
+  return rows;
+}
+function recommendExpectedYieldV910(crop){
+  const row=DATA.yields&&DATA.yields[crop];
+  if(!row)return 1;
+  const mode=['min','avg','max'].includes(state.settings.yieldMode)?state.settings.yieldMode:'avg';
+  const base=Math.max(0.000001,Number(row[mode]||row.avg)||1);
+  const giant=RECOMMEND_GIANT_CHANCE_V910[recommendSettingV910('skillKing',4)]||0;
+  const harvest=RECOMMEND_GOOD_HARVEST_V910[recommendSettingV910('skillHarvest',7)]||RECOMMEND_GOOD_HARVEST_V910[0];
+  return Math.max(0.000001,base*((1-giant)+giant*7)+harvest.chance*harvest.add);
+}
+function recommendSeedRefundV910(){
+  return RECOMMEND_SEED_REFUND_V910[recommendSettingV910('skillSeedBonus',10)]||0;
+}
+function recommendSeedPerGatherV910(){
+  const hoe=recommendSettingV910('sageHoe',15);
+  const base=Number(DATA.sageSeeds&&DATA.sageSeeds[hoe])||0;
+  const power=RECOMMEND_GATHER_POWER_V910[recommendSettingV910('sageEngraveGatherPower',3)]||0;
+  const luck=RECOMMEND_SEED_LUCK_V910[recommendSettingV910('sageEngraveSeedLuck',4)]||0;
+  const box=RECOMMEND_CROP_BOX_V910[recommendSettingV910('sageEngraveCropBox',5)]||0;
+  const roulette=RECOMMEND_ROULETTE_V910[recommendSettingV910('sageEngraveFarmerRoulette',5)]||0;
+  return Math.max(0,base*(1+power)+luck+box+roulette);
+}
+function recommendGoldChanceV910(){
+  const hoe=recommendSettingV910('sageHoe',15);
+  const base=Number(DATA.sageGoldPowderChance&&DATA.sageGoldPowderChance[hoe])||0;
+  const bonus=RECOMMEND_GOLD_BONUS_PP_V910[recommendSettingV910('sageEngraveGoldPowder',4)]||0;
+  return Math.max(0,(base+bonus)/100);
+}
+function recommendSerenityDaysV910(){
+  return RECOMMEND_SERENITY_DAYS_V910[recommendSettingV910('skillSerenitySparkle',4)]||7;
+}
+function recommendGoldStorageFactorV910(){
+  // 기본 7일 대비 보관 가능 기간이 길수록 금 가루 폐기 위험과 재확보 부담을 낮춘다.
+  return 7/recommendSerenityDaysV910();
+}
 
 function recommendExpandRawV800(name,qty,out,stack=[]){
   const amount=Math.max(0,Number(qty)||0);
@@ -6556,19 +6664,24 @@ function recommendExpandRawV800(name,qty,out,stack=[]){
 }
 function recommendRawMapV800(dish){
   const out={};
-  if(!dish||!Array.isArray(dish.ingredients))return out;
-  dish.ingredients.forEach(ing=>recommendExpandRawV800(ing.name,ing.qty,out));
+  recommendRecipeInputsV910(dish).forEach(ing=>recommendExpandRawV800(ing.name,ing.qty,out));
   return out;
 }
 function recommendRawBurdenPartV800(name,qty){
   const amount=Math.max(0,Number(qty)||0);
   if(amount<=0)return 0;
-  // 상점 구매 재료는 수급 난이도 0. 비용은 수익성에서만 반영한다.
-  if(DATA.fixedPrices&&DATA.fixedPrices[name]!=null)return 0;
+  // 구매 가격이 입력된 재료는 수익성 원가로 반영하고 직접 수급 부담에서는 제외한다.
+  if((DATA.fixedPrices&&DATA.fixedPrices[name]!=null)||hasPositiveMarketPrice(name))return 0;
   if(name==='토마토'||name==='양파'||name==='마늘'){
-    // 세 작물의 재배 난이도는 같고 수확량 차이만 반영: 평균 수확량이 적을수록 단위 부담 증가.
-    const avg=Math.max(0.000001,Number(DATA.yields&&DATA.yields[name]&&DATA.yields[name].avg)||1);
-    return (amount/8)*(2/avg);
+    const seedName=DATA.yields&&DATA.yields[name]&&DATA.yields[name].seed;
+    if(seedName&&hasPositiveMarketPrice(seedName))return 0;
+    const seedNeed=amount/recommendExpectedYieldV910(name)*(1-recommendSeedRefundV910());
+    const perGather=recommendSeedPerGatherV910();
+    return perGather>0?seedNeed/perGather:1e6+seedNeed;
+  }
+  if(name==='금 가루'){
+    const chance=recommendGoldChanceV910();
+    return chance>0?amount/chance*recommendGoldStorageFactorV910():1e6+amount;
   }
   if(Object.prototype.hasOwnProperty.call(RECOMMEND_GENERAL_CROP_BURDEN_V800,name)){
     return (amount/64)*RECOMMEND_GENERAL_CROP_BURDEN_V800[name];
@@ -6578,24 +6691,31 @@ function recommendRawBurdenPartV800(name,qty){
   return 0;
 }
 function recommendSupplyBurdenV800(raw){
-  return Object.entries(raw||{}).reduce((sum,[name,qty])=>sum+recommendRawBurdenPartV800(name,qty),0);
+  let seedRuns=0,other=0;
+  ['토마토','양파','마늘'].forEach(name=>{seedRuns+=recommendRawBurdenPartV800(name,raw&&raw[name]);});
+  const goldRuns=recommendRawBurdenPartV800('금 가루',raw&&raw['금 가루']);
+  Object.entries(raw||{}).forEach(([name,qty])=>{
+    if(name==='토마토'||name==='양파'||name==='마늘'||name==='금 가루')return;
+    other+=recommendRawBurdenPartV800(name,qty);
+  });
+  return Math.max(seedRuns,goldRuns)+other;
 }
 function recommendCraftSecondsV800(dish){
   let seconds=0;
-  (dish&&dish.ingredients||[]).forEach(ing=>{
+  recommendRecipeInputsV910(dish).forEach(ing=>{
     const name=ing.name;
     const qty=Math.max(0,Number(ing.qty)||0);
     if(RECOMMEND_COOKING_PROCESSED_V800.has(name)){
       seconds+=15*qty;
     }else if(RECOMMEND_BUNDLES_V800.has(name)){
-      const batchOutput=RECOMMEND_TEN_BUNDLES_V800.has(name)?10:(RECOMMEND_DOUBLE_BUNDLES_V800.has(name)?14:7);
+      const batchOutput=Math.max(1,Number(DATA.processed&&DATA.processed[name]&&DATA.processed[name].outputQty)||1);
       seconds+=(20/batchOutput)*qty;
     }
   });
   return seconds;
 }
-function recommendFixedShopCostV800(raw){
-  return Object.entries(raw||{}).reduce((sum,[name,qty])=>sum+(Number(DATA.fixedPrices&&DATA.fixedPrices[name])||0)*(Number(qty)||0),0);
+function recommendCashCostV910(dish){
+  return recommendRecipeInputsV910(dish).reduce((sum,ing)=>sum+costOfItem(ing.name,ing.qty).cost,0);
 }
 function recommendMarketPositionV800(dish,calc){
   const ranges=dish&&dish.isGolden?DATA.goldenDishPriceRanges:DATA.dishPriceRanges;
@@ -6641,9 +6761,9 @@ function recommendAttachScoresV800(rows){
       const factor=maxUsage>1?(used-1)/(maxUsage-1):0;
       competition+=part*factor;
     });
-    const shopCost=recommendFixedShopCostV800(raw);
-    const economicProfit=(Number(row.calc.finalSell)||0)-shopCost;
-    row.__recommendV800={raw,supply,craft,competition,shopCost,economicProfit,marketPosition:recommendMarketPositionV800(row.dish,row.calc)};
+    const cashCost=recommendCashCostV910(row.dish);
+    const economicProfit=(Number(row.calc.finalSell)||0)-cashCost;
+    row.__recommendV800={raw,supply,craft,competition,cashCost,economicProfit,marketPosition:recommendMarketPositionV800(row.dish,row.calc)};
   });
   const profits=rows.map(r=>r.__recommendV800.economicProfit);
   const supplies=rows.map(r=>r.__recommendV800.supply);
@@ -6663,7 +6783,7 @@ function recommendAttachScoresV800(rows){
     row.calc.recommendBaseScore=baseScore;
     row.calc.recommendMarketFactor=marketFactor;
     row.calc.recommendMarketPosition=m.marketPosition;
-    row.calc.recommendParts={profitScore,supplyScore,craftScore,competitionScore,supplyBurden:m.supply,craftSeconds:m.craft,competitionBurden:m.competition,economicProfit:m.economicProfit};
+    row.calc.recommendParts={profitScore,supplyScore,craftScore,competitionScore,supplyBurden:m.supply,craftSeconds:m.craft,competitionBurden:m.competition,economicProfit:m.economicProfit,seedPerGather:recommendSeedPerGatherV910(),goldChance:recommendGoldChanceV910()*100,serenityDays:recommendSerenityDaysV910()};
   });
   return rows;
 }
@@ -6778,9 +6898,11 @@ function pricePositionBoxHTML(d,c){
 function cardHTML(d,c,scale={}){
   const stateKey=dishStateKeyV900(d)
   const fav=state.favorites[stateKey]?'★':'☆'
-  const linkedCalc = !d.isGolden && state && state.view && state.view.lastLinkedCalcDish && state.view.lastLinkedCalcDish.name === d.name;
+  const linkedCalc = !!(state && state.view && state.view.lastLinkedCalcDish && state.view.lastLinkedCalcDish.name === d.name);
   const linkedClass = linkedCalc ? ' linked-calc-card-v470' : '';
-  const linkedQty = linkedCalc ? Math.max(0, Math.floor(num(state.settings.saleSets||0))*64 + Math.floor(num(state.settings.saleSingles||0))) : 0;
+  const linkedQty = linkedCalc ? Math.max(0,d.isGolden
+    ? Math.floor(num(state.settings.goldenSaleSetsV911||0))*64+Math.floor(num(state.settings.goldenSaleSinglesV911||0))
+    : Math.floor(num(state.settings.saleSets||0))*64+Math.floor(num(state.settings.saleSingles||0))) : 0;
   const linkedQtyText = linkedQty >= 64 ? `${Math.floor(linkedQty/64)}세트 ${linkedQty%64}개` : `${linkedQty}개`;
   const linkedBadge = linkedCalc ? '<span class="calc-linked-badge-v470">판매 수량 반영됨</span>' : '';
   const linkedMeta = linkedCalc ? `<div class="calc-linked-sale-meta-v480">판매 예정 ${linkedQtyText}</div>` : '';
@@ -6842,7 +6964,7 @@ function cardHTML(d,c,scale={}){
 
       ${miss}
 
-      ${d.isGolden?`<div class="notice golden-recipe-note-v900">금 가루 1개는 일반 요리 ${GOLDEN_BATCH_DISH_QTY_V906}개를 한 번에 변환하고, 식용 금 가루 1개는 일반 요리 1개를 개별 변환합니다. 두 가루 사이의 변환 조합법은 없습니다.</div>`:''}
+      ${d.isGolden?`<div class="notice golden-recipe-note-v900">금 가루 1개는 일반 요리 ${GOLDEN_BATCH_DISH_QTY_V906}개를 한 번에 변환하며, 금 가루 1개를 식용 금 가루 10개로 가공할 수도 있습니다. 식용 금 가루 1개는 일반 요리 1개를 개별 변환합니다.</div>`:''}
       <div class="ingredients">${ingredientHTML}</div>
 
       <details class="details">
@@ -7118,6 +7240,12 @@ function bindView(){
  const singles=document.getElementById('saleSingles');
  singles.value=state.settings.saleSingles??0;
  singles.oninput=e=>{let v=Math.max(0,Math.floor(num(e.target.value)||0));if(v>63)v=63;state.settings.saleSingles=v;singles.value=v;save();renderCards()};
+ const goldenSale=document.getElementById('goldenSaleSetsV911');
+ goldenSale.value=state.settings.goldenSaleSetsV911??0;
+ goldenSale.oninput=e=>{state.settings.goldenSaleSetsV911=Math.max(0,Math.floor(num(e.target.value)||0));save();renderCards()};
+ const goldenSingles=document.getElementById('goldenSaleSinglesV911');
+ goldenSingles.value=state.settings.goldenSaleSinglesV911??0;
+ goldenSingles.oninput=e=>{let v=Math.max(0,Math.floor(num(e.target.value)||0));if(v>63)v=63;state.settings.goldenSaleSinglesV911=v;goldenSingles.value=v;save();renderCards()};
  document.getElementById('resetView').onclick=()=>{state.view=clone(defaultState.view);save();bindView();renderCards()};
  document.getElementById('showFavOnly').onclick=()=>{state.view.favOnly=!state.view.favOnly;save();renderCards();};
  document.getElementById('goldenModeToggleV900').onclick=toggleGoldenModeV900;
@@ -10480,7 +10608,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     'farmSeedTomatoLarge','farmSeedTomatoSmall','farmSeedTomatoStack','farmSeedTomatoSingle',
     'farmSeedOnionLarge','farmSeedOnionSmall','farmSeedOnionStack','farmSeedOnionSingle',
     'farmSeedGarlicLarge','farmSeedGarlicSmall','farmSeedGarlicStack','farmSeedGarlicSingle',
-    'farmOwnedGoldPowderV907'
+    'farmOwnedGoldPowderV907','farmOwnedEdibleGoldPowderV911'
   ];
 
   function q(id){ return document.getElementById(id); }
@@ -11585,37 +11713,46 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }
   }
   function numFmt(v){ return Math.trunc(Number(v)||0).toLocaleString('ko-KR'); }
-  function ownedGoldPowderQtyV907(){
+  function ownedGoldenMaterialQtyV911(name){
     try{
-      return typeof ownedMaterialRowV712 === 'function' ? Math.max(0, Math.floor(Number(ownedMaterialRowV712('금 가루').qty)||0)) : 0;
+      return typeof ownedMaterialRowV712 === 'function' ? Math.max(0, Math.floor(Number(ownedMaterialRowV712(name).qty)||0)) : 0;
     }catch(e){ return 0; }
   }
-  function writeOwnedGoldPowderV907(qty){
+  function writeOwnedGoldenMaterialV911(name,inputId,qty){
     const value=Math.max(0,Math.floor(Number(qty)||0));
     try{
       if(typeof ownedMaterialWriteV763 === 'function'){
-        const current=typeof ownedMaterialRowV712 === 'function' ? ownedMaterialRowV712('금 가루') : {has:false};
-        ownedMaterialWriteV763('금 가루',value,!!current.has||value>0);
+        const current=typeof ownedMaterialRowV712 === 'function' ? ownedMaterialRowV712(name) : {has:false};
+        ownedMaterialWriteV763(name,value,!!current.has||value>0);
       }
-    }catch(e){ console.error('gold powder owned write failed',e); }
-    const input=byId('farmOwnedGoldPowderV907');
+    }catch(e){ console.error('golden material owned write failed',e); }
+    const input=byId(inputId);
     if(input&&input.value!==String(value))input.value=String(value);
     return value;
   }
+  function ownedGoldPowderQtyV907(){ return ownedGoldenMaterialQtyV911('금 가루'); }
+  function ownedEdibleGoldPowderQtyV911(){ return ownedGoldenMaterialQtyV911('식용 금 가루'); }
+  function writeOwnedGoldPowderV907(qty){ return writeOwnedGoldenMaterialV911('금 가루','farmOwnedGoldPowderV907',qty); }
+  function writeOwnedEdibleGoldPowderV911(qty){ return writeOwnedGoldenMaterialV911('식용 금 가루','farmOwnedEdibleGoldPowderV911',qty); }
   function bindOwnedGoldPowderV907(){
-    const input=byId('farmOwnedGoldPowderV907');
-    if(!input)return;
-    if(input.dataset.goldOwnedBoundV907!=='1'){
-      input.dataset.goldOwnedBoundV907='1';
-      const commit=()=>{
-        writeOwnedGoldPowderV907(readNum('farmOwnedGoldPowderV907'));
-        try{if(typeof save==='function')save(false);}catch(e){}
-      };
-      input.addEventListener('input',commit);
-      input.addEventListener('change',commit);
-    }
-    const saved=ownedGoldPowderQtyV907();
-    if(document.activeElement!==input&&input.value!==String(saved))input.value=String(saved);
+    [
+      {id:'farmOwnedGoldPowderV907',read:ownedGoldPowderQtyV907,write:writeOwnedGoldPowderV907},
+      {id:'farmOwnedEdibleGoldPowderV911',read:ownedEdibleGoldPowderQtyV911,write:writeOwnedEdibleGoldPowderV911}
+    ].forEach(row=>{
+      const input=byId(row.id);
+      if(!input)return;
+      if(input.dataset.goldOwnedBoundV907!=='1'){
+        input.dataset.goldOwnedBoundV907='1';
+        const commit=()=>{
+          row.write(readNum(row.id));
+          try{if(typeof save==='function')save(false);}catch(e){}
+        };
+        input.addEventListener('input',commit);
+        input.addEventListener('change',commit);
+      }
+      const saved=row.read();
+      if(document.activeElement!==input&&input.value!==String(saved))input.value=String(saved);
+    });
   }
 
   function sectionByTitle(title){
@@ -13248,6 +13385,84 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       recipes.find(dish => `${dish.grade} - ${dish.name}` === String(name || '').trim()) ||
       null;
   }
+  function stateObjV911(){
+    try{ return typeof state !== 'undefined' ? state : (window.state || null); }catch(e){ return window.state || null; }
+  }
+  function goldPowderSwapEnabledV911(){
+    const st=stateObjV911();
+    return !!(st&&st.settings&&st.settings.goldPowderSwapV911);
+  }
+  function writeGoldPowderSwapV911(enabled){
+    const st=stateObjV911();
+    if(st){st.settings=st.settings||{};st.settings.goldPowderSwapV911=!!enabled;}
+    try{if(typeof save==='function')save(false);}catch(e){}
+  }
+  function dishStockMapV911(){
+    const st=stateObjV911();
+    if(!st)return {};
+    if(!st.farmDishStockV737||typeof st.farmDishStockV737!=='object')st.farmDishStockV737={};
+    return st.farmDishStockV737;
+  }
+  function dishStockQtyV911(name){
+    const map=dishStockMapV911();
+    const stored=Math.max(0,Math.trunc(Number(map[name])||0));
+    const st=stateObjV911();
+    const linked=st&&st.view&&st.view.lastLinkedCalcDish;
+    const linkedQty=linked&&linked.name===name?calcSaleInputTotalV480(String(name).startsWith('황금 ')):0;
+    return Math.max(stored,linkedQty);
+  }
+  function setDishStockQtyV911(name,qty){
+    const value=Math.max(0,Math.trunc(Number(qty)||0));
+    dishStockMapV911()[name]=value;
+    return value;
+  }
+  function ownedGoldenMaterialQtyV911(name){
+    try{
+      return typeof ownedMaterialRowV712==='function'?Math.max(0,Math.floor(Number(ownedMaterialRowV712(name).qty)||0)):0;
+    }catch(e){return 0;}
+  }
+  function writeOwnedGoldenMaterialV911(name,inputId,qty){
+    const value=Math.max(0,Math.floor(Number(qty)||0));
+    try{
+      if(typeof ownedMaterialWriteV763==='function'){
+        const current=typeof ownedMaterialRowV712==='function'?ownedMaterialRowV712(name):{has:false};
+        ownedMaterialWriteV763(name,value,!!current.has||value>0);
+      }
+    }catch(e){console.error('golden material conversion write failed',e);}
+    const input=byId(inputId);
+    if(input&&input.value!==String(value))input.value=String(value);
+    return value;
+  }
+  function goldenConvertPlanV911(dish){
+    const regularName=dish&&dish.name||'';
+    const goldenName=regularName?`황금 ${regularName}`:'';
+    const regularHave=regularName?dishStockQtyV911(regularName):0;
+    const goldenHave=goldenName?dishStockQtyV911(goldenName):0;
+    const goldHave=ownedGoldenMaterialQtyV911('금 가루');
+    const edibleHave=ownedGoldenMaterialQtyV911('식용 금 가루');
+    const allowGoldSwap=goldPowderSwapEnabledV911();
+    const batchGold=Math.min(Math.floor(regularHave/GOLDEN_BATCH_DISH_QTY_V906),goldHave);
+    let converted=batchGold*GOLDEN_BATCH_DISH_QTY_V906;
+    let remainRegular=regularHave-converted;
+    const edibleUsed=Math.min(remainRegular,edibleHave);
+    converted+=edibleUsed;
+    remainRegular-=edibleUsed;
+    let convertedGold=0,convertedEdibleUsed=0,convertedEdibleLeft=0;
+    if(remainRegular>0&&allowGoldSwap&&goldHave-batchGold>0){
+      convertedGold=1;
+      convertedEdibleUsed=Math.min(remainRegular,10);
+      convertedEdibleLeft=10-convertedEdibleUsed;
+      converted+=convertedEdibleUsed;
+      remainRegular-=convertedEdibleUsed;
+    }
+    const goldUsed=batchGold+convertedGold;
+    return {
+      regularName,goldenName,regularHave,goldenHave,goldHave,edibleHave,allowGoldSwap,batchGold,edibleUsed,
+      convertedGold,convertedEdibleUsed,convertedEdibleLeft,goldUsed,converted,
+      regularLeft:regularHave-converted,goldenAfter:goldenHave+converted,
+      goldLeft:goldHave-goldUsed,edibleLeft:edibleHave-edibleUsed+convertedEdibleLeft
+    };
+  }
   function addBaseNeed(out, item, qty){
     CROPS.forEach(crop => {
       if(item === `${crop} 베이스`) out[crop] += qty;
@@ -13296,37 +13511,67 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     return lines;
   }
 
+  function regularToGoldenPreviewLines(){
+    const dish=dishByName(selectedDishName());
+    if(!dish)return ['선택된 요리 없음'];
+    const plan=goldenConvertPlanV911(dish);
+    if(plan.regularHave<=0)return [`${dish.name}: 보유 일반 요리 없음`];
+    if(plan.converted<=0)return [
+      plan.regularHave<10&&plan.goldHave>0&&!plan.allowGoldSwap?`${dish.name}: 금 가루 치환 체크 시 변환 가능`:`${dish.name}: 황금 재료 부족`,
+      `보유 금 가루 ${formatQty(plan.goldHave)} · 식용 금 가루 ${formatQty(plan.edibleHave)}`
+    ];
+    const lines=[`${plan.goldenName} +${formatQty(plan.converted)} / 일반 요리 -${formatQty(plan.converted)}`];
+    if(plan.batchGold>0)lines.push(`금 가루 ${formatQty(plan.batchGold)}로 ${formatQty(plan.batchGold*GOLDEN_BATCH_DISH_QTY_V906)} 일괄 변환`);
+    if(plan.edibleUsed>0)lines.push(`보유 식용 금 가루 -${formatQty(plan.edibleUsed)}`);
+    if(plan.convertedGold>0)lines.push(`금 가루 1개 → 식용 금 가루 10개 · ${formatQty(plan.convertedEdibleUsed)} 사용 · ${formatQty(plan.convertedEdibleLeft)} 보관`);
+    if(plan.regularLeft>0)lines.push(`변환 후 일반 요리 ${formatQty(plan.regularLeft)} 남음`);
+    return lines;
+  }
+  function goldenPreviewBoxV911(lines){
+    const body=lines&&lines.length
+      ?lines.map(line=>`<div class="farm-auto-preview-line-v440">${escText(line)}</div>`).join('')
+      :`<div class="farm-auto-preview-muted-v440">보유 일반 요리와 황금 재료 기준 계산 대기</div>`;
+    const checked=goldPowderSwapEnabledV911()?' checked':'';
+    return `<div class="farm-auto-preview-box-v440"><div class="farm-auto-preview-title-v440">선택 요리 → 황금 요리 예정</div>${body}<label class="farm-gold-swap-check-v911"><input id="farmGoldPowderSwapV911" type="checkbox"${checked}>10개 미만 잔여분에 금 가루를 식용 금 가루 10개로 치환</label></div>`;
+  }
+
   function updateAutoConvertPreview(){
     const preview = byId('farmAutoConvertPreviewV440');
     if(!preview) return;
     const cropLines = cropToBasePreviewLines();
     const dishLines = baseToDishPreviewLines();
+    const goldenLines = regularToGoldenPreviewLines();
     preview.innerHTML = previewBox('작물 → 베이스 예정', cropLines, '변환 가능한 작물 없음') +
-      previewBox('베이스 → 요리 예정', dishLines, '선택 요리 기준 계산 대기');
+      previewBox('베이스 → 요리 예정', dishLines, '선택 요리 기준 계산 대기') +
+      goldenPreviewBoxV911(goldenLines);
   }
 
-  function calcSaleInputTotalV480(){
-    const setEl = byId('saleSets');
-    const singleEl = byId('saleSingles');
-    const sets = Math.max(0, Math.floor(Number(setEl ? setEl.value : (state && state.settings ? state.settings.saleSets : 0)) || 0));
-    const singles = Math.max(0, Math.floor(Number(singleEl ? singleEl.value : (state && state.settings ? state.settings.saleSingles : 0)) || 0));
+  function calcSaleInputTotalV480(golden=false){
+    const setId=golden?'goldenSaleSetsV911':'saleSets',singleId=golden?'goldenSaleSinglesV911':'saleSingles';
+    const setKey=golden?'goldenSaleSetsV911':'saleSets',singleKey=golden?'goldenSaleSinglesV911':'saleSingles';
+    const setEl = byId(setId);
+    const singleEl = byId(singleId);
+    const sets = Math.max(0, Math.floor(Number(setEl ? setEl.value : (state && state.settings ? state.settings[setKey] : 0)) || 0));
+    const singles = Math.max(0, Math.floor(Number(singleEl ? singleEl.value : (state && state.settings ? state.settings[singleKey] : 0)) || 0));
     return sets * 64 + singles;
   }
-  function writeCalcSaleInputsV480(total){
+  function writeCalcSaleInputsV480(total,golden=false){
     const value = Math.max(0, Math.trunc(Number(total) || 0));
     const sets = Math.floor(value / 64);
     const singles = value % 64;
     const changed = [];
+    const setId=golden?'goldenSaleSetsV911':'saleSets',singleId=golden?'goldenSaleSinglesV911':'saleSingles';
+    const setKey=golden?'goldenSaleSetsV911':'saleSets',singleKey=golden?'goldenSaleSinglesV911':'saleSingles';
     try{
       if(typeof state !== 'undefined'){
         state.settings = state.settings || {};
-        state.settings.saleSets = sets;
-        state.settings.saleSingles = singles;
+        state.settings[setKey] = sets;
+        state.settings[singleKey] = singles;
       }
     }catch(e){}
-    const saleSets = byId('saleSets');
+    const saleSets = byId(setId);
     if(saleSets){ saleSets.value = sets; changed.push(saleSets); }
-    const saleSingles = byId('saleSingles');
+    const saleSingles = byId(singleId);
     if(saleSingles){ saleSingles.value = singles; changed.push(saleSingles); }
     return {sets, singles, total:value, changed};
   }
@@ -13350,6 +13595,22 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const highlighted = !!document.querySelector('.calc-card.linked-calc-card-v470');
     return {sets:written.sets, singles:written.singles, total:after, before, added, highlighted};
   }
+  function syncGoldenDishToCalcV911(goldenName,total){
+    const value=Math.max(0,Math.trunc(Number(total)||0));
+    const before=calcSaleInputTotalV480(true);
+    const written=writeCalcSaleInputsV480(value,true);
+    try{
+      if(typeof state!=='undefined'){
+        state.view=state.view||{};
+        state.view.goldenMode=true;
+        state.view.lastLinkedCalcDish={name:goldenName,qty:value,added:Math.max(0,value-before),before,at:Date.now()};
+      }
+    }catch(e){}
+    dispatchEdited(written.changed);
+    try{if(typeof save==='function')save(false);}catch(e){}
+    try{if(typeof renderCards==='function')renderCards();}catch(e){}
+    return {before,total:value,highlighted:!!document.querySelector('.calc-card.linked-calc-card-v470')};
+  }
 
   window.completeLinkedCalcSaleV480 = function(name){
     try{
@@ -13358,8 +13619,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         toastSafe('판매 반영 내역 없음');
         return;
       }
-      const before = calcSaleInputTotalV480();
-      const written = writeCalcSaleInputsV480(0);
+      const golden=String(name).startsWith('황금 ');
+      const before = calcSaleInputTotalV480(golden);
+      const written = writeCalcSaleInputsV480(0,golden);
       if(state && state.view) delete state.view.lastLinkedCalcDish;
       dispatchEdited(written.changed);
       try{ if(typeof save === 'function') save(false); }catch(e){}
@@ -13454,15 +13716,61 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     toastSafe('베이스 → 요리 변환 완료 · 판매 수량 누적');
   }
 
+  function convertRegularToGoldenV911(){
+    const dish=dishByName(selectedDishName());
+    if(!dish){
+      setStatus('선택된 요리 없음','warn');
+      toastSafe('선택된 요리 없음');
+      return;
+    }
+    const plan=goldenConvertPlanV911(dish);
+    if(plan.regularHave<=0){
+      setStatus('보유 일반 요리 없음','warn');
+      toastSafe('보유 일반 요리 없음');
+      return;
+    }
+    if(plan.converted<=0){
+      const swapHint=plan.regularHave<10&&plan.goldHave>0&&!plan.allowGoldSwap;
+      setStatus(swapHint?'금 가루 치환을 체크하면 변환 가능':'금 가루 또는 식용 금 가루 부족','warn');
+      toastSafe(swapHint?'금 가루 치환 체크 필요':'황금 요리 변환 재료 부족');
+      return;
+    }
+
+    captureInputHistory();
+    setDishStockQtyV911(plan.regularName,plan.regularLeft);
+    setDishStockQtyV911(plan.goldenName,plan.goldenAfter);
+    writeOwnedGoldenMaterialV911('금 가루','farmOwnedGoldPowderV907',plan.goldLeft);
+    writeOwnedGoldenMaterialV911('식용 금 가루','farmOwnedEdibleGoldPowderV911',plan.edibleLeft);
+
+    const lines=[
+      `${plan.regularName} -${formatQty(plan.converted)}`,
+      `${plan.goldenName} +${formatQty(plan.converted)}`
+    ];
+    if(plan.batchGold>0)lines.push(`금 가루 -${formatQty(plan.batchGold)} · 10개 일괄 변환`);
+    if(plan.edibleUsed>0)lines.push(`식용 금 가루 -${formatQty(plan.edibleUsed)} · 낱개 변환`);
+    if(plan.convertedGold>0)lines.push(`금 가루 -1개 → 식용 금 가루 10개 · ${formatQty(plan.convertedEdibleUsed)} 사용 · ${formatQty(plan.convertedEdibleLeft)} 보관`);
+
+    const calcSync=syncGoldenDishToCalcV911(plan.goldenName,plan.goldenAfter);
+    saveAndRefresh();
+    try{if(typeof renderPrices==='function')renderPrices();}catch(e){}
+    updateAutoConvertPreview();
+    addRecent('일반 요리 → 황금 요리 변환',lines,`황금 요리 계산 연결 · 일반 요리 ${formatQty(plan.regularLeft)} 남음`);
+    setStatus(`황금 변환 완료: ${plan.goldenName} ${formatQty(plan.converted)}${calcSync.highlighted?' · 계산 카드 연결':''}`,'ok');
+    toastSafe('일반 요리 → 황금 요리 변환 완료');
+  }
+
   function isPreviewInput(target){
     const id = target && target.id || '';
     return id === 'farmDishSelect' ||
+      id === 'farmOwnedGoldPowderV907' || id === 'farmOwnedEdibleGoldPowderV911' ||
+      id === 'saleSets' || id === 'saleSingles' || id === 'goldenSaleSetsV911' || id === 'goldenSaleSinglesV911' ||
       /^farm(Crop|Base)(Tomato|Onion|Garlic)(Stack|Single)$/.test(id);
   }
 
   function bind(){
     const cropBtn = byId('farmCropToBaseBtnV410');
     const dishBtn = byId('farmBaseToDishBtnV410');
+    const goldenBtn = byId('farmRegularToGoldenBtnV911');
     if(cropBtn && cropBtn.dataset.autoConvertBoundV410 !== '1'){
       cropBtn.dataset.autoConvertBoundV410 = '1';
       cropBtn.addEventListener('click', convertCropToBase);
@@ -13471,10 +13779,21 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       dishBtn.dataset.autoConvertBoundV410 = '1';
       dishBtn.addEventListener('click', convertBaseToDish);
     }
+    if(goldenBtn&&goldenBtn.dataset.autoConvertBoundV911!=='1'){
+      goldenBtn.dataset.autoConvertBoundV911='1';
+      goldenBtn.addEventListener('click',convertRegularToGoldenV911);
+    }
     if(!document.body.dataset.autoConvertPreviewBoundV440){
       document.body.dataset.autoConvertPreviewBoundV440 = '1';
       document.addEventListener('input', event => { if(isPreviewInput(event.target)) updateAutoConvertPreview(); }, true);
-      document.addEventListener('change', event => { if(isPreviewInput(event.target)) updateAutoConvertPreview(); }, true);
+      document.addEventListener('change', event => {
+        if(event.target&&event.target.id==='farmGoldPowderSwapV911'){
+          writeGoldPowderSwapV911(event.target.checked);
+          updateAutoConvertPreview();
+          return;
+        }
+        if(isPreviewInput(event.target)) updateAutoConvertPreview();
+      }, true);
     }
     updateAutoConvertPreview();
   }
@@ -14468,7 +14787,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   const STORE_KEY = 'farmShelfLifeV710';
   const CROPS = ['토마토','양파','마늘'];
   const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
-  const DISH_NAMES = new Set(((window.DATA && DATA.recipes) || []).map(d => d.name));
+  const REGULAR_DISH_NAMES = ((typeof DATA!=='undefined'&&DATA.recipes) || []).map(d => d.name);
+  const DISH_NAMES = new Set([...REGULAR_DISH_NAMES,...REGULAR_DISH_NAMES.map(name=>`황금 ${name}`)]);
   let internalWrite = 0;
   let actionDepth = 0;
   let expireTimerV737 = 0;
@@ -14491,7 +14811,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const value=truncQty(total);
     map[item]=value;
     const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-    if(linked && linked.name === item) writeSaleTotal(value);
+    if(linked && linked.name === item) writeSaleTotal(value,String(item).startsWith('황금 '));
   }
   function ensureStore(){
     const st = stateObj();
@@ -14521,16 +14841,18 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const si=byId(prefix+'Single'); if(si) si.value = single;
     }finally{ setTimeout(()=>{ internalWrite=Math.max(0, internalWrite-1); },0); }
   }
-  function readSaleTotal(){ return readNum('saleSets')*64 + readNum('saleSingles'); }
-  function writeSaleTotal(total){
+  function readSaleTotal(golden=false){ return golden?readNum('goldenSaleSetsV911')*64+readNum('goldenSaleSinglesV911'):readNum('saleSets')*64+readNum('saleSingles'); }
+  function writeSaleTotal(total,golden=false){
     const value = truncQty(total);
     const sets = Math.floor(value/64), singles = value%64;
+    const setId=golden?'goldenSaleSetsV911':'saleSets',singleId=golden?'goldenSaleSinglesV911':'saleSingles';
+    const setKey=golden?'goldenSaleSetsV911':'saleSets',singleKey=golden?'goldenSaleSinglesV911':'saleSingles';
     internalWrite++;
     try{
       const st = stateObj();
-      if(st){ st.settings = st.settings || {}; st.settings.saleSets = sets; st.settings.saleSingles = singles; }
-      const setEl=byId('saleSets'); if(setEl) setEl.value = sets;
-      const singleEl=byId('saleSingles'); if(singleEl) singleEl.value = singles;
+      if(st){ st.settings = st.settings || {}; st.settings[setKey] = sets; st.settings[singleKey] = singles; }
+      const setEl=byId(setId); if(setEl) setEl.value = sets;
+      const singleEl=byId(singleId); if(singleEl) singleEl.value = singles;
     }finally{ setTimeout(()=>{ internalWrite=Math.max(0, internalWrite-1); },0); }
   }
   function itemKind(item){
@@ -14546,7 +14868,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(baseCrop) return readStackSingle('farmBase' + EN[baseCrop]);
     if(DISH_NAMES.has(item)){
       const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      const linkedQty = linked && linked.name === item ? readSaleTotal() : 0;
+      const linkedQty = linked && linked.name === item ? readSaleTotal(String(item).startsWith('황금 ')) : 0;
       return Math.max(dishStockQtyV737(item), linkedQty);
     }
     return 0;
@@ -14657,7 +14979,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const found=[...DISH_NAMES].find(name => name === clean || raw.includes(name));
       return found || clean;
     })();
-    return {crops,bases,sale:readSaleTotal(), linked, selected, dishStocks};
+    return {crops,bases,regularSale:readSaleTotal(false),goldenSale:readSaleTotal(true),linked,selected,dishStocks};
   }
   function lineQty(q){
     const value=truncQty(q), sets=Math.floor(value/64), pieces=value%64;
@@ -14697,13 +15019,27 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
         const baseDelta = after.bases[c] - before.bases[c];
         if(baseDelta < 0) consumeLots(c + ' 베이스', -baseDelta);
       });
-      const saleDelta = after.sale - before.sale;
+      const saleDelta = after.regularSale - before.regularSale;
       const dish = after.linked && after.linked.name || before.linked && before.linked.name || before.selected;
       if(saleDelta > 0 && dish && DISH_NAMES.has(dish)){
-        const prevStock = before.dishStocks && Object.prototype.hasOwnProperty.call(before.dishStocks,dish) ? truncQty(before.dishStocks[dish]) : ((before.linked && before.linked.name === dish) ? truncQty(before.sale) : 0);
+        const prevStock = before.dishStocks && Object.prototype.hasOwnProperty.call(before.dishStocks,dish) ? truncQty(before.dishStocks[dish]) : ((before.linked && before.linked.name === dish) ? truncQty(before.regularSale) : 0);
         setDishStockQtyV737(dish, prevStock + saleDelta);
         addLot(dish, saleDelta, '베이스 → 요리 변환', now);
         recent.push(dish + ' +' + lineQty(saleDelta) + ' 유통기한 추적');
+      }
+    }else if(action === 'regularToGolden'){
+      const regular=before.selected;
+      const golden=regular?`황금 ${regular}`:'';
+      const beforeRegular=before.dishStocks&&Object.prototype.hasOwnProperty.call(before.dishStocks,regular)?truncQty(before.dishStocks[regular]):((before.linked&&before.linked.name===regular)?truncQty(before.regularSale):0);
+      const afterRegular=after.dishStocks&&Object.prototype.hasOwnProperty.call(after.dishStocks,regular)?truncQty(after.dishStocks[regular]):0;
+      const beforeGolden=before.dishStocks&&Object.prototype.hasOwnProperty.call(before.dishStocks,golden)?truncQty(before.dishStocks[golden]):((before.linked&&before.linked.name===golden)?truncQty(before.goldenSale):0);
+      const afterGolden=after.dishStocks&&Object.prototype.hasOwnProperty.call(after.dishStocks,golden)?truncQty(after.dishStocks[golden]):((after.linked&&after.linked.name===golden)?truncQty(after.goldenSale):0);
+      const regularUsed=Math.max(0,beforeRegular-afterRegular);
+      const goldenMade=Math.max(0,afterGolden-beforeGolden);
+      if(regularUsed>0)consumeLots(regular,regularUsed);
+      if(goldenMade>0){
+        addLot(golden,goldenMade,'일반 요리 → 황금 요리 변환',now);
+        recent.push(golden+' +'+lineQty(goldenMade)+' 유통기한 추적');
       }
     }
     if(recent.length) addRecent('유통기한 추적', recent, '새로 생성된 수량만 추적');
@@ -14761,9 +15097,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(m) return Object.keys(EN).find(k => EN[k] === m[1]);
     m = /^farmBase(Tomato|Onion|Garlic)(Stack|Single)$/.exec(id||'');
     if(m){ const crop=Object.keys(EN).find(k => EN[k] === m[1]); return crop ? crop + ' 베이스' : ''; }
-    if(id === 'saleSets' || id === 'saleSingles'){
+    if(id === 'saleSets' || id === 'saleSingles' || id === 'goldenSaleSetsV911' || id === 'goldenSaleSinglesV911'){
       const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      return linked && linked.name ? linked.name : '';
+      const name=linked&&linked.name?linked.name:'';
+      if(!name)return '';
+      const goldenInput=id==='goldenSaleSetsV911'||id==='goldenSaleSinglesV911';
+      return String(name).startsWith('황금 ')===goldenInput?name:'';
     }
     return '';
   }
@@ -14776,7 +15115,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const item=manualInputItemFromId(target.id);
       if(!item) return;
       clearLotsForItem(item);
-      if(DISH_NAMES.has(item)) setDishStockQtyV737(item, readSaleTotal());
+      if(DISH_NAMES.has(item)) setDishStockQtyV737(item, readSaleTotal(String(item).startsWith('황금 ')));
       saveQuiet();
     }, true));
   }
@@ -14792,6 +15131,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       else if(id === 'farmGatherApplyBtnV117') action='gather';
       else if(id === 'farmCropToBaseBtnV410') action='cropToBase';
       else if(id === 'farmBaseToDishBtnV410') action='baseToDish';
+      else if(id === 'farmRegularToGoldenBtnV911') action='regularToGolden';
       if(!action) return;
       checkExpired();
       const before=snapshot();
@@ -14808,11 +15148,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(typeof original !== 'function' || original.__shelfLifeSafeV710) return;
     const wrapped=function(name){
       checkExpired();
-      const before = readSaleTotal();
+      const golden=String(name||'').startsWith('황금 ');
+      const before = readSaleTotal(golden);
       const ret = original.apply(this, arguments);
       setTimeout(function(){
         try{
-          const after = readSaleTotal();
+          const after = readSaleTotal(golden);
           const sold = Math.max(0, before - after);
           if(sold > 0 && name) consumeLots(name, sold);
           if(name && DISH_NAMES.has(name)) setDishStockQtyV737(name, 0);
@@ -15200,7 +15541,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     farmManualPlantApplyBtnV740:'직접 수량 심기',
     farmIslandChestApplyBtnV690:'상자 기록',
     farmCropToBaseBtnV410:'작물→베이스 변환',
-    farmBaseToDishBtnV410:'베이스→요리 변환'
+    farmBaseToDishBtnV410:'베이스→요리 변환',
+    farmRegularToGoldenBtnV911:'일반→황금 변환'
   };
   const UNIT_SEED = {Large:3456, Small:1728, Stack:64, Single:1};
 
@@ -15239,6 +15581,54 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }catch(e){ console.error('shelf rollback restore failed', e); }
   }
 
+  function dishStockSnapshotV911(){
+    try{
+      const st=stateObjV737();
+      const map=st&&st.farmDishStockV737&&typeof st.farmDishStockV737==='object'?st.farmDishStockV737:{};
+      return JSON.stringify(map);
+    }catch(e){ return '{}'; }
+  }
+  function restoreDishStockSnapshotV911(raw){
+    try{
+      const st=stateObjV737(); if(!st) return;
+      const parsed=raw?JSON.parse(raw):{};
+      st.farmDishStockV737=parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};
+    }catch(e){ console.error('dish stock rollback restore failed',e); }
+  }
+  function calcViewSnapshotV911(){
+    try{
+      const st=stateObjV737(), view=st&&st.view&&typeof st.view==='object'?st.view:{};
+      return JSON.stringify({
+        hasLinked:Object.prototype.hasOwnProperty.call(view,'lastLinkedCalcDish'),
+        linked:view.lastLinkedCalcDish||null,
+        hasGoldenMode:Object.prototype.hasOwnProperty.call(view,'goldenMode'),
+        goldenMode:!!view.goldenMode
+      });
+    }catch(e){ return '{}'; }
+  }
+  function restoreCalcViewSnapshotV911(raw){
+    try{
+      const st=stateObjV737(); if(!st) return;
+      st.view=st.view&&typeof st.view==='object'?st.view:{};
+      const snap=raw?JSON.parse(raw):{};
+      if(snap.hasLinked) st.view.lastLinkedCalcDish=snap.linked;
+      else delete st.view.lastLinkedCalcDish;
+      if(snap.hasGoldenMode) st.view.goldenMode=!!snap.goldenMode;
+      else delete st.view.goldenMode;
+    }catch(e){ console.error('calc view rollback restore failed',e); }
+  }
+  function dishStockChangesV911(beforeRaw,afterRaw){
+    let before={},after={};
+    try{ before=beforeRaw?JSON.parse(beforeRaw):{}; }catch(e){}
+    try{ after=afterRaw?JSON.parse(afterRaw):{}; }catch(e){}
+    return [...new Set([...Object.keys(before||{}),...Object.keys(after||{})])].map(name=>({
+      name,before:int(before&&before[name]),after:int(after&&after[name])
+    })).filter(row=>row.before!==row.after);
+  }
+  function dishStockSummaryV911(beforeRaw,afterRaw){
+    return dishStockChangesV911(beforeRaw,afterRaw).slice(0,3).map(row=>`${row.name} ${row.after>row.before?'+':''}${fmt(row.after-row.before)}`).join(' · ');
+  }
+
   function pendingHarvestSnapshotV740(){
     try{
       const st=stateObjV737();
@@ -15262,7 +15652,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   }
 
   function ownedFieldIds(){
-    const ids=['farmUseStamina','farmOwnedGoldPowderV907','saleSets','saleSingles'];
+    const ids=['farmUseStamina','farmOwnedGoldPowderV907','farmOwnedEdibleGoldPowderV911','saleSets','saleSingles','goldenSaleSetsV911','goldenSaleSinglesV911'];
     CROPS.forEach(crop=>{
       const p=EN[crop];
       ['Large','Small','Stack','Single'].forEach(u=>ids.push(`farmSeed${p}${u}`));
@@ -15413,9 +15803,14 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(stamA!==stamB) pick.push(`체력 ${stamA>stamB?'+':''}${fmt(stamA-stamB)}`);
     const goldB=int((before||{}).farmOwnedGoldPowderV907), goldA=int((after||{}).farmOwnedGoldPowderV907);
     if(goldA!==goldB) pick.push(`금 가루 ${goldA>goldB?'+':''}${fmt(goldA-goldB)}`);
+    const edibleB=int((before||{}).farmOwnedEdibleGoldPowderV911), edibleA=int((after||{}).farmOwnedEdibleGoldPowderV911);
+    if(edibleA!==edibleB) pick.push(`식용 금 가루 ${edibleA>edibleB?'+':''}${fmt(edibleA-edibleB)}`);
     const saleB=int((before||{}).saleSets)*64 + int((before||{}).saleSingles);
     const saleA=int((after||{}).saleSets)*64 + int((after||{}).saleSingles);
-    if(saleA!==saleB) pick.push(`요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}`);
+    if(saleA!==saleB) pick.push(`일반 요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}`);
+    const goldenSaleB=int((before||{}).goldenSaleSetsV911)*64+int((before||{}).goldenSaleSinglesV911);
+    const goldenSaleA=int((after||{}).goldenSaleSetsV911)*64+int((after||{}).goldenSaleSinglesV911);
+    if(goldenSaleA!==goldenSaleB) pick.push(`황금 요리 수량 ${goldenSaleA>goldenSaleB?'+':''}${fmt(goldenSaleA-goldenSaleB)}`);
     return pick.slice(0,6).join(' · ') || '보유량 변화';
   }
   function fieldTotalFromSnapshot(obj, kind, crop){
@@ -15438,6 +15833,8 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       beforeRecent:recentIds(),
       beforeShelf:shelfSnapshotV737(),
       beforeHarvestPendingV740:pendingHarvestSnapshotV740(),
+      beforeDishStocksV911:dishStockSnapshotV911(),
+      beforeCalcViewV911:calcViewSnapshotV911(),
       startedAt:Date.now()
     };
   }
@@ -15456,8 +15853,11 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const newRecentActionIds=[...afterRecentActions].filter(id=>!cur.beforeRecent.has(id));
       const afterShelf=shelfSnapshotV737();
       const afterHarvestPendingV740=pendingHarvestSnapshotV740();
-      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newGold.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforeHarvestPendingV740===afterHarvestPendingV740) return;
-      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,goldIds:newGold,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforeHarvestPendingV740:cur.beforeHarvestPendingV740,afterHarvestPendingV740,summary:labelFromFields(cur.beforeFields, afterFields)});
+      const afterDishStocksV911=dishStockSnapshotV911();
+      const afterCalcViewV911=calcViewSnapshotV911();
+      if(!changed.length && !newRecent.length && !newPending.length && !newChest.length && !newGold.length && !newRecentActionIds.length && cur.beforeShelf===afterShelf && cur.beforeHarvestPendingV740===afterHarvestPendingV740 && cur.beforeDishStocksV911===afterDishStocksV911 && cur.beforeCalcViewV911===afterCalcViewV911) return;
+      const summary=[dishStockSummaryV911(cur.beforeDishStocksV911,afterDishStocksV911),labelFromFields(cur.beforeFields,afterFields)].filter(Boolean).join(' · ');
+      pushUndo({action:cur.action,beforeFields:cur.beforeFields,afterFields,correctionIds:newRecent,pendingCorrectionIds:newPending,chestIds:newChest,goldIds:newGold,recentIds:newRecentActionIds,beforeShelf:cur.beforeShelf,afterShelf,beforeHarvestPendingV740:cur.beforeHarvestPendingV740,afterHarvestPendingV740,beforeDishStocksV911:cur.beforeDishStocksV911,afterDishStocksV911,beforeCalcViewV911:cur.beforeCalcViewV911,afterCalcViewV911,summary});
     },350);
   }
 
@@ -15476,7 +15876,14 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     if(stamA!==stamB) lines.push(`사용 체력 ${stamA-stamB>0?'+':''}${fmt(stamA-stamB)}`);
     else if(String(rec&&rec.action||'').includes('채집')) lines.push('사용 체력 0');
     const saleB=int(before.saleSets)*64+int(before.saleSingles), saleA=int(after.saleSets)*64+int(after.saleSingles);
-    if(saleA!==saleB) lines.push(`요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}개`);
+    if(saleA!==saleB) lines.push(`일반 요리 수량 ${saleA>saleB?'+':''}${fmt(saleA-saleB)}개`);
+    const goldenSaleB=int(before.goldenSaleSetsV911)*64+int(before.goldenSaleSinglesV911), goldenSaleA=int(after.goldenSaleSetsV911)*64+int(after.goldenSaleSinglesV911);
+    if(goldenSaleA!==goldenSaleB) lines.push(`황금 요리 수량 ${goldenSaleA>goldenSaleB?'+':''}${fmt(goldenSaleA-goldenSaleB)}개`);
+    const goldB=int(before.farmOwnedGoldPowderV907), goldA=int(after.farmOwnedGoldPowderV907);
+    if(goldA!==goldB) lines.push(`금 가루 ${goldA>goldB?'+':''}${fmt(goldA-goldB)}개`);
+    const edibleB=int(before.farmOwnedEdibleGoldPowderV911), edibleA=int(after.farmOwnedEdibleGoldPowderV911);
+    if(edibleA!==edibleB) lines.push(`식용 금 가루 ${edibleA>edibleB?'+':''}${fmt(edibleA-edibleB)}개`);
+    dishStockChangesV911(rec&&rec.beforeDishStocksV911,rec&&rec.afterDishStocksV911).forEach(row=>lines.push(`${row.name} ${row.after>row.before?'+':''}${fmt(row.after-row.before)}개`));
     return lines.length?lines:[rec&&rec.summary||'보유량 변화'];
   }
   function recoverOrphanUndoRecentActionsV766(){
@@ -15490,7 +15897,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const originalRecentIds=Array.isArray(rec.recentIds)?rec.recentIds.filter(Boolean):[];
       if(originalRecentIds.length) return;
       const changed=diffFields(rec.beforeFields||{},rec.afterFields||{});
-      const hasSideEffects=(rec.correctionIds||[]).length||(rec.pendingCorrectionIds||[]).length||(rec.chestIds||[]).length||rec.beforeShelf!==rec.afterShelf||rec.beforeHarvestPendingV740!==rec.afterHarvestPendingV740;
+      const hasSideEffects=(rec.correctionIds||[]).length||(rec.pendingCorrectionIds||[]).length||(rec.chestIds||[]).length||rec.beforeShelf!==rec.afterShelf||rec.beforeHarvestPendingV740!==rec.afterHarvestPendingV740||rec.beforeDishStocksV911!==rec.afterDishStocksV911||rec.beforeCalcViewV911!==rec.afterCalcViewV911;
       if(!changed.length&&!hasSideEffects) return;
       const id=`ra-recovered-${rec.id}`;
       if(!existing.has(id)){
@@ -15522,6 +15929,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     }
     if(Object.prototype.hasOwnProperty.call(rec,'beforeHarvestPendingV740')){
       restorePendingHarvestSnapshotV740(rec.beforeHarvestPendingV740);
+    }
+    if(Object.prototype.hasOwnProperty.call(rec,'beforeDishStocksV911')){
+      restoreDishStockSnapshotV911(rec.beforeDishStocksV911);
+    }
+    if(Object.prototype.hasOwnProperty.call(rec,'beforeCalcViewV911')){
+      restoreCalcViewSnapshotV911(rec.beforeCalcViewV911);
     }
     markRecentCanceled(recentId, '취소됨');
     removeUndo(rec.id);
@@ -15565,7 +15978,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       const delta=(m[1]==='-'?-1:1)*int(m[2]);
       if(delta) changes.push({kind:'stamina',delta});
     }
-    const dishNames=((window.DATA&&DATA.recipes)||[]).map(d=>d&&d.name).filter(Boolean).sort((a,b)=>b.length-a.length);
+    const dishNames=((typeof DATA!=='undefined'&&DATA.recipes)||[]).map(d=>d&&d.name).filter(Boolean).sort((a,b)=>b.length-a.length);
     lines.forEach(line=>{
       const s=String(line||'');
       const dish=dishNames.find(name=>s.includes(name));
