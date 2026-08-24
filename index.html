@@ -4986,6 +4986,68 @@ header .farm-correction-shared-status-v545.bad{color:#ffc2c2}
   header .farm-correction-share-card-v520{grid-column:auto}
 }
 
+/* 요리 계산 제외 재료 접힘 필터 v913 */
+#calc .ingredient-exclude-v913{
+  margin-top:12px;
+  border:1px solid #35405a;
+  border-radius:14px;
+  background:#141b2a;
+  overflow:hidden;
+}
+#calc .ingredient-exclude-v913>summary{
+  min-height:44px;
+  box-sizing:border-box;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  list-style:none;
+  font-size:13px;
+  font-weight:900;
+}
+#calc .ingredient-exclude-v913>summary::-webkit-details-marker{display:none}
+#calc .ingredient-exclude-v913>summary:before{content:'▶';color:var(--accent);font-size:11px;flex:0 0 auto}
+#calc .ingredient-exclude-v913[open]>summary:before{content:'▼'}
+#calc .ingredient-exclude-v913>summary>span{margin-right:auto}
+#calc .ingredient-exclude-v913>summary>b{
+  min-width:0;
+  max-width:64%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#ffd978;
+  font-size:12px;
+}
+#calc .ingredient-exclude-body-v913{border-top:1px solid #2b354a;padding:10px}
+#calc .ingredient-exclude-grid-v913{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  max-height:220px;
+  overflow-y:auto;
+  padding-right:3px;
+}
+#calc .ingredient-exclude-option-v913{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid #2d374d;
+  border-radius:10px;
+  background:#0f1520;
+  padding:7px 8px;
+  color:#dbe5f6;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+#calc .ingredient-exclude-option-v913:has(input:checked){border-color:#f5b942;background:rgba(245,185,66,.12);color:#ffe49a}
+#calc .ingredient-exclude-option-v913 input{width:15px;height:15px;margin:0;accent-color:#f5b942;flex:0 0 auto}
+#calc .ingredient-exclude-option-v913 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#calc .ingredient-exclude-clear-v913{width:100%;margin-top:9px;padding:8px 10px!important;background:#20283a!important}
+
 </style>
 
 <style id="farmCorrectionHeaderDockStyleV521">
@@ -5573,7 +5635,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <div><strong>이름순</strong><span>요리 이름 가나다순.</span></div>
 </div>
 </details>
-<div class="two"><div class="control"><label>일반 요리 세트 수</label><input id="saleSets" min="0" step="1" type="number" value="1"/></div><div class="control"><label>일반 요리 낱개 수</label><input id="saleSingles" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="two golden-sale-inputs-v911"><div class="control"><label>황금 요리 세트 수</label><input id="goldenSaleSetsV911" min="0" step="1" type="number" value="0"/></div><div class="control"><label>황금 요리 낱개 수</label><input id="goldenSaleSinglesV911" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="notice">1세트는 64개 기준. 일반·황금 요리 수량은 따로 계산됩니다. 한 솥 가득은 해당 요리 세트 수가 3 이상일 때만 자동 적용.</div><div class="row" style="margin-top:12px"><button class="btn danger" id="resetView">보기 초기화</button><button class="btn favorite-accent-v23" id="showFavOnly">☆ 즐겨찾기만</button><button class="btn golden-mode-toggle-v900" id="goldenModeToggleV900" type="button" aria-pressed="false">✦ 황금</button></div></div></aside><section><div class="cards" id="cards"></div></section></div></section>
+<div class="two"><div class="control"><label>일반 요리 세트 수</label><input id="saleSets" min="0" step="1" type="number" value="1"/></div><div class="control"><label>일반 요리 낱개 수</label><input id="saleSingles" max="63" min="0" step="1" type="number" value="0"/></div></div><div class="two golden-sale-inputs-v911"><div class="control"><label>황금 요리 세트 수</label><input id="goldenSaleSetsV911" min="0" step="1" type="number" value="0"/></div><div class="control"><label>황금 요리 낱개 수</label><input id="goldenSaleSinglesV911" max="63" min="0" step="1" type="number" value="0"/></div></div><details class="ingredient-exclude-v913" id="ingredientExcludeV913"><summary><span>제외 재료</span><b id="ingredientExcludeSummaryV913">선택 없음</b></summary><div class="ingredient-exclude-body-v913"><div class="ingredient-exclude-grid-v913" id="ingredientExcludeGridV913"></div><button class="btn ingredient-exclude-clear-v913" id="ingredientExcludeClearV913" type="button">선택 해제</button></div></details><div class="row" style="margin-top:12px"><button class="btn danger" id="resetView">보기 초기화</button><button class="btn favorite-accent-v23" id="showFavOnly">☆ 즐겨찾기만</button><button class="btn golden-mode-toggle-v900" id="goldenModeToggleV900" type="button" aria-pressed="false">✦ 황금</button></div></div></aside><section><div class="cards" id="cards"></div></section></div></section>
 <section class="tabpage hidden" id="prices"><div class="panel"><div class="inner"><div class="price-title-row-v109"><h2 class="section-title"><span aria-hidden="true" class="section-mini-icon emoji-icon">💵</span>재료 가격 / 시세 설정</h2><div class="price-title-actions-v109"><button class="btn primary" id="savePrices">저장</button><button class="btn danger" id="materialPriceResetBtn" type="button">재료 가격 초기화</button></div></div><div class="price-groups-v97" id="priceList" style="margin-top:14px"></div></div></div></section>
 <section class="tabpage hidden" id="settings">
 <div class="panel settings-panel-v102">
@@ -5800,7 +5862,7 @@ DATA.processed['버터 조각']={outputQty:1,ingredients:[{name:'요리용 우�
 ['달콤한 열매 묶음','설탕 큐브'].forEach(name=>{if(DATA.processed[name])DATA.processed[name].outputQty=10;});
 DATA.processed['식용 금 가루']={outputQty:10,ingredients:[{name:'금 가루',qty:1}]};
 const LS='ddingCookingCalcV01';
-const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0,goldenSaleSetsV911:0,goldenSaleSinglesV911:0,goldPowderSwapV911:false}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,goldRecords:[],shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
+const defaultState={marketPrices:{}, marketPriceUnits:{}, ownedMaterials:{}, favorites:{}, heldDishSales:{}, dishPrices:{}, goldenDishPrices:{}, settings:{skillSell:0,skillPot:0,skillSerenitySparkle:0,equipSell:0,otherSell:0,sageHoe:0,sageEngraveGatherPower:0,sageEngraveSeedLuck:0,sageEngraveGoldPowder:0,sageEngraveCoffeeLuck:0,sageEngraveCropBox:0,sageEngraveFarmerRoulette:0,yieldMode:'avg',plotCount:220,skillHarvest:0,skillKing:0,skillHotHoe:0,skillNature:0,skillSeedBonus:0,saleSets:1,saleSingles:0,goldenSaleSetsV911:0,goldenSaleSinglesV911:0,goldPowderSwapV911:false}, view:{search:'',gradeFilter:'all',sortBy:'recommend',favOnly:false,goldenMode:false,excludedIngredientsV913:[]}, farmPlanInputs:{values:{},updatedAt:''}, farmPlanSavedValues:{}, dishPriceMeta:{lastAppliedAt:'',period:'',next:'',count:0,failed:0}, farmCorrection:{version:1,anonymousId:'',stats:{},recent:[],pendingStats:{},pendingRecent:[],pendingCount:0,goldRecords:[],shareMeta:{lastSharedAt:'',lastSharedCount:0,lastSharedRecent:0,lastSharedPendingCount:0},sharedStats:{},sharedMeta:{lastFetchedAt:'',lastFetchCount:0,lastFetchTotal:0,lastFetchOk:false}}, meta:{lastSavedAt:''}};
 const HARD_DIRECT_ITEMS=[];
 const FIXED_SHOP_ITEMS=Object.keys(DATA.fixedPrices);
 const FARM_RAW_ITEMS=new Set(['토마토','양파','마늘','당근','감자','비트','호박','수박','달콤한 열매','사탕수수','밀','파인애플','코코넛']);
@@ -6776,12 +6838,67 @@ function sortValueV742(c,kind){
   if(kind==='burden')return (c.selfBurden!=null&&isFinite(c.selfBurden))?c.selfBurden:Infinity;
   return Number(c.profit)||0;
 }
+function ingredientExcludeListV913(){
+  const src=state.view&&Array.isArray(state.view.excludedIngredientsV913)?state.view.excludedIngredientsV913:[];
+  return [...new Set(src.map(name=>String(name||'').trim()).filter(Boolean))];
+}
+function collectIngredientNamesV913(name,out,stack=[]){
+  const item=String(name||'').trim();
+  if(!item||stack.includes(item))return;
+  out.add(item);
+  const recipe=DATA.processed&&DATA.processed[item];
+  if(recipe&&Array.isArray(recipe.ingredients))recipe.ingredients.forEach(ing=>collectIngredientNamesV913(ing.name,out,stack.concat(item)));
+}
+function ingredientExcludeOptionsV913(){
+  const names=new Set();
+  (DATA.recipes||[]).forEach(dish=>(dish.ingredients||[]).forEach(ing=>collectIngredientNamesV913(ing.name,names)));
+  names.add('금 가루');
+  names.add('식용 금 가루');
+  return [...names].sort((a,b)=>a.localeCompare(b,'ko'));
+}
+function dishIngredientNamesV913(dish){
+  const names=new Set();
+  const base=dish&&dish.isGolden?(dish.regularDish||dish):dish;
+  (base&&base.ingredients||[]).forEach(ing=>collectIngredientNamesV913(ing.name,names));
+  if(dish&&dish.isGolden){names.add('금 가루');names.add('식용 금 가루');}
+  return names;
+}
+function dishHasExcludedIngredientV913(dish,excluded){
+  if(!excluded||!excluded.size)return false;
+  const used=dishIngredientNamesV913(dish);
+  return [...excluded].some(name=>used.has(name));
+}
+function setIngredientExcludedV913(name,checked){
+  const next=new Set(ingredientExcludeListV913());
+  if(checked)next.add(name);else next.delete(name);
+  state.view.excludedIngredientsV913=[...next];
+  save();
+  renderCards();
+}
+function renderIngredientExcludeV913(){
+  const grid=document.getElementById('ingredientExcludeGridV913');
+  const summary=document.getElementById('ingredientExcludeSummaryV913');
+  if(!grid||!summary)return;
+  const selected=ingredientExcludeListV913();
+  const selectedSet=new Set(selected);
+  const preview=selected.length===0?'선택 없음':selected.length<=2?selected.join(', '):`${selected.slice(0,2).join(', ')} 외 ${selected.length-2}개`;
+  summary.textContent=preview;
+  summary.title=selected.length?selected.join(', '):'선택 없음';
+  grid.innerHTML=ingredientExcludeOptionsV913().map(name=>`<label class="ingredient-exclude-option-v913"><input type="checkbox" data-exclude-ingredient-v913="${heldSaleEscAttr(name)}" ${selectedSet.has(name)?'checked':''}><span>${heldSaleEscAttr(name)}</span></label>`).join('');
+  grid.querySelectorAll('[data-exclude-ingredient-v913]').forEach(input=>{
+    input.onchange=()=>setIngredientExcludedV913(input.getAttribute('data-exclude-ingredient-v913'),input.checked);
+  });
+  const clear=document.getElementById('ingredientExcludeClearV913');
+  if(clear)clear.disabled=selected.length===0;
+}
 function renderCards(){
   const q=(state.view.search||'').trim().toLowerCase();
+  const excludedIngredients=new Set(ingredientExcludeListV913());
   let allRows=activeRecipesV900().map(d=>({dish:d,calc:calcDish(d)}));
   recommendAttachScoresV800(allRows);
   let rows=allRows.filter(r=>{
     const d=r.dish;
+    if(dishHasExcludedIngredientV913(d,excludedIngredients))return false;
     if(state.view.gradeFilter!=='all'&&d.grade!==state.view.gradeFilter)return false;
     if(state.view.favOnly&&!state.favorites[dishStateKeyV900(d)])return false;
     if(!q)return true;
@@ -6813,6 +6930,7 @@ function renderCards(){
     favBtn.classList.add('favorite-accent-v23');
   }
   syncGoldenModeControlsV900();
+  renderIngredientExcludeV913();
 }
 function craftRows(d,c){
   const qty=c.saleInfo.qty;
@@ -7229,8 +7347,11 @@ function bindView(){
  goldenSingles.oninput=e=>{let v=Math.max(0,Math.floor(num(e.target.value)||0));if(v>63)v=63;state.settings.goldenSaleSinglesV911=v;goldenSingles.value=v;save();renderCards()};
  document.getElementById('resetView').onclick=()=>{state.view=clone(defaultState.view);save();bindView();renderCards()};
  document.getElementById('showFavOnly').onclick=()=>{state.view.favOnly=!state.view.favOnly;save();renderCards();};
+ const excludeClear=document.getElementById('ingredientExcludeClearV913');
+ if(excludeClear)excludeClear.onclick=()=>{state.view.excludedIngredientsV913=[];save();renderCards();};
  document.getElementById('goldenModeToggleV900').onclick=toggleGoldenModeV900;
  syncGoldenModeControlsV900();
+ renderIngredientExcludeV913();
 }
 function openTab(tabName){
  const btn=document.querySelector('.tab[data-tab="'+tabName+'"]');
