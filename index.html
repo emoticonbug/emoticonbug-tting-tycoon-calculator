@@ -5048,6 +5048,30 @@ header .farm-correction-shared-status-v545.bad{color:#ffc2c2}
 #calc .ingredient-exclude-option-v913 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #calc .ingredient-exclude-clear-v913{width:100%;margin-top:9px;padding:8px 10px!important;background:#20283a!important}
 
+/* 추천순 제작 가치 기준선 v914 */
+#cards .recommend-threshold-v914{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  margin:2px 0;
+  color:#ffcf70;
+  font-size:12px;
+  font-weight:900;
+}
+#cards .recommend-threshold-v914:before,
+#cards .recommend-threshold-v914:after{
+  content:'';
+  height:0;
+  flex:1 1 auto;
+  border-top:1px dashed rgba(255,207,112,.58);
+}
+#cards .recommend-threshold-v914 span{white-space:nowrap}
+#cards .recommend-threshold-v914.all-below{color:#ff9b85}
+#cards .recommend-threshold-v914.all-below:before,
+#cards .recommend-threshold-v914.all-below:after{border-color:rgba(255,126,103,.62)}
+
 </style>
 
 <style id="farmCorrectionHeaderDockStyleV521">
@@ -6923,7 +6947,16 @@ function renderCards(){
       if(c.selfBurden!=null&&isFinite(c.selfBurden)&&c.selfBurden>scale.selfBurdenMax)scale.selfBurdenMax=c.selfBurden;
     }
   });
-  document.getElementById('cards').innerHTML=rows.map(r=>cardHTML(r.dish,r.calc,scale)).join('')||'<div class="notice">검색 결과 없음</div>';
+  let cardsHTML=rows.map(r=>cardHTML(r.dish,r.calc,scale));
+  if(s==='recommend'&&rows.length){
+    const firstBelow=rows.findIndex(r=>!(Number(r.calc.recommendValue)>0));
+    if(firstBelow>=0){
+      const allBelow=firstBelow===0;
+      const label=allBelow?'제작 가치 기준 미달 · 이번 주 쉬기 권장':'제작 가치 기준 미달';
+      cardsHTML.splice(firstBelow,0,`<div class="recommend-threshold-v914 ${allBelow?'all-below':''}"><span>${label}</span></div>`);
+    }
+  }
+  document.getElementById('cards').innerHTML=cardsHTML.join('')||'<div class="notice">검색 결과 없음</div>';
   const favBtn=document.getElementById('showFavOnly');
   if(favBtn){
     favBtn.textContent=state.view.favOnly?'★ 즐겨찾기만':'☆ 즐겨찾기만';
