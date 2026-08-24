@@ -12199,12 +12199,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     qa('input', card).forEach(input => {
       input.addEventListener('input', () => {
         if(kind === 'gather'){
-          try{ if(typeof updateGatherUsedStaminaComputedV620 === 'function') updateGatherUsedStaminaComputedV620(); }catch(e){}
+          let staminaInfoV915=null;
+          try{ if(typeof updateGatherUsedStaminaComputedV620 === 'function') staminaInfoV915=updateGatherUsedStaminaComputedV620(); }catch(e){}
           gatherStatusHoldUntil = 0;
           gatherAppliedLocked = false;
           const btn = byId('farmGatherApplyBtnV117');
-          if(btn) btn.disabled = false;
-          setGatherStatus('\uC2E4\uC81C\uAC12 \uC218\uC815 \uC911', '');
+          const hasRemainV915=readGatherRemainStaminaV620()!=null;
+          const noStaminaUsedV915=hasRemainV915&&Math.max(0,Math.floor(Number(staminaInfoV915?.used)||0))<=0;
+          if(btn)btn.disabled=!hasRemainV915||noStaminaUsedV915;
+          if(!hasRemainV915)setGatherStatus('현재 남은 체력을 입력해주세요.', 'warn');
+          else if(noStaminaUsedV915)setGatherStatus('체력 변화 없음 · 실제 채집 반영 불가', 'warn');
+          else setGatherStatus('\uC2E4\uC81C\uAC12 \uC218\uC815 \uC911', '');
         }else{
           harvestStatusHoldUntil = 0;
           harvestAppliedLocked = false;
@@ -13220,9 +13225,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       try{ if(typeof toast === 'function') toast('체력 증가/회복량 확인 필요'); }catch(e){}
       return;
     }
-    if(total <= 0 && usedStaminaInput <= 0){
-      setGatherStatus('\uBC18\uC601\uD560 \uCC44\uC9D1\uAC12 \uC5C6\uC74C', 'warn');
-      try{ if(typeof toast === 'function') toast('\uBC18\uC601\uD560 \uCC44\uC9D1\uAC12 \uC5C6\uC74C'); }catch(e){}
+    if(usedStaminaInput <= 0){
+      setGatherStatus('남은 체력과 추가 체력에 변화가 없어 실제 채집을 반영할 수 없습니다.', 'warn');
+      try{ if(typeof toast === 'function') toast('체력 변화 없음 · 채집 반영 안 됨'); }catch(e){}
       return;
     }
     if(gatherAppliedLocked && sig === lastGatherSignature){
@@ -16290,6 +16295,25 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       e.preventDefault(); e.stopImmediatePropagation();
       const status=byId('farmGatherStatusV117'); if(status) status.textContent='현재 남은 체력을 입력해야 반영됩니다.';
       toastSafe('현재 남은 체력 입력 필요');
+      return;
+    }
+    const current=Math.max(0,int(byId('farmUseStamina')?.value));
+    const remaining=Math.max(0,int(raw));
+    const extra=Math.max(0,int(byId('farmGatherExtraStaminaV620')?.value));
+    const available=current+extra;
+    if(remaining>available){
+      e.preventDefault(); e.stopImmediatePropagation();
+      const status=byId('farmGatherStatusV117');
+      if(status){status.textContent='현재 남은 체력이 계산 가능한 체력보다 큽니다.';status.classList.add('warn');}
+      toastSafe('체력 증가/회복량 확인 필요');
+      return;
+    }
+    const used=Math.max(0,available-remaining);
+    if(used<=0){
+      e.preventDefault(); e.stopImmediatePropagation();
+      const status=byId('farmGatherStatusV117');
+      if(status){status.textContent='체력 변화 없음 · 실제 채집 반영 불가';status.classList.add('warn');}
+      toastSafe('체력 변화 없음 · 채집 반영 안 됨');
     }
   }
   function captureAction(e){
