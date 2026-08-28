@@ -6965,7 +6965,8 @@ function renderCards(){
   });
   let cardsHTML=rows.map(r=>cardHTML(r.dish,r.calc,scale));
   if(s==='recommend'&&rows.length){
-    const firstBelow=rows.findIndex(r=>!(Number(r.calc.recommendValue)>0));
+    // 추천 정렬에 사용한 주간 고가 가산점까지 포함해 동일한 기준으로 통과 여부를 나눈다.
+    const firstBelow=rows.findIndex(r=>!(Number(r.calc.recommendOrderValue)>0));
     if(firstBelow>=0){
       const allBelow=firstBelow===0;
       const label=allBelow?'제작 가치 기준 미달 · 이번 주 쉬기 권장':'제작 가치 기준 미달';
