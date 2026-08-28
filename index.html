@@ -5551,6 +5551,13 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 </div>
 </div>
 </div>
+<div class="farm-owned-dishes-v918" id="farmOwnedDishesV918">
+<div class="farm-owned-dishes-head-v918"><h4>보유 요리</h4><span id="farmOwnedDishesMetaV918">불러오는 중</span></div>
+<div class="farm-owned-dishes-grid-v918">
+<section><div class="farm-owned-dishes-title-v918">일반 요리</div><div class="farm-owned-dishes-list-v918" id="farmOwnedRegularDishesV918"><span class="farm-owned-dishes-empty-v918">없음</span></div></section>
+<section class="golden"><div class="farm-owned-dishes-title-v918">황금 요리</div><div class="farm-owned-dishes-list-v918" id="farmOwnedGoldenDishesV918"><span class="farm-owned-dishes-empty-v918">없음</span></div></section>
+</div>
+</div>
 <div class="farm-owned-gold-v907"><h4>보유 황금 재료</h4><div class="control"><label>금 가루</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div><div class="control"><label>식용 금</label><input data-no-farm-save="1" id="farmOwnedEdibleGoldPowderV911" min="0" step="1" type="number" value="0"/></div></div>
 </div><div class="farm-section farm-input-compact-v240 farm-step3-seeds-v250">
 <h3>보유 씨앗</h3>
@@ -17039,6 +17046,141 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
   else bind();
   window.addEventListener('load', bind);
+})();
+</script>
+
+<style id="farmOwnedDishesStyleV918">
+#seedplan .farm-owned-dishes-v918{
+  flex:0 0 auto;
+  margin-top:8px;
+  padding:8px;
+  border:1px solid rgba(125,211,252,.20);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(14,165,233,.07),rgba(16,22,32,.96) 55%);
+}
+#seedplan .farm-owned-dishes-head-v918{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:7px;
+}
+#seedplan .farm-owned-dishes-head-v918 h4{margin:0!important;color:#eaf6ff;font-size:13px!important}
+#seedplan .farm-owned-dishes-head-v918 > span{color:#8fa8c2;font-size:10px;font-weight:800;white-space:nowrap}
+#seedplan .farm-owned-dishes-grid-v918{display:grid;gap:6px}
+#seedplan .farm-owned-dishes-grid-v918 > section{
+  min-width:0;
+  display:grid;
+  grid-template-columns:64px minmax(0,1fr);
+  gap:7px;
+  align-items:start;
+  padding:6px 7px;
+  border:1px solid rgba(148,163,184,.14);
+  border-radius:10px;
+  background:rgba(10,16,25,.54);
+}
+#seedplan .farm-owned-dishes-grid-v918 > section.golden{
+  border-color:rgba(255,205,84,.20);
+  background:linear-gradient(90deg,rgba(111,73,10,.13),rgba(10,16,25,.60));
+}
+#seedplan .farm-owned-dishes-title-v918{padding-top:2px;color:#a9c7e8;font-size:11px;font-weight:900;white-space:nowrap}
+#seedplan .golden .farm-owned-dishes-title-v918{color:#ffe39a}
+#seedplan .farm-owned-dishes-list-v918{min-width:0;max-height:76px;overflow:auto;display:grid;gap:4px;scrollbar-width:thin}
+#seedplan .farm-owned-dish-row-v918{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  padding:3px 5px;
+  border-radius:7px;
+  background:rgba(148,163,184,.07);
+  color:#dce9f8;
+  font-size:11px;
+  line-height:1.25;
+}
+#seedplan .golden .farm-owned-dish-row-v918{background:rgba(255,205,84,.07);color:#fff0b8}
+#seedplan .farm-owned-dish-row-v918 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
+#seedplan .farm-owned-dish-row-v918 b{flex:0 0 auto;color:#eaf6ff;font-size:11px;white-space:nowrap}
+#seedplan .golden .farm-owned-dish-row-v918 b{color:#ffd766}
+#seedplan .farm-owned-dishes-empty-v918{display:block;padding:2px 0;color:#70839b;font-size:11px;font-weight:800}
+</style>
+
+<script id="farmOwnedDishesScriptV918">
+/* 재배 계획 보유 일반/황금 요리 표시 v918 */
+(function(){
+  if(window.__farmOwnedDishesV918) return;
+  window.__farmOwnedDishesV918 = true;
+
+  function byId(id){ return document.getElementById(id); }
+  function int(value){ const n=Number(value); return Number.isFinite(n)?Math.max(0,Math.trunc(n)):0; }
+  function esc(text){ return String(text??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function stateObj(){ try{ return typeof state!=='undefined'?state:(window.state||null); }catch(e){ return window.state||null; } }
+  function recipes(){ try{ return (typeof DATA!=='undefined'&&Array.isArray(DATA.recipes))?DATA.recipes:(window.DATA&&Array.isArray(window.DATA.recipes)?window.DATA.recipes:[]); }catch(e){ return []; } }
+  function saleTotal(golden){
+    const setEl=byId(golden?'goldenSaleSetsV911':'saleSets');
+    const singleEl=byId(golden?'goldenSaleSinglesV911':'saleSingles');
+    return int(setEl&&setEl.value)*64+int(singleEl&&singleEl.value);
+  }
+  function qtyText(total){
+    const value=int(total), sets=Math.floor(value/64), pieces=value%64;
+    if(sets<=0) return `${pieces.toLocaleString('ko-KR')}개`;
+    if(pieces<=0) return `${sets.toLocaleString('ko-KR')}세트`;
+    return `${sets.toLocaleString('ko-KR')}세트 ${pieces.toLocaleString('ko-KR')}개`;
+  }
+  function ownedRows(){
+    const st=stateObj();
+    const stored=st&&st.farmDishStockV737&&typeof st.farmDishStockV737==='object'?st.farmDishStockV737:{};
+    const names=recipes().map(d=>String(d&&d.name||'')).filter(Boolean);
+    const allowed=new Set([...names,...names.map(name=>`황금 ${name}`)]);
+    const order=new Map();
+    names.forEach((name,index)=>{ order.set(name,index); order.set(`황금 ${name}`,index); });
+    const quantities={};
+    Object.keys(stored).forEach(name=>{ if(allowed.has(name)&&int(stored[name])>0) quantities[name]=int(stored[name]); });
+    const linked=st&&st.view&&st.view.lastLinkedCalcDish;
+    if(linked&&allowed.has(linked.name)) quantities[linked.name]=Math.max(int(quantities[linked.name]),saleTotal(String(linked.name).startsWith('황금 ')));
+    return Object.keys(quantities).filter(name=>quantities[name]>0).map(name=>({name,qty:quantities[name],golden:name.startsWith('황금 '),order:order.get(name)??999})).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'ko'));
+  }
+  function rowHtml(row){
+    const shortName=row.golden?row.name.replace(/^황금\s+/,''):row.name;
+    return `<div class="farm-owned-dish-row-v918" title="${esc(row.name)}"><span>${esc(shortName)}</span><b>${esc(qtyText(row.qty))}</b></div>`;
+  }
+  function render(){
+    const regularHost=byId('farmOwnedRegularDishesV918');
+    const goldenHost=byId('farmOwnedGoldenDishesV918');
+    const meta=byId('farmOwnedDishesMetaV918');
+    if(!regularHost||!goldenHost) return;
+    const rows=ownedRows();
+    const regular=rows.filter(row=>!row.golden), golden=rows.filter(row=>row.golden);
+    regularHost.innerHTML=regular.length?regular.map(rowHtml).join(''):'<span class="farm-owned-dishes-empty-v918">없음</span>';
+    goldenHost.innerHTML=golden.length?golden.map(rowHtml).join(''):'<span class="farm-owned-dishes-empty-v918">없음</span>';
+    if(meta){
+      const regularTotal=regular.reduce((sum,row)=>sum+row.qty,0);
+      const goldenTotal=golden.reduce((sum,row)=>sum+row.qty,0);
+      meta.textContent=`일반 ${regularTotal.toLocaleString('ko-KR')}개 · 황금 ${goldenTotal.toLocaleString('ko-KR')}개`;
+    }
+  }
+
+  window.renderFarmOwnedDishesV918=render;
+
+  const oldPlanUpdate=window.farmPlanUpdate;
+  if(typeof oldPlanUpdate==='function'&&!oldPlanUpdate.__ownedDishesV918){
+    const wrapped=function(){ const result=oldPlanUpdate.apply(this,arguments); render(); return result; };
+    wrapped.__ownedDishesV918=true;
+    window.farmPlanUpdate=wrapped;
+  }
+  const oldRenderCards=window.renderCards;
+  if(typeof oldRenderCards==='function'&&!oldRenderCards.__ownedDishesV918){
+    const wrapped=function(){ const result=oldRenderCards.apply(this,arguments); render(); return result; };
+    wrapped.__ownedDishesV918=true;
+    window.renderCards=wrapped;
+  }
+  document.addEventListener('input',event=>{
+    if(['saleSets','saleSingles','goldenSaleSetsV911','goldenSaleSinglesV911'].includes(event.target&&event.target.id)) render();
+  },true);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',render);
+  else render();
+  window.addEventListener('load',render);
 })();
 </script>
 
