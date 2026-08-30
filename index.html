@@ -5839,30 +5839,30 @@ const DATA = {
   sageSeeds:{0:0,1:1,2:2,3:2,4:3,5:3,6:4,7:4,8:5,9:5,10:6,11:7,12:8,13:9,14:10,15:14},
   sageGoldPowderChance:{0:0,1:1,2:1,3:2,4:2,5:3,6:3,7:4,8:5,9:6,10:7,11:8,12:9,13:10,14:12,15:15},
   serenitySparkleSkill:[
-    {days:7,skillPoints:0,gold:0,abilityStones:0},
-    {days:8,skillPoints:30,gold:3000000,abilityStones:60},
-    {days:10,skillPoints:50,gold:5000000,abilityStones:100},
-    {days:12,skillPoints:100,gold:10000000,abilityStones:200},
-    {days:14,skillPoints:125,gold:12000000,abilityStones:250}
+    {days:14,skillPoints:0,gold:0,abilityStones:0},
+    {days:17,skillPoints:30,gold:3000000,abilityStones:60},
+    {days:20,skillPoints:50,gold:5000000,abilityStones:100},
+    {days:25,skillPoints:100,gold:10000000,abilityStones:200},
+    {days:30,skillPoints:125,gold:12000000,abilityStones:250}
   ],
   yields:{'토마토':{min:1,avg:2,max:3,seed:'토마토 씨앗'},'마늘':{min:1,avg:2.5,max:4,seed:'마늘 씨앗'},'양파':{min:1,avg:1.5,max:2,seed:'양파 씨앗'}}
 };
 const DISH_PRICE_PATCH_2026_08={
-  '토마토 스파게티':{sellPrice:332,min:155,max:518},
-  '어니언 링':{sellPrice:247,min:184,max:616},
-  '갈릭 케이크':{sellPrice:360,min:136,max:454},
-  '삼겹살 토마토 찌개':{sellPrice:524,min:367,max:1223},
-  '삼색 아이스크림':{sellPrice:760,min:544,max:1813},
-  '마늘 양갈비 핫도그':{sellPrice:426,min:308,max:1028},
-  '달콤 시리얼':{sellPrice:1392,min:464,max:1547},
-  '로스트 치킨 파이':{sellPrice:667,min:384,max:1280},
-  '스윗 치킨 햄버거':{sellPrice:1526,min:582,max:1940},
-  '토마토 파인애플 피자':{sellPrice:1189,min:553,max:1846},
-  '양파 수프':{sellPrice:1199,min:683,max:2278},
-  '허브 삼겹살 찜':{sellPrice:1763,min:536,max:1789},
-  '토마토 라자냐':{sellPrice:1611,min:752,max:2506},
-  '딥 크림 빠네':{sellPrice:1334,min:691,max:2302},
-  '트리플 소갈비 꼬치':{sellPrice:910,min:775,max:2584}
+  '토마토 스파게티':{sellPrice:332,min:171,max:570},
+  '어니언 링':{sellPrice:247,min:203,max:677},
+  '갈릭 케이크':{sellPrice:360,min:149,max:499},
+  '삼겹살 토마토 찌개':{sellPrice:524,min:403,max:1346},
+  '삼색 아이스크림':{sellPrice:760,min:598,max:1995},
+  '마늘 양갈비 핫도그':{sellPrice:426,min:339,max:1131},
+  '달콤 시리얼':{sellPrice:1392,min:510,max:1701},
+  '로스트 치킨 파이':{sellPrice:667,min:422,max:1408},
+  '스윗 치킨 햄버거':{sellPrice:1526,min:640,max:2134},
+  '토마토 파인애플 피자':{sellPrice:1189,min:609,max:2031},
+  '양파 수프':{sellPrice:1199,min:752,max:2506},
+  '허브 삼겹살 찜':{sellPrice:1763,min:590,max:1968},
+  '토마토 라자냐':{sellPrice:1611,min:827,max:2757},
+  '딥 크림 빠네':{sellPrice:1334,min:760,max:2532},
+  '트리플 소갈비 꼬치':{sellPrice:910,min:852,max:2843}
 };
 DATA.recipes.forEach(dish=>{
   const patched=DISH_PRICE_PATCH_2026_08[dish.name];
@@ -6706,7 +6706,7 @@ const RECOMMEND_SEED_LUCK_V910=[0,0.5,1,1.5,2];
 const RECOMMEND_CROP_BOX_V910=[0,0.255,0.51,0.765,1.02,1.275];
 const RECOMMEND_ROULETTE_V910=[0,0.231,0.462,0.693,0.924,1.155];
 const RECOMMEND_GOLD_BONUS_PP_V910=[0,1,2,3,5];
-const RECOMMEND_SERENITY_DAYS_V910=[7,8,10,12,14];
+const RECOMMEND_SERENITY_DAYS_V910=[14,17,20,25,30];
 
 function recommendSettingV910(name,max=Infinity){
   const n=Math.floor(Number(state&&state.settings&&state.settings[name])||0);
@@ -6747,11 +6747,11 @@ function recommendGoldChanceV910(){
   return Math.max(0,(base+bonus)/100);
 }
 function recommendSerenityDaysV910(){
-  return RECOMMEND_SERENITY_DAYS_V910[recommendSettingV910('skillSerenitySparkle',4)]||7;
+  return RECOMMEND_SERENITY_DAYS_V910[recommendSettingV910('skillSerenitySparkle',4)]||14;
 }
 function recommendGoldStorageFactorV910(){
-  // 기본 7일 대비 보관 가능 기간이 길수록 금 가루 폐기 위험과 재확보 부담을 낮춘다.
-  return 7/recommendSerenityDaysV910();
+  // 기본 14일 대비 보관 가능 기간이 길수록 금 가루 폐기 위험과 재확보 부담을 낮춘다.
+  return 14/recommendSerenityDaysV910();
 }
 function recommendCraftSecondsV800(dish){
   let seconds=0;
