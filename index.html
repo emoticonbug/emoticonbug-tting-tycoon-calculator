@@ -5658,7 +5658,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <details class="sort-explain-v67">
 <summary>정렬 기준 설명</summary>
 <div class="sort-explain-body-v67">
-<div><strong>추천순</strong><span>판매 수익에서 입력한 재료 시세 또는 개인 수급 기준 기회비용·가공 시간·반복 준비 부담을 차감한 순서. 돈벌·한 솥 가득·세이지 괭이·각인·수확·반짝임 유지 설정을 반영하고, 황금 요리는 10개 일괄 변환 기준. 자기 가격범위 중간보다 낮은 주간 시세는 최대 25%까지 감점.</span></div>
+<div><strong>추천순</strong><span>판매 수익에서 입력한 재료 시세 또는 개인 수급 기준 기회비용·가공 시간·반복 준비 부담을 차감한 순서. 돈벌·한 솥 가득·세이지 괭이·각인·수확·반짝임 유지 설정과 등급별 황금 요리 일괄 제작 수량을 반영합니다. 자기 가격범위 중간보다 낮은 주간 시세는 최대 25%까지 감점됩니다.</span></div>
 <div><strong>현재가 높은 순</strong><span>현재 판매가가 높은 순. 원가나 수급 부담은 제외.</span></div>
 <div><strong>보유 재료 기준 수익순</strong><span>보유 재료를 먼저 쓰고 부족분만 산다고 가정한 수익 순.</span></div>
 <div><strong>재료 효율순</strong><span>판매가를 원재료 총 소모량으로 나눈 값이 높은 순.</span></div>
@@ -6323,6 +6323,30 @@ function priceIcon(name){
 
 const GOLDEN_GRADE_MAP_V900={커먼:'레어',노멀:'에픽',레어:'전설',에픽:'신화'};
 const GOLDEN_BATCH_DISH_QTY_V906=10;
+const GOLDEN_COMMON_RECIPE_DISHES_V921=new Set(['토마토 스파게티','어니언 링','갈릭 케이크']);
+const GOLDEN_NORMAL_RECIPE_DISHES_V921=new Set(['삼겹살 토마토 찌개','삼색 아이스크림','마늘 양갈비 핫도그','달콤 시리얼']);
+function goldenRecipeRuleV921(dish){
+  const base=dish&&dish.regularDish?dish.regularDish:dish;
+  const name=String(base&&base.name||dish&&dish.baseName||'');
+  if(GOLDEN_COMMON_RECIPE_DISHES_V921.has(name))return {batchQty:20,singleRegularQty:2};
+  if(GOLDEN_NORMAL_RECIPE_DISHES_V921.has(name))return {batchQty:13,singleRegularQty:1};
+  return {batchQty:GOLDEN_BATCH_DISH_QTY_V906,singleRegularQty:1};
+}
+function goldenProductionPlanV921(dish,qty){
+  const count=Math.max(0,Math.floor(Number(qty)||0));
+  const rule=goldenRecipeRuleV921(dish);
+  const fullBatches=Math.floor(count/rule.batchQty);
+  const singles=count%rule.batchQty;
+  return {...rule,count,fullBatches,singles,regularInputQty:fullBatches*rule.batchQty+singles*rule.singleRegularQty};
+}
+function goldenRecipeSummaryV921(dish){
+  const rule=goldenRecipeRuleV921(dish);
+  return `금 가루 1개는 일반 요리 ${rule.batchQty}개를 한 번에 황금 요리 ${rule.batchQty}개로 변환합니다. 식용 금 가루 1개는 일반 요리 ${rule.singleRegularQty}개로 황금 요리 1개를 제작합니다. 금 가루 1개와 식용 금 가루 10개는 서로 변환할 수 있습니다.`;
+}
+function goldenRecipePillsV921(dish){
+  const rule=goldenRecipeRuleV921(dish);
+  return `<span class="pill">${icon(dish.baseName)}${dish.baseName} × ${rule.batchQty}</span><span class="pill">${icon('금 가루')}금 가루 × 1</span><span class="pill">→ 황금 × ${rule.batchQty}</span><span class="pill">${icon(dish.baseName)}${dish.baseName} × ${rule.singleRegularQty}</span><span class="pill">${icon('식용 금 가루')}식용 금 가루 × 1</span><span class="pill">→ 황금 × 1</span>`;
+}
 function goldenDishFromRegularV900(dish){
   if(!dish)return null;
   return {
@@ -6638,15 +6662,14 @@ function calcRegularDishV900(dish){
 }
 function goldenTotalIngredientsV900(dish,qty){
  const regular=dish.regularDish;
- const rows=regular.ingredients.map(ing=>({name:ing.name,qty:ing.qty*qty}));
- const fullBatches=Math.floor(qty/GOLDEN_BATCH_DISH_QTY_V906);
- const singles=qty%GOLDEN_BATCH_DISH_QTY_V906;
- if(fullBatches>0)rows.push({name:'금 가루',qty:fullBatches});
- if(singles>0)rows.push({name:'식용 금 가루',qty:singles});
+ const production=goldenProductionPlanV921(dish,qty);
+ const rows=regular.ingredients.map(ing=>({name:ing.name,qty:ing.qty*production.regularInputQty}));
+ if(production.fullBatches>0)rows.push({name:'금 가루',qty:production.fullBatches});
+ if(production.singles>0)rows.push({name:'식용 금 가루',qty:production.singles});
  return rows;
 }
 function calcGoldenDishV900(dish){
- const force=currentForceMode(); const info=saleInfo(); const totalIngredients=goldenTotalIngredientsV900(dish,info.qty);
+ const force=currentForceMode(); const info=saleInfo(); const production=goldenProductionPlanV921(dish,info.qty); const totalIngredients=goldenTotalIngredientsV900(dish,info.qty);
  let totalCost=0,missing=[],rawTotal={},seedsTotal={};
  totalIngredients.forEach(ing=>{const r=costOfItem(ing.name,ing.qty,force);totalCost+=r.cost;missing=missing.concat(r.missing);addMap(rawTotal,r.raw);addMap(seedsTotal,r.seeds);});
  missing=[...new Set(missing)];
@@ -6656,7 +6679,7 @@ function calcGoldenDishV900(dish){
  const rawQty=Object.values(raw).reduce((sum,v)=>sum+(Number(v)||0),0); const materialEff=rawQty>0?sell.finalSell/rawQty:null;
  const cashRoi=cost>0?profit/cost*100:null; const self=selfSupplyMetrics(rawTotal,seedsTotal,totalProfit);
  const owned=calcOwnedTotalIngredientsV900(totalIngredients,info.qty,totalSell);
- return {cost,totalCost,missing,raw,seeds,rawTotal,seedsTotal,rawQty,materialEff,sellBase:sell.sellBase,finalSell:sell.finalSell,totalSell,profit,totalProfit,roi:cashRoi,cashCost:cost,cashRoi,sellBonus:sell.sellBonus,saleInfo:info,selfBurden:self.burden,selfScore:self.score,selfFarmBurden:self.farmBurden,selfOtherBurden:self.otherBurden,selfSeedNeed:self.seedNeed,selfSeedGather:self.seedGather,goldenFullBatches:Math.floor(info.qty/GOLDEN_BATCH_DISH_QTY_V906),goldenSingles:info.qty%GOLDEN_BATCH_DISH_QTY_V906,...owned};
+ return {cost,totalCost,missing,raw,seeds,rawTotal,seedsTotal,rawQty,materialEff,sellBase:sell.sellBase,finalSell:sell.finalSell,totalSell,profit,totalProfit,roi:cashRoi,cashCost:cost,cashRoi,sellBonus:sell.sellBonus,saleInfo:info,selfBurden:self.burden,selfScore:self.score,selfFarmBurden:self.farmBurden,selfOtherBurden:self.otherBurden,selfSeedNeed:self.seedNeed,selfSeedGather:self.seedGather,goldenFullBatches:production.fullBatches,goldenSingles:production.singles,goldenBatchQty:production.batchQty,goldenSingleRegularQty:production.singleRegularQty,goldenRegularInputQty:production.regularInputQty,...owned};
 }
 function calcDish(dish){return dish&&dish.isGolden?calcGoldenDishV900(dish):calcRegularDishV900(dish)}
 function calcBonus(){return sellBonusForSaleInfo(saleInfo())}
@@ -6668,7 +6691,7 @@ function normalizeSortByV742(value){
 // 개인 설정 반영 추천순 v912
 // 현재 보유 재고는 별도 정렬에서 다룬다. 추천순은 반복 생산 시 실제로 남는 가치로 비교한다.
 // 입력 시세는 직접 수급한 재료에도 기회비용으로 사용하고, 미입력 재료는 보수적인 대체가로 계산한다.
-// 황금 요리는 금 가루 1개로 10개를 일괄 변환하는 기준을 사용한다.
+// 황금 요리는 등급별 일괄 제작 수량에 맞춘 금 가루 기회비용을 사용한다.
 const RECOMMEND_FALLBACK_UNIT_G_V912={
   '토마토':8,
   '양파':10,
@@ -6716,7 +6739,7 @@ function recommendRecipeInputsV910(dish){
   if(!dish)return [];
   const base=dish.isGolden?(dish.regularDish||dish):dish;
   const rows=(base.ingredients||[]).map(ing=>({name:ing.name,qty:Number(ing.qty)||0}));
-  if(dish.isGolden)rows.push({name:'금 가루',qty:1/GOLDEN_BATCH_DISH_QTY_V906});
+  if(dish.isGolden)rows.push({name:'금 가루',qty:1/goldenRecipeRuleV921(dish).batchQty});
   return rows;
 }
 function recommendExpectedYieldV910(crop){
@@ -6985,9 +7008,9 @@ function renderCards(){
 function craftRows(d,c){
   const qty=c.saleInfo.qty;
   if(d.isGolden){
-    const rows=[`<tr><td>${icon(d.baseName)} ${d.baseName}</td><td>${qty}개</td><td class="muted">황금 변환 대상</td></tr>`];
-    if(c.goldenFullBatches>0)rows.push(`<tr><td>${icon('금 가루')} 금 가루</td><td>${c.goldenFullBatches}개</td><td class="muted">요리 ${GOLDEN_BATCH_DISH_QTY_V906}개 일괄 변환</td></tr>`);
-    if(c.goldenSingles>0)rows.push(`<tr><td>${icon('식용 금 가루')} 식용 금 가루</td><td>${c.goldenSingles}개</td><td class="muted">요리 1개씩 개별 변환</td></tr>`);
+    const rows=[`<tr><td>${icon(d.baseName)} ${d.baseName}</td><td>${c.goldenRegularInputQty}개</td><td class="muted">황금 ${qty}개 제작에 사용</td></tr>`];
+    if(c.goldenFullBatches>0)rows.push(`<tr><td>${icon('금 가루')} 금 가루</td><td>${c.goldenFullBatches}개</td><td class="muted">요리 ${c.goldenBatchQty}개 일괄 변환</td></tr>`);
+    if(c.goldenSingles>0)rows.push(`<tr><td>${icon('식용 금 가루')} 식용 금 가루</td><td>${c.goldenSingles}개</td><td class="muted">일반 요리 ${c.goldenSingleRegularQty}개당 황금 1개</td></tr>`);
     return rows.join('');
   }
   return d.ingredients.map(i=>{
@@ -7071,7 +7094,7 @@ function cardHTML(d,c,scale={}){
 
   const goldenClass=d.isGolden?' golden-dish-card-v900':''
   const ingredientHTML=d.isGolden
-    ? `<span class="pill">${icon(d.baseName)}${d.baseName} × ${GOLDEN_BATCH_DISH_QTY_V906}</span><span class="pill">${icon('금 가루')}금 가루 × 1</span><span class="pill">→ 황금 × ${GOLDEN_BATCH_DISH_QTY_V906}</span><span class="pill">${icon(d.baseName)}${d.baseName} × 1</span><span class="pill">${icon('식용 금 가루')}식용 금 가루 × 1</span><span class="pill">→ 황금 × 1</span>`
+    ? goldenRecipePillsV921(d)
     : d.ingredients.map(i=>`<span class="pill">${icon(i.name)}${i.name} × ${i.qty}</span>`).join('')
 
   return `<article class="card calc-card collapsed${linkedClass}${goldenClass}" data-calc-dish="${esc(d.name)}">
@@ -7113,7 +7136,7 @@ function cardHTML(d,c,scale={}){
 
       ${miss}
 
-      ${d.isGolden?`<div class="notice golden-recipe-note-v900">금 가루 1개는 일반 요리 ${GOLDEN_BATCH_DISH_QTY_V906}개를 한 번에 변환하며, 금 가루 1개를 식용 금 가루 10개로 가공할 수도 있습니다. 식용 금 가루 1개는 일반 요리 1개를 개별 변환합니다.</div>`:''}
+      ${d.isGolden?`<div class="notice golden-recipe-note-v900">${goldenRecipeSummaryV921(d)}</div>`:''}
       <div class="ingredients">${ingredientHTML}</div>
 
       <details class="details">
@@ -7151,7 +7174,7 @@ function priceGroupDefinitions(){
  const meat=meatOrderV767.filter(n=>meatSetV767.has(n));
  return [
   {title:'구매 재료', note:'상점 고정가로 계산', fixed:true, items:['소금','요리용 달걀','요리용 우유','오일']},
-  {title:'황금 요리 재료', note:'황금 요리 변환 원가 반영', items:['금 가루','식용 금 가루']},
+  {title:'황금 요리 재료', note:'금 가루 1개 ↔ 식용 금 가루 10개 변환 가능', items:['금 가루','식용 금 가루']},
   {title:'가공 요리', note:'입력 시세 우선 · 0원/빈값이면 하위 재료 연계', items:['치즈 조각','밀가루 반죽','버터 조각','요리용 소금']},
   {title:'아일랜드 작물', note:'입력 우선 · 빈값이면 씨앗 가격 연계', items:['토마토','마늘','양파']},
   {title:'씨앗류', note:'작물/베이스 자동 추정 기준', items:['토마토 씨앗','양파 씨앗','마늘 씨앗']},
@@ -13632,26 +13655,41 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const goldHave=ownedGoldenMaterialQtyV911('금 가루');
     const edibleHave=ownedGoldenMaterialQtyV911('식용 금 가루');
     const allowGoldSwap=goldPowderSwapEnabledV911();
-    const batchGold=Math.min(Math.floor(regularHave/GOLDEN_BATCH_DISH_QTY_V906),goldHave);
-    let converted=batchGold*GOLDEN_BATCH_DISH_QTY_V906;
-    let remainRegular=regularHave-converted;
-    const edibleUsed=allowGoldSwap?Math.min(remainRegular,edibleHave):0;
-    converted+=edibleUsed;
-    remainRegular-=edibleUsed;
-    let convertedGold=0,convertedEdibleUsed=0,convertedEdibleLeft=0;
-    if(remainRegular>0&&allowGoldSwap&&goldHave-batchGold>0){
-      convertedGold=1;
-      convertedEdibleUsed=Math.min(remainRegular,10);
-      convertedEdibleLeft=10-convertedEdibleUsed;
-      converted+=convertedEdibleUsed;
-      remainRegular-=convertedEdibleUsed;
+    const rule=typeof goldenRecipeRuleV921==='function'?goldenRecipeRuleV921(dish):{batchQty:GOLDEN_BATCH_DISH_QTY_V906,singleRegularQty:1};
+    const batchQty=rule.batchQty, singleRegularQty=rule.singleRegularQty;
+    let remainRegular=regularHave, goldLeft=goldHave, edibleLeft=edibleHave;
+    const batchGold=Math.min(Math.floor(remainRegular/batchQty),goldLeft);
+    let regularUsed=batchGold*batchQty, converted=batchGold*batchQty;
+    remainRegular-=regularUsed; goldLeft-=batchGold;
+    let edibleToGold=0,edibleUsed=0,convertedGold=0,convertedEdibleUsed=0,convertedEdibleLeft=0;
+    if(allowGoldSwap){
+      edibleToGold=Math.min(Math.floor(remainRegular/batchQty),Math.floor(edibleLeft/10));
+      if(edibleToGold>0){
+        const batchConverted=edibleToGold*batchQty;
+        edibleLeft-=edibleToGold*10; remainRegular-=batchConverted; regularUsed+=batchConverted; converted+=batchConverted;
+      }
+      edibleUsed=Math.min(Math.floor(remainRegular/singleRegularQty),edibleLeft);
+      if(edibleUsed>0){
+        const singleRegularUsed=edibleUsed*singleRegularQty;
+        edibleLeft-=edibleUsed; remainRegular-=singleRegularUsed; regularUsed+=singleRegularUsed; converted+=edibleUsed;
+      }
+      if(remainRegular>=singleRegularQty&&goldLeft>0){
+        convertedGold=1; goldLeft-=1;
+        convertedEdibleUsed=Math.min(Math.floor(remainRegular/singleRegularQty),10);
+        convertedEdibleLeft=10-convertedEdibleUsed;
+        const convertedRegularUsed=convertedEdibleUsed*singleRegularQty;
+        remainRegular-=convertedRegularUsed; regularUsed+=convertedRegularUsed; converted+=convertedEdibleUsed; edibleLeft+=convertedEdibleLeft;
+      }
     }
-    const goldUsed=batchGold+convertedGold;
+    const canSwap=!allowGoldSwap&&(
+      (edibleHave>=10&&regularHave>=batchQty)||
+      (edibleHave>0&&regularHave>=singleRegularQty)||
+      (goldHave>0&&regularHave>=singleRegularQty)
+    );
     return {
-      regularName,goldenName,regularHave,goldenHave,goldHave,edibleHave,allowGoldSwap,batchGold,edibleUsed,
-      convertedGold,convertedEdibleUsed,convertedEdibleLeft,goldUsed,converted,
-      regularLeft:regularHave-converted,goldenAfter:goldenHave+converted,
-      goldLeft:goldHave-goldUsed,edibleLeft:edibleHave-edibleUsed+convertedEdibleLeft
+      regularName,goldenName,regularHave,goldenHave,goldHave,edibleHave,allowGoldSwap,batchQty,singleRegularQty,
+      batchGold,edibleToGold,edibleUsed,convertedGold,convertedEdibleUsed,convertedEdibleLeft,regularUsed,converted,canSwap,
+      regularLeft:remainRegular,goldenAfter:goldenHave+converted,goldLeft,edibleLeft
     };
   }
   function addBaseNeed(out, item, qty){
@@ -13708,12 +13746,13 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     const plan=goldenConvertPlanV911(dish);
     if(plan.regularHave<=0)return [`${dish.name}: 보유 일반 요리 없음`];
     if(plan.converted<=0)return [
-      plan.regularHave<10&&plan.goldHave>0&&!plan.allowGoldSwap?`${dish.name}: 금 가루 치환 체크 시 변환 가능`:`${dish.name}: 황금 재료 부족`,
+      plan.canSwap?`${dish.name}: 재료 변환 사용을 체크하면 변환 가능`:`${dish.name}: 황금 재료 부족`,
       `보유 금 가루 ${formatQty(plan.goldHave)} · 식용 금 가루 ${formatQty(plan.edibleHave)}`
     ];
-    const lines=[`${plan.goldenName} +${formatQty(plan.converted)} / 일반 요리 -${formatQty(plan.converted)}`];
-    if(plan.batchGold>0)lines.push(`금 가루 ${formatQty(plan.batchGold)}로 ${formatQty(plan.batchGold*GOLDEN_BATCH_DISH_QTY_V906)} 일괄 변환`);
-    if(plan.edibleUsed>0)lines.push(`보유 식용 금 가루 -${formatQty(plan.edibleUsed)}`);
+    const lines=[`${plan.goldenName} +${formatQty(plan.converted)} / 일반 요리 -${formatQty(plan.regularUsed)}`];
+    if(plan.batchGold>0)lines.push(`금 가루 ${formatQty(plan.batchGold)}로 ${formatQty(plan.batchGold*plan.batchQty)} 일괄 변환`);
+    if(plan.edibleToGold>0)lines.push(`식용 금 가루 ${formatQty(plan.edibleToGold*10)} → 금 가루 ${formatQty(plan.edibleToGold)} → ${formatQty(plan.edibleToGold*plan.batchQty)} 일괄 변환`);
+    if(plan.edibleUsed>0)lines.push(`보유 식용 금 가루 -${formatQty(plan.edibleUsed)} · 일반 요리 ${plan.singleRegularQty}개당 황금 1개`);
     if(plan.convertedGold>0)lines.push(`금 가루 1개 → 식용 금 가루 10개 · ${formatQty(plan.convertedEdibleUsed)} 사용 · ${formatQty(plan.convertedEdibleLeft)} 보관`);
     if(plan.regularLeft>0)lines.push(`변환 후 일반 요리 ${formatQty(plan.regularLeft)} 남음`);
     return lines;
@@ -13723,7 +13762,7 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       ?lines.map(line=>`<div class="farm-auto-preview-line-v440">${escText(line)}</div>`).join('')
       :`<div class="farm-auto-preview-muted-v440">보유 일반 요리와 황금 재료 기준 계산 대기</div>`;
     const checked=goldPowderSwapEnabledV911()?' checked':'';
-    return `<div class="farm-auto-preview-box-v440"><div class="farm-auto-preview-title-v440">선택 요리 → 황금 요리 예정</div>${body}<label class="farm-gold-swap-check-v911"><input id="farmGoldPowderSwapV911" type="checkbox"${checked}>10개 미만 잔여분에 금 가루를 식용 금 가루 10개로 치환</label></div>`;
+    return `<div class="farm-auto-preview-box-v440"><div class="farm-auto-preview-title-v440">선택 요리 → 황금 요리 예정</div>${body}<label class="farm-gold-swap-check-v911"><input id="farmGoldPowderSwapV911" type="checkbox"${checked}>남은 요리에 금 가루 ↔ 식용 금 가루 변환 사용</label></div>`;
   }
 
   function updateAutoConvertPreview(){
@@ -13921,9 +13960,9 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
       return;
     }
     if(plan.converted<=0){
-      const swapHint=plan.regularHave<10&&plan.goldHave>0&&!plan.allowGoldSwap;
-      setStatus(swapHint?'금 가루 치환을 체크하면 변환 가능':'금 가루 또는 식용 금 가루 부족','warn');
-      toastSafe(swapHint?'금 가루 치환 체크 필요':'황금 요리 변환 재료 부족');
+      const swapHint=plan.canSwap;
+      setStatus(swapHint?'재료 변환 사용을 체크하면 변환 가능':'금 가루 또는 식용 금 가루 부족','warn');
+      toastSafe(swapHint?'재료 변환 사용 체크 필요':'황금 요리 변환 재료 부족');
       return;
     }
 
@@ -13934,11 +13973,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     writeOwnedGoldenMaterialV911('식용 금 가루','farmOwnedEdibleGoldPowderV911',plan.edibleLeft);
 
     const lines=[
-      `${plan.regularName} -${formatQty(plan.converted)}`,
+      `${plan.regularName} -${formatQty(plan.regularUsed)}`,
       `${plan.goldenName} +${formatQty(plan.converted)}`
     ];
-    if(plan.batchGold>0)lines.push(`금 가루 -${formatQty(plan.batchGold)} · 10개 일괄 변환`);
-    if(plan.edibleUsed>0)lines.push(`식용 금 가루 -${formatQty(plan.edibleUsed)} · 낱개 변환`);
+    if(plan.batchGold>0)lines.push(`금 가루 -${formatQty(plan.batchGold)} · ${plan.batchQty}개 일괄 변환`);
+    if(plan.edibleToGold>0)lines.push(`식용 금 가루 -${formatQty(plan.edibleToGold*10)} → 금 가루 ${formatQty(plan.edibleToGold)}개 제작·사용`);
+    if(plan.edibleUsed>0)lines.push(`식용 금 가루 -${formatQty(plan.edibleUsed)} · 일반 요리 ${plan.singleRegularQty}개당 황금 1개`);
     if(plan.convertedGold>0)lines.push(`금 가루 -1개 → 식용 금 가루 10개 · ${formatQty(plan.convertedEdibleUsed)} 사용 · ${formatQty(plan.convertedEdibleLeft)} 보관`);
 
     const calcSync=syncGoldenDishToCalcV911(plan.goldenName,plan.goldenAfter);
@@ -13949,7 +13989,6 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     setStatus(`황금 변환 완료: ${plan.goldenName} ${formatQty(plan.converted)}${calcSync.highlighted?' · 계산 카드 연결':''}`,'ok');
     toastSafe('일반 요리 → 황금 요리 변환 완료');
   }
-
   function isPreviewInput(target){
     const id = target && target.id || '';
     return id === 'farmDishSelect' ||
