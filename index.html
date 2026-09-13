@@ -15200,7 +15200,12 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
     });return removed;
   }
   function ensureInventoryCoverage(){
-    allTrackedItems().forEach(item=>{const gap=itemCurrentQty(item)-trackedQty(item);if(gap>0)addLot(item,gap,'기존 보유량 등록');});
+    let added=0;
+    allTrackedItems().forEach(item=>{
+      const gap=itemCurrentQty(item)-trackedQty(item);
+      if(gap>0)added+=addLot(item,gap,'기존 보유량 등록');
+    });
+    return added;
   }
   function lineQty(q){const v=truncQty(q),sets=Math.floor(v/64),pieces=v%64;return sets?(pieces?sets+'세트 '+pieces+'개':sets+'세트'):pieces+'개';}
   function addRecent(type,lines,note){if(!lines||!lines.length)return;try{if(typeof window.farmAddRecentActionV116==='function')window.farmAddRecentActionV116({type,lines,note:note||'공유 전송 없음'});}catch(e){}}
@@ -15258,9 +15263,17 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
   function farmInventoryRestoreReady(){try{if(typeof window.farmPlanRestoreReadyV78==='function')return !!window.farmPlanRestoreReadyV78();}catch(e){}return true;}
   function checkExpired(){
     if(!farmInventoryRestoreReady())return;
-    const store=ensureStore();if(!store)return;compactLots();reconcileLotsToInventory();ensureInventoryCoverage();compactLots();
+    const store=ensureStore();if(!store)return;compactLots();
+    const reconciled=reconcileLotsToInventory();
+    const covered=ensureInventoryCoverage();
+    compactLots();
     const now=Date.now(),expired=store.lots.filter(l=>new Date(l.expiresAt||'').getTime()<=now&&truncQty(l.qty)>0);
-    if(!expired.length){syncBaselines();saveQuiet();return;}
+    if(!expired.length){
+      syncBaselines();
+      if(reconciled>0||covered>0)saveQuiet();
+      else renderSummary();
+      return;
+    }
     const lines=[];expired.forEach(l=>{const expiredQty=truncQty(l.qty),current=itemCurrentQty(l.item),deduct=Math.min(current,expiredQty);l.qty=0;if(deduct>0){setItemCurrentQty(l.item,current-deduct);lines.push(l.item+' -'+lineQty(deduct));}});
     compactLots();syncBaselines();
     if(lines.length){addRecent('유통기한 만료',lines,'각 묶음에 저장된 만료일 기준 · 현재 보유 수량 안에서 1회 차감');try{if(typeof toast==='function')toast('유통기한 만료 차감');}catch(e){}}
