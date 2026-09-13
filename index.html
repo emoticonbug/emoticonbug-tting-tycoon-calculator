@@ -3179,6 +3179,15 @@ header .title h1.app-logo-title{
 #seedplan .farm-owned-gold-v907 h4{margin:0!important;align-self:center;color:#ffe39a;font-size:13px!important}
 #seedplan .farm-owned-gold-v907 .control{width:100%;max-width:88px;min-width:0;margin:0;justify-self:end}
 #seedplan .farm-owned-gold-v907 input{min-height:32px!important;padding:6px 8px!important}
+#seedplan .farm-shelf-life-v922{grid-column:1/-1;border-top:1px solid rgba(255,205,84,.18);padding-top:6px;color:var(--muted);font-size:11px}
+#seedplan .farm-shelf-life-v922 summary{cursor:pointer;list-style:none;color:#ffe39a;font-weight:800;display:flex;align-items:center;gap:5px}
+#seedplan .farm-shelf-life-v922 summary::-webkit-details-marker{display:none}
+#seedplan .farm-shelf-life-v922 summary::before{content:'▸';color:#ffd45f}
+#seedplan .farm-shelf-life-v922[open] summary::before{content:'▾'}
+#seedplan .farm-shelf-life-body-v922{display:grid;gap:4px;margin-top:6px}
+#seedplan .farm-shelf-life-body-v922>div{display:flex;justify-content:space-between;gap:8px}
+#seedplan .farm-shelf-life-body-v922 strong{color:var(--text)}
+#seedplan .farm-shelf-life-body-v922 small{color:var(--muted);line-height:1.35}
 @media(max-width:900px){
   #seedplan .farm-gather-gold-row-v907,#seedplan .farm-owned-gold-v907{grid-template-columns:1fr}
 }
@@ -5558,7 +5567,7 @@ header .farm-correction-pending-card-v728 .farm-pending-actions-v722{
 <section class="golden"><div class="farm-owned-dishes-title-v918">황금 요리</div><div class="farm-owned-dishes-list-v918" id="farmOwnedGoldenDishesV918"><span class="farm-owned-dishes-empty-v918">없음</span></div></section>
 </div>
 </div>
-<div class="farm-owned-gold-v907"><h4>보유 황금 재료</h4><div class="control"><label>금 가루</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div><div class="control"><label>식용 금</label><input data-no-farm-save="1" id="farmOwnedEdibleGoldPowderV911" min="0" step="1" type="number" value="0"/></div></div>
+<div class="farm-owned-gold-v907"><h4>보유 황금 재료</h4><div class="control"><label>금 가루</label><input data-no-farm-save="1" id="farmOwnedGoldPowderV907" min="0" step="1" type="number" value="0"/></div><div class="control"><label>식용 금</label><input data-no-farm-save="1" id="farmOwnedEdibleGoldPowderV911" min="0" step="1" type="number" value="0"/></div><details class="farm-shelf-life-v922" id="farmShelfLifeSummaryV922"><summary>유통기한 확인</summary><div class="farm-shelf-life-body-v922">추적 준비 중</div></details></div>
 </div><div class="farm-section farm-input-compact-v240 farm-step3-seeds-v250">
 <h3>보유 씨앗</h3>
 <div class="farm-owned-grid">
@@ -15008,416 +15017,300 @@ initDefaults(); updateStickyOffset(); renderWikiMenu(); bindTabs(); bindSettings
 
 
 
-<script id="farmShelfLifeSafeScriptV710">
+<script id="farmShelfLifeSafeScriptV922">
 (function(){
-  if(window.__farmShelfLifeSafeV710) return;
-  window.__farmShelfLifeSafeV710 = true;
+  if(window.__farmShelfLifeSafeV922) return;
+  window.__farmShelfLifeSafeV922 = true;
 
-  const VERSION = 760;
+  const VERSION = 922;
   const STORE_KEY = 'farmShelfLifeV710';
   const CROPS = ['토마토','양파','마늘'];
   const EN = {토마토:'Tomato', 양파:'Onion', 마늘:'Garlic'};
-  const REGULAR_DISH_NAMES = ((typeof DATA!=='undefined'&&DATA.recipes) || []).map(d => d.name);
-  const DISH_NAMES = new Set([...REGULAR_DISH_NAMES,...REGULAR_DISH_NAMES.map(name=>`황금 ${name}`)]);
+  const GOLD_ITEMS = ['금 가루','식용 금 가루'];
+  const GOLD_INPUT = {'금 가루':'farmOwnedGoldPowderV907','식용 금 가루':'farmOwnedEdibleGoldPowderV911'};
+  const REGULAR_DISH_NAMES = ((typeof DATA !== 'undefined' && DATA.recipes) || []).map(d => d.name);
+  const DISH_NAMES = new Set([...REGULAR_DISH_NAMES,...REGULAR_DISH_NAMES.map(name => `황금 ${name}`)]);
   let internalWrite = 0;
   let actionDepth = 0;
-  let expireTimerV737 = 0;
+  let expireTimer = 0;
+  const manualBaselines = new Map();
 
   function byId(id){ return document.getElementById(id); }
+  function truncQty(v){ const n=Math.trunc(Number(v)||0); return n>0?n:0; }
   function stateObj(){ try{ return (typeof state !== 'undefined') ? state : (window.state || null); }catch(e){ return window.state || null; } }
-  function dishStockMapV737(){
-    const st=stateObj();
-    if(!st) return {};
-    if(!st.farmDishStockV737 || typeof st.farmDishStockV737 !== 'object') st.farmDishStockV737 = {};
-    return st.farmDishStockV737;
+  function readNum(id){ const el=byId(id); return truncQty(el && el.value); }
+  function readStackSingle(prefix){ return readNum(prefix+'Stack')*64+readNum(prefix+'Single'); }
+  function readSaleTotal(golden){ return golden?readNum('goldenSaleSetsV911')*64+readNum('goldenSaleSinglesV911'):readNum('saleSets')*64+readNum('saleSingles'); }
+  function serenityLevel(){ const st=stateObj(); return Math.max(0,Math.min(4,Math.trunc(Number(st&&st.settings&&st.settings.skillSerenitySparkle)||0))); }
+  function serenityDays(){
+    const level=serenityLevel();
+    const row=typeof DATA!=='undefined'&&Array.isArray(DATA.serenitySparkleSkill)?DATA.serenitySparkleSkill[level]:null;
+    return Math.max(1,Math.trunc(Number(row&&row.days)||[14,17,20,25,30][level]||14));
   }
-  function dishStockQtyV737(item){
-    const map=dishStockMapV737();
-    return truncQty(map && Object.prototype.hasOwnProperty.call(map,item) ? map[item] : 0);
-  }
-  function setDishStockQtyV737(item,total){
-    if(!DISH_NAMES.has(item)) return;
-    const map=dishStockMapV737();
-    const value=truncQty(total);
-    map[item]=value;
-    const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-    if(linked && linked.name === item) writeSaleTotal(value,String(item).startsWith('황금 '));
-  }
-  function ensureStore(){
-    const st = stateObj();
-    if(!st) return null;
-    if(!st[STORE_KEY] || typeof st[STORE_KEY] !== 'object') st[STORE_KEY] = {version:VERSION, lots:[], updatedAt:'', createdAt:new Date().toISOString()};
-    if(!Array.isArray(st[STORE_KEY].lots)) st[STORE_KEY].lots = [];
-    st[STORE_KEY].version = VERSION;
-    return st[STORE_KEY];
-  }
-  function saveQuiet(){
-    try{ const store=ensureStore(); if(store) store.updatedAt = new Date().toISOString(); }catch(e){}
-    try{ if(typeof window.farmSaveInputsV78 === 'function') window.farmSaveInputsV78({intent:'shelflife'}); }catch(e){}
-    try{ if(typeof save === 'function') save(false); }catch(e){}
-    try{ if(typeof renderCards === 'function') renderCards(); }catch(e){}
-    try{ if(typeof farmPlanUpdate === 'function') farmPlanUpdate(); }catch(e){}
-    try{ if(typeof renderDataStatus === 'function') renderDataStatus(); }catch(e){}
-  }
-  function truncQty(v){ const n = Math.trunc(Number(v) || 0); return n > 0 ? n : 0; }
-  function readNum(id){ const el=byId(id); return Math.max(0, Math.trunc(Number(el && el.value || 0) || 0)); }
-  function readStackSingle(prefix){ return readNum(prefix+'Stack')*64 + readNum(prefix+'Single'); }
-  function writeStackSingle(prefix,total){
-    const value = truncQty(total);
-    const stack = Math.floor(value/64), single = value%64;
-    internalWrite++;
-    try{
-      const st=byId(prefix+'Stack'); if(st) st.value = stack;
-      const si=byId(prefix+'Single'); if(si) si.value = single;
-    }finally{ setTimeout(()=>{ internalWrite=Math.max(0, internalWrite-1); },0); }
-  }
-  function readSaleTotal(golden=false){ return golden?readNum('goldenSaleSetsV911')*64+readNum('goldenSaleSinglesV911'):readNum('saleSets')*64+readNum('saleSingles'); }
-  function writeSaleTotal(total,golden=false){
-    const value = truncQty(total);
-    const sets = Math.floor(value/64), singles = value%64;
-    const setId=golden?'goldenSaleSetsV911':'saleSets',singleId=golden?'goldenSaleSinglesV911':'saleSingles';
-    const setKey=golden?'goldenSaleSetsV911':'saleSets',singleKey=golden?'goldenSaleSinglesV911':'saleSingles';
-    internalWrite++;
-    try{
-      const st = stateObj();
-      if(st){ st.settings = st.settings || {}; st.settings[setKey] = sets; st.settings[singleKey] = singles; }
-      const setEl=byId(setId); if(setEl) setEl.value = sets;
-      const singleEl=byId(singleId); if(singleEl) singleEl.value = singles;
-    }finally{ setTimeout(()=>{ internalWrite=Math.max(0, internalWrite-1); },0); }
+  function shelfDaysFor(item){ return GOLD_ITEMS.includes(item)?serenityDays():2; }
+  function expiryAt(item,createdAt,storedDays){
+    const d=createdAt?new Date(createdAt):new Date();
+    if(Number.isNaN(d.getTime())) return expiryAt(item,new Date().toISOString(),storedDays);
+    const days=Math.max(1,Math.trunc(Number(storedDays)||shelfDaysFor(item)));
+    return new Date(d.getFullYear(),d.getMonth(),d.getDate()+days,3,0,0,0).toISOString();
   }
   function itemKind(item){
     if(CROPS.includes(item)) return 'crop';
-    if(CROPS.some(c => item === c + ' 베이스')) return 'base';
+    if(CROPS.some(c=>item===c+' 베이스')) return 'base';
     if(DISH_NAMES.has(item)) return 'dish';
+    if(GOLD_ITEMS.includes(item)) return 'gold';
     return '';
   }
   function isTrackedItem(item){ return !!itemKind(item); }
+  function allTrackedItems(){ return [...CROPS,...CROPS.map(c=>c+' 베이스'),...DISH_NAMES,...GOLD_ITEMS]; }
+  function ensureStore(){
+    const st=stateObj(); if(!st) return null;
+    if(!st[STORE_KEY]||typeof st[STORE_KEY]!=='object') st[STORE_KEY]={version:VERSION,lots:[],updatedAt:'',createdAt:new Date().toISOString()};
+    if(!Array.isArray(st[STORE_KEY].lots)) st[STORE_KEY].lots=[];
+    st[STORE_KEY].version=VERSION;
+    return st[STORE_KEY];
+  }
+  function dishStockMap(){
+    const st=stateObj(); if(!st) return {};
+    if(!st.farmDishStockV737||typeof st.farmDishStockV737!=='object') st.farmDishStockV737={};
+    return st.farmDishStockV737;
+  }
+  function dishStockQty(item){ const map=dishStockMap(); return truncQty(Object.prototype.hasOwnProperty.call(map,item)?map[item]:0); }
+  function setDishStockQty(item,total){
+    if(!DISH_NAMES.has(item)) return;
+    const value=truncQty(total); dishStockMap()[item]=value;
+    const st=stateObj(), linked=st&&st.view&&st.view.lastLinkedCalcDish;
+    if(linked&&linked.name===item) writeSaleTotal(value,String(item).startsWith('황금 '));
+  }
+  function writeStackSingle(prefix,total){
+    const value=truncQty(total), stack=Math.floor(value/64), single=value%64;
+    internalWrite++;
+    try{ const a=byId(prefix+'Stack'),b=byId(prefix+'Single'); if(a)a.value=stack;if(b)b.value=single; }
+    finally{ setTimeout(()=>{internalWrite=Math.max(0,internalWrite-1);},0); }
+  }
+  function writeSaleTotal(total,golden){
+    const value=truncQty(total),sets=Math.floor(value/64),singles=value%64;
+    const setId=golden?'goldenSaleSetsV911':'saleSets',singleId=golden?'goldenSaleSinglesV911':'saleSingles';
+    internalWrite++;
+    try{
+      const st=stateObj(); if(st){st.settings=st.settings||{};st.settings[setId]=sets;st.settings[singleId]=singles;}
+      const a=byId(setId),b=byId(singleId);if(a)a.value=sets;if(b)b.value=singles;
+    }finally{setTimeout(()=>{internalWrite=Math.max(0,internalWrite-1);},0);}
+  }
+  function goldQty(item){
+    const input=byId(GOLD_INPUT[item]);
+    if(input) return truncQty(input.value);
+    try{return typeof ownedMaterialRowV712==='function'?truncQty(ownedMaterialRowV712(item).qty):0;}catch(e){return 0;}
+  }
+  function setGoldQty(item,total){
+    const value=truncQty(total); internalWrite++;
+    try{
+      if(typeof ownedMaterialWriteV763==='function'){
+        let has=value>0;try{has=has||!!ownedMaterialRowV712(item).has;}catch(e){}
+        ownedMaterialWriteV763(item,value,has);
+      }
+      const input=byId(GOLD_INPUT[item]);if(input)input.value=String(value);
+    }finally{setTimeout(()=>{internalWrite=Math.max(0,internalWrite-1);},0);}
+  }
   function itemCurrentQty(item){
-    if(CROPS.includes(item)) return readStackSingle('farmCrop' + EN[item]);
-    const baseCrop = CROPS.find(c => item === c + ' 베이스');
-    if(baseCrop) return readStackSingle('farmBase' + EN[baseCrop]);
+    if(CROPS.includes(item)) return readStackSingle('farmCrop'+EN[item]);
+    const crop=CROPS.find(c=>item===c+' 베이스');if(crop)return readStackSingle('farmBase'+EN[crop]);
     if(DISH_NAMES.has(item)){
-      const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      const linkedQty = linked && linked.name === item ? readSaleTotal(String(item).startsWith('황금 ')) : 0;
-      return Math.max(dishStockQtyV737(item), linkedQty);
+      const st=stateObj(),linked=st&&st.view&&st.view.lastLinkedCalcDish;
+      const linkedQty=linked&&linked.name===item?readSaleTotal(String(item).startsWith('황금 ')):0;
+      return Math.max(dishStockQty(item),linkedQty);
     }
+    if(GOLD_ITEMS.includes(item)) return goldQty(item);
     return 0;
   }
   function setItemCurrentQty(item,total){
-    if(CROPS.includes(item)) return writeStackSingle('farmCrop' + EN[item], total);
-    const baseCrop = CROPS.find(c => item === c + ' 베이스');
-    if(baseCrop) return writeStackSingle('farmBase' + EN[baseCrop], total);
-    if(DISH_NAMES.has(item)){
-      return setDishStockQtyV737(item, total);
+    if(CROPS.includes(item))return writeStackSingle('farmCrop'+EN[item],total);
+    const crop=CROPS.find(c=>item===c+' 베이스');if(crop)return writeStackSingle('farmBase'+EN[crop],total);
+    if(DISH_NAMES.has(item))return setDishStockQty(item,total);
+    if(GOLD_ITEMS.includes(item))return setGoldQty(item,total);
+  }
+  function formatExpiry(iso){
+    const d=new Date(iso);if(Number.isNaN(d.getTime()))return '-';
+    return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+  function trackedQty(item){const store=ensureStore();return store?store.lots.reduce((s,l)=>s+(l&&l.item===item?truncQty(l.qty):0),0):0;}
+  function nearestExpiry(item){
+    const store=ensureStore();if(!store)return '';
+    const list=store.lots.filter(l=>l&&l.item===item&&truncQty(l.qty)>0).map(l=>l.expiresAt).filter(Boolean).sort();
+    return list[0]||'';
+  }
+  function renderSummary(){
+    const details=byId('farmShelfLifeSummaryV922');if(!details)return;
+    const summary=details.querySelector('summary'),body=details.querySelector('.farm-shelf-life-body-v922');
+    if(summary)summary.textContent='유통기한 · 신규 Lv.'+serenityLevel()+' '+serenityDays()+'일';
+    if(body){
+      body.innerHTML=GOLD_ITEMS.map(item=>{
+        const qty=trackedQty(item),expiry=nearestExpiry(item);
+        return '<div><strong>'+item+'</strong><span>'+qty.toLocaleString('ko-KR')+'개'+(expiry?' · 최근 '+formatExpiry(expiry):' · 없음')+'</span></div>';
+      }).join('')+'<small>스킬 변경은 이후 새로 얻는 재료부터 적용</small>';
     }
   }
-  function expiryAt(createdAt){
-    const d = createdAt ? new Date(createdAt) : new Date();
-    if(Number.isNaN(d.getTime())) return expiryAt(new Date().toISOString());
-    const exp = new Date(d.getFullYear(), d.getMonth(), d.getDate()+2, 3, 0, 0, 0);
-    return exp.toISOString();
+  function scheduleNextExpiry(){
+    try{if(expireTimer)clearTimeout(expireTimer);}catch(e){} expireTimer=0;
+    const store=ensureStore();if(!store)return;
+    const now=Date.now(),times=store.lots.map(l=>truncQty(l&&l.qty)>0?new Date(l.expiresAt||'').getTime():NaN).filter(Number.isFinite);
+    if(!times.length)return;
+    const target=Math.min(...times),delay=target<=now?60*60*1000:Math.min(target-now+1500,2147480000);
+    expireTimer=setTimeout(()=>{try{checkExpired();}catch(e){console.error('shelf life scheduled check failed',e);}},Math.max(1000,delay));
   }
   function compactLots(){
-    const store=ensureStore(); if(!store) return;
-    const map = new Map();
-    store.lots.forEach(lot => {
-      if(!lot || !isTrackedItem(lot.item)) return;
-      const qty = truncQty(lot.qty);
-      if(qty <= 0 || !lot.createdAt || !lot.expiresAt) return;
-      const key = [lot.item, lot.expiresAt, lot.source || ''].join('|');
-      if(!map.has(key)) map.set(key, {...lot, qty});
-      else map.get(key).qty += qty;
+    const store=ensureStore();if(!store)return;
+    const map=new Map();
+    store.lots.forEach(lot=>{
+      if(!lot||!isTrackedItem(lot.item))return;
+      const qty=truncQty(lot.qty);if(qty<=0||!lot.createdAt)return;
+      const shelfDays=Math.max(1,Math.trunc(Number(lot.shelfDays)||shelfDaysFor(lot.item)));
+      const expiresAt=lot.expiresAt||expiryAt(lot.item,lot.createdAt,shelfDays);
+      const key=[lot.item,expiresAt,lot.source||'',shelfDays].join('|');
+      if(!map.has(key))map.set(key,{...lot,qty,shelfDays,expiresAt});else map.get(key).qty+=qty;
     });
-    store.lots = Array.from(map.values()).sort((a,b)=> new Date(a.expiresAt||a.createdAt||0) - new Date(b.expiresAt||b.createdAt||0));
-    store.updatedAt = new Date().toISOString();
-    scheduleNextExpiryCheckV737();
+    store.lots=Array.from(map.values()).sort((a,b)=>new Date(a.expiresAt)-new Date(b.expiresAt));
+    store.updatedAt=new Date().toISOString();scheduleNextExpiry();renderSummary();
   }
-  function scheduleNextExpiryCheckV737(){
-    try{ if(expireTimerV737) clearTimeout(expireTimerV737); }catch(e){}
-    expireTimerV737 = 0;
-    const store=ensureStore(); if(!store || !Array.isArray(store.lots)) return;
-    const now=Date.now();
-    const times=store.lots.map(lot=>truncQty(lot&&lot.qty)>0 ? new Date(lot.expiresAt||'').getTime() : NaN).filter(t=>Number.isFinite(t));
-    if(!times.length) return;
-    const target=Math.min(...times);
-    const delay = target <= now ? 60*60*1000 : Math.min(target - now + 1500, 2147480000);
-    expireTimerV737 = setTimeout(function(){ try{ checkExpired(); }catch(e){ console.error('shelf life scheduled check failed', e); } }, Math.max(1000, delay));
+  function addLot(item,qty,source,createdAt){
+    const amount=truncQty(qty);if(amount<=0||!isTrackedItem(item))return 0;
+    const store=ensureStore();if(!store)return 0;
+    const madeAt=createdAt||new Date().toISOString(),days=shelfDaysFor(item);
+    store.lots.push({id:'slv922_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),item,qty:amount,createdAt:madeAt,expiresAt:expiryAt(item,madeAt,days),shelfDays:days,source:source||'site'});
+    compactLots();return amount;
   }
-  function addLot(item, qty, source, createdAt){
-    const amount=truncQty(qty);
-    if(amount <= 0 || !isTrackedItem(item)) return 0;
-    const store=ensureStore(); if(!store) return 0;
-    const madeAt = createdAt || new Date().toISOString();
-    store.lots.push({id:'slv710_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8), item, qty:amount, createdAt:madeAt, expiresAt:expiryAt(madeAt), source:source||'site'});
-    compactLots();
-    return amount;
-  }
-  function consumeLots(item, qty){
-    let remain=truncQty(qty), used=0;
-    if(remain <= 0 || !isTrackedItem(item)) return 0;
-    const store=ensureStore(); if(!store) return 0;
-    compactLots();
-    store.lots.filter(lot => lot.item === item && truncQty(lot.qty) > 0)
-      .sort((a,b)=> new Date(a.expiresAt||a.createdAt||0) - new Date(b.expiresAt||b.createdAt||0))
-      .forEach(lot => {
-        if(remain <= 0) return;
-        const take = Math.min(remain, truncQty(lot.qty));
-        lot.qty -= take;
-        remain -= take;
-        used += take;
-      });
-    compactLots();
-    return used;
+  function consumeLots(item,qty){
+    let remain=truncQty(qty),used=0;if(remain<=0||!isTrackedItem(item))return 0;
+    const store=ensureStore();if(!store)return 0;compactLots();
+    store.lots.filter(l=>l.item===item&&truncQty(l.qty)>0).sort((a,b)=>new Date(a.expiresAt)-new Date(b.expiresAt)).forEach(l=>{
+      if(remain<=0)return;const take=Math.min(remain,truncQty(l.qty));l.qty-=take;remain-=take;used+=take;
+    });
+    compactLots();return used;
   }
   function clearLotsForItem(item){
-    const store=ensureStore(); if(!store || !isTrackedItem(item)) return 0;
-    let removed=0;
-    store.lots.forEach(lot => { if(lot.item === item){ removed += truncQty(lot.qty); lot.qty = 0; } });
-    compactLots();
-    return removed;
+    const store=ensureStore();if(!store||!isTrackedItem(item))return 0;let removed=0;
+    store.lots.forEach(l=>{if(l.item===item){removed+=truncQty(l.qty);l.qty=0;}});compactLots();return removed;
   }
   function reconcileLotsToInventory(){
-    const store=ensureStore(); if(!store) return 0;
-    let removed=0;
-    const items=[...new Set(store.lots.map(lot => lot && lot.item).filter(isTrackedItem))];
-    items.forEach(item => {
-      const lots=store.lots
-        .filter(lot => lot && lot.item === item && truncQty(lot.qty) > 0)
-        .sort((a,b)=> new Date(a.expiresAt||a.createdAt||0) - new Date(b.expiresAt||b.createdAt||0));
-      const tracked=lots.reduce((sum,lot)=>sum+truncQty(lot.qty),0);
-      let overflow=Math.max(0, tracked-itemCurrentQty(item));
-      lots.forEach(lot => {
-        if(overflow <= 0) return;
-        const drop=Math.min(overflow,truncQty(lot.qty));
-        lot.qty=Math.max(0,truncQty(lot.qty)-drop);
-        overflow-=drop;
-        removed+=drop;
-      });
-    });
-    return removed;
+    const store=ensureStore();if(!store)return 0;let removed=0;
+    [...new Set(store.lots.map(l=>l&&l.item).filter(isTrackedItem))].forEach(item=>{
+      const lots=store.lots.filter(l=>l&&l.item===item&&truncQty(l.qty)>0).sort((a,b)=>new Date(b.expiresAt)-new Date(a.expiresAt));
+      let overflow=Math.max(0,lots.reduce((s,l)=>s+truncQty(l.qty),0)-itemCurrentQty(item));
+      lots.forEach(l=>{if(overflow<=0)return;const drop=Math.min(overflow,truncQty(l.qty));l.qty-=drop;overflow-=drop;removed+=drop;});
+    });return removed;
+  }
+  function ensureInventoryCoverage(){
+    allTrackedItems().forEach(item=>{const gap=itemCurrentQty(item)-trackedQty(item);if(gap>0)addLot(item,gap,'기존 보유량 등록');});
+  }
+  function lineQty(q){const v=truncQty(q),sets=Math.floor(v/64),pieces=v%64;return sets?(pieces?sets+'세트 '+pieces+'개':sets+'세트'):pieces+'개';}
+  function addRecent(type,lines,note){if(!lines||!lines.length)return;try{if(typeof window.farmAddRecentActionV116==='function')window.farmAddRecentActionV116({type,lines,note:note||'공유 전송 없음'});}catch(e){}}
+  function saveQuiet(){
+    try{const store=ensureStore();if(store)store.updatedAt=new Date().toISOString();}catch(e){}
+    try{if(typeof window.farmSaveInputsV78==='function')window.farmSaveInputsV78({intent:'shelflife'});}catch(e){}
+    try{if(typeof save==='function')save(false);}catch(e){}
+    try{if(typeof renderCards==='function')renderCards();}catch(e){}
+    try{if(typeof farmPlanUpdate==='function')farmPlanUpdate();}catch(e){}
+    try{if(typeof renderDataStatus==='function')renderDataStatus();}catch(e){}
+    renderSummary();
   }
   function snapshot(){
-    const crops={}, bases={};
-    CROPS.forEach(c => { crops[c] = readStackSingle('farmCrop' + EN[c]); bases[c] = readStackSingle('farmBase' + EN[c]); });
-    const st = stateObj();
-    const linked = st && st.view && st.view.lastLinkedCalcDish ? {...st.view.lastLinkedCalcDish} : null;
-    const dishStocks = st && st.farmDishStockV737 && typeof st.farmDishStockV737 === 'object' ? {...st.farmDishStockV737} : {};
-    const selected = (function(){
-      const el=byId('farmDishSelect');
-      const raw=String(el && (el.value || (el.options && el.selectedIndex>=0 && el.options[el.selectedIndex].textContent) || '') || '');
-      const clean=raw.replace(/^[^·-]+[·-]\s*/,'').trim();
-      const found=[...DISH_NAMES].find(name => name === clean || raw.includes(name));
-      return found || clean;
-    })();
-    return {crops,bases,regularSale:readSaleTotal(false),goldenSale:readSaleTotal(true),linked,selected,dishStocks};
+    const crops={},bases={};CROPS.forEach(c=>{crops[c]=readStackSingle('farmCrop'+EN[c]);bases[c]=readStackSingle('farmBase'+EN[c]);});
+    const st=stateObj(),linked=st&&st.view&&st.view.lastLinkedCalcDish?{...st.view.lastLinkedCalcDish}:null;
+    const dishStocks=st&&st.farmDishStockV737&&typeof st.farmDishStockV737==='object'?{...st.farmDishStockV737}:{};
+    const el=byId('farmDishSelect'),raw=String(el&&(el.value||(el.options&&el.selectedIndex>=0&&el.options[el.selectedIndex].textContent)||'')||'');
+    const clean=raw.replace(/^[^·-]+[·-]\s*/,'').trim(),selected=[...DISH_NAMES].find(name=>name===clean||raw.includes(name))||clean;
+    return {crops,bases,regularSale:readSaleTotal(false),goldenSale:readSaleTotal(true),gold:goldQty('금 가루'),edible:goldQty('식용 금 가루'),linked,selected,dishStocks};
   }
-  function lineQty(q){
-    const value=truncQty(q), sets=Math.floor(value/64), pieces=value%64;
-    if(sets <= 0) return pieces + '개';
-    if(pieces <= 0) return sets + '세트';
-    return sets + '세트 ' + pieces + '개';
+  function recordMaterialDelta(item,before,after,source,now,recent){
+    const delta=after-before;if(delta<0)consumeLots(item,-delta);else if(delta>0){addLot(item,delta,source,now);recent.push(item+' +'+lineQty(delta)+' 유통기한 추적');}
   }
-  function addRecent(type, lines, note){
-    if(!lines || !lines.length) return;
-    try{
-      if(typeof window.farmAddRecentActionV116 === 'function') window.farmAddRecentActionV116({type, lines, note:note||'공유 전송 없음'});
-    }catch(e){}
-  }
-  function recordAfter(action, before){
-    const after=snapshot();
-    const now = new Date().toISOString();
-    const recent=[];
-    if(action === 'harvest'){
-      CROPS.forEach(c => {
-        const delta = after.crops[c] - before.crops[c];
-        if(delta > 0){ addLot(c, delta, '실제 수확 반영', now); recent.push(c + ' 작물 +' + lineQty(delta) + ' 유통기한 추적'); }
-      });
-    }else if(action === 'gather'){
-      CROPS.forEach(c => {
-        const delta = after.bases[c] - before.bases[c];
-        if(delta > 0){ addLot(c + ' 베이스', delta, '실제 채집 반영', now); recent.push(c + ' 베이스 +' + lineQty(delta) + ' 유통기한 추적'); }
-      });
-    }else if(action === 'cropToBase'){
-      CROPS.forEach(c => {
-        const cropDelta = after.crops[c] - before.crops[c];
-        const baseDelta = after.bases[c] - before.bases[c];
-        if(cropDelta < 0) consumeLots(c, -cropDelta);
-        if(baseDelta > 0){ addLot(c + ' 베이스', baseDelta, '작물 → 베이스 변환', now); recent.push(c + ' 베이스 +' + lineQty(baseDelta) + ' 유통기한 추적'); }
-      });
-    }else if(action === 'baseToDish'){
-      CROPS.forEach(c => {
-        const baseDelta = after.bases[c] - before.bases[c];
-        if(baseDelta < 0) consumeLots(c + ' 베이스', -baseDelta);
-      });
-      const saleDelta = after.regularSale - before.regularSale;
-      const dish = after.linked && after.linked.name || before.linked && before.linked.name || before.selected;
-      if(saleDelta > 0 && dish && DISH_NAMES.has(dish)){
-        const prevStock = before.dishStocks && Object.prototype.hasOwnProperty.call(before.dishStocks,dish) ? truncQty(before.dishStocks[dish]) : ((before.linked && before.linked.name === dish) ? truncQty(before.regularSale) : 0);
-        setDishStockQtyV737(dish, prevStock + saleDelta);
-        addLot(dish, saleDelta, '베이스 → 요리 변환', now);
-        recent.push(dish + ' +' + lineQty(saleDelta) + ' 유통기한 추적');
+  function recordAfter(action,before){
+    const after=snapshot(),now=new Date().toISOString(),recent=[];
+    if(action==='harvest')CROPS.forEach(c=>recordMaterialDelta(c,before.crops[c],after.crops[c],'실제 수확 반영',now,recent));
+    else if(action==='gather'){
+      CROPS.forEach(c=>recordMaterialDelta(c+' 베이스',before.bases[c],after.bases[c],'실제 채집 반영',now,recent));
+      recordMaterialDelta('금 가루',before.gold,after.gold,'실제 채집 반영',now,recent);
+    }else if(action==='cropToBase')CROPS.forEach(c=>{recordMaterialDelta(c,before.crops[c],after.crops[c],'작물 → 베이스 변환',now,recent);recordMaterialDelta(c+' 베이스',before.bases[c],after.bases[c],'작물 → 베이스 변환',now,recent);});
+    else if(action==='baseToDish'){
+      CROPS.forEach(c=>recordMaterialDelta(c+' 베이스',before.bases[c],after.bases[c],'베이스 → 요리 변환',now,recent));
+      const dish=after.linked&&after.linked.name||before.linked&&before.linked.name||before.selected;
+      const linkedChanged=after.linked&&after.linked.name===dish&&(!before.linked||after.linked.at!==before.linked.at);
+      const made=linkedChanged?truncQty(after.linked.added):Math.max(0,after.regularSale-before.regularSale);
+      if(made>0&&DISH_NAMES.has(dish)){
+        const beforeStock=before.dishStocks&&Object.prototype.hasOwnProperty.call(before.dishStocks,dish)?truncQty(before.dishStocks[dish]):0;
+        setDishStockQty(dish,Math.max(dishStockQty(dish),beforeStock+made));addLot(dish,made,'베이스 → 요리 변환',now);recent.push(dish+' +'+lineQty(made)+' 유통기한 추적');
       }
-    }else if(action === 'regularToGolden'){
-      const regular=before.selected;
-      const golden=regular?`황금 ${regular}`:'';
-      const beforeRegular=before.dishStocks&&Object.prototype.hasOwnProperty.call(before.dishStocks,regular)?truncQty(before.dishStocks[regular]):((before.linked&&before.linked.name===regular)?truncQty(before.regularSale):0);
-      const afterRegular=after.dishStocks&&Object.prototype.hasOwnProperty.call(after.dishStocks,regular)?truncQty(after.dishStocks[regular]):0;
-      const beforeGolden=before.dishStocks&&Object.prototype.hasOwnProperty.call(before.dishStocks,golden)?truncQty(before.dishStocks[golden]):((before.linked&&before.linked.name===golden)?truncQty(before.goldenSale):0);
-      const afterGolden=after.dishStocks&&Object.prototype.hasOwnProperty.call(after.dishStocks,golden)?truncQty(after.dishStocks[golden]):((after.linked&&after.linked.name===golden)?truncQty(after.goldenSale):0);
-      const regularUsed=Math.max(0,beforeRegular-afterRegular);
-      const goldenMade=Math.max(0,afterGolden-beforeGolden);
-      if(regularUsed>0)consumeLots(regular,regularUsed);
-      if(goldenMade>0){
-        addLot(golden,goldenMade,'일반 요리 → 황금 요리 변환',now);
-        recent.push(golden+' +'+lineQty(goldenMade)+' 유통기한 추적');
-      }
+    }else if(action==='regularToGolden'){
+      const regular=before.selected,golden=regular?'황금 '+regular:'';
+      if(regular&&DISH_NAMES.has(regular))recordMaterialDelta(regular,dishStockQtyFrom(before,regular),dishStockQtyFrom(after,regular),'일반 요리 → 황금 요리 변환',now,recent);
+      if(golden&&DISH_NAMES.has(golden))recordMaterialDelta(golden,dishStockQtyFrom(before,golden),dishStockQtyFrom(after,golden),'일반 요리 → 황금 요리 변환',now,recent);
+      recordMaterialDelta('금 가루',before.gold,after.gold,'황금 재료 변환',now,recent);
+      recordMaterialDelta('식용 금 가루',before.edible,after.edible,'황금 재료 변환',now,recent);
     }
-    if(recent.length) addRecent('유통기한 추적', recent, '새로 생성된 수량만 추적');
+    if(recent.length)addRecent('유통기한 추적',recent,'새로 생긴 수량만 새 만료일 적용');
+    syncBaselines();saveQuiet();
+  }
+  function dishStockQtyFrom(snap,item){
+    if(snap.dishStocks&&Object.prototype.hasOwnProperty.call(snap.dishStocks,item))return truncQty(snap.dishStocks[item]);
+    if(snap.linked&&snap.linked.name===item)return String(item).startsWith('황금 ')?truncQty(snap.goldenSale):truncQty(snap.regularSale);
+    return 0;
+  }
+  function farmInventoryRestoreReady(){try{if(typeof window.farmPlanRestoreReadyV78==='function')return !!window.farmPlanRestoreReadyV78();}catch(e){}return true;}
+  function checkExpired(){
+    if(!farmInventoryRestoreReady())return;
+    const store=ensureStore();if(!store)return;compactLots();reconcileLotsToInventory();ensureInventoryCoverage();compactLots();
+    const now=Date.now(),expired=store.lots.filter(l=>new Date(l.expiresAt||'').getTime()<=now&&truncQty(l.qty)>0);
+    if(!expired.length){syncBaselines();saveQuiet();return;}
+    const lines=[];expired.forEach(l=>{const expiredQty=truncQty(l.qty),current=itemCurrentQty(l.item),deduct=Math.min(current,expiredQty);l.qty=0;if(deduct>0){setItemCurrentQty(l.item,current-deduct);lines.push(l.item+' -'+lineQty(deduct));}});
+    compactLots();syncBaselines();
+    if(lines.length){addRecent('유통기한 만료',lines,'각 묶음에 저장된 만료일 기준 · 현재 보유 수량 안에서 1회 차감');try{if(typeof toast==='function')toast('유통기한 만료 차감');}catch(e){}}
     saveQuiet();
   }
-  function farmInventoryRestoreReadyV760(){
-    try{
-      if(typeof window.farmPlanRestoreReadyV78 === 'function') return !!window.farmPlanRestoreReadyV78();
-    }catch(e){}
-    return true;
-  }
-  function checkExpired(){
-    // 저장된 작물/베이스가 화면에 복구되기 전에 초기값 0으로 lot를 정리하지 않는다.
-    if(!farmInventoryRestoreReadyV760()) return;
-    const store=ensureStore(); if(!store) return;
-    compactLots();
-
-    const reconciled=reconcileLotsToInventory();
-    const now=Date.now();
-    const expired=store.lots.filter(lot => new Date(lot.expiresAt || '').getTime() <= now && truncQty(lot.qty) > 0);
-    if(!expired.length){
-      if(reconciled > 0){
-        compactLots();
-        saveQuiet();
-      }
-      return;
+  function manualInputInfo(id){
+    let m=/^farmCrop(Tomato|Onion|Garlic)(Stack|Single)$/.exec(id||'');if(m)return {item:Object.keys(EN).find(k=>EN[k]===m[1]),kind:'stock'};
+    m=/^farmBase(Tomato|Onion|Garlic)(Stack|Single)$/.exec(id||'');if(m){const c=Object.keys(EN).find(k=>EN[k]===m[1]);return {item:c?c+' 베이스':'',kind:'stock'};}
+    if(id==='saleSets'||id==='saleSingles'||id==='goldenSaleSetsV911'||id==='goldenSaleSinglesV911'){
+      const linked=stateObj()&&stateObj().view&&stateObj().view.lastLinkedCalcDish,name=linked&&linked.name||'',golden=id.startsWith('golden');
+      return name&&String(name).startsWith('황금 ')===golden?{item:name,kind:'sale',golden}:null;
     }
-
-    const lines=[];
-    let closed=0;
-    expired.forEach(lot => {
-      const expiredQty=truncQty(lot.qty);
-      if(expiredQty <= 0) return;
-      const current=itemCurrentQty(lot.item);
-      const deduct=Math.min(current,expiredQty);
-
-      lot.qty=0;
-      closed+=expiredQty;
-
-      if(deduct > 0){
-        setItemCurrentQty(lot.item,current-deduct);
-        lines.push(lot.item + ' -' + lineQty(deduct));
-      }
-    });
-
-    compactLots();
-    if(lines.length){
-      addRecent('유통기한 만료', lines, '생성일 +2일 후 03시 기준 · 현재 보유 수량 안에서 1회 차감');
-      try{ if(typeof toast === 'function') toast('유통기한 만료 차감'); }catch(e){}
-    }
-    if(reconciled > 0 || closed > 0) saveQuiet();
+    const gold=GOLD_ITEMS.find(item=>GOLD_INPUT[item]===id);return gold?{item:gold,kind:'gold'}:null;
   }
-  function manualInputItemFromId(id){
-    let m = /^farmCrop(Tomato|Onion|Garlic)(Stack|Single)$/.exec(id||'');
-    if(m) return Object.keys(EN).find(k => EN[k] === m[1]);
-    m = /^farmBase(Tomato|Onion|Garlic)(Stack|Single)$/.exec(id||'');
-    if(m){ const crop=Object.keys(EN).find(k => EN[k] === m[1]); return crop ? crop + ' 베이스' : ''; }
-    if(id === 'saleSets' || id === 'saleSingles' || id === 'goldenSaleSetsV911' || id === 'goldenSaleSinglesV911'){
-      const linked = stateObj() && stateObj().view && stateObj().view.lastLinkedCalcDish;
-      const name=linked&&linked.name?linked.name:'';
-      if(!name)return '';
-      const goldenInput=id==='goldenSaleSetsV911'||id==='goldenSaleSinglesV911';
-      return String(name).startsWith('황금 ')===goldenInput?name:'';
-    }
-    return '';
-  }
-  function bindManualProtect(){
-    if(document.body && document.body.dataset.shelfLifeManualProtectV710 === '1') return;
-    if(document.body) document.body.dataset.shelfLifeManualProtectV710 = '1';
-    ['input','change'].forEach(evt => document.addEventListener(evt, function(e){
-      const target=e.target;
-      if(!target || !target.id || internalWrite > 0 || actionDepth > 0) return;
-      const item=manualInputItemFromId(target.id);
-      if(!item) return;
-      clearLotsForItem(item);
-      if(DISH_NAMES.has(item)) setDishStockQtyV737(item, readSaleTotal(String(item).startsWith('황금 ')));
-      saveQuiet();
-    }, true));
+  function directInputQty(info){if(info.kind==='sale')return readSaleTotal(info.golden);return itemCurrentQty(info.item);}
+  function syncBaselines(){allTrackedItems().forEach(item=>manualBaselines.set(item,itemCurrentQty(item)));}
+  function bindManualTracking(){
+    if(document.body&&document.body.dataset.shelfLifeManualTrackV922==='1')return;
+    if(document.body)document.body.dataset.shelfLifeManualTrackV922='1';
+    ['input','change'].forEach(evt=>document.addEventListener(evt,e=>{
+      const target=e.target;if(!target||!target.id||internalWrite>0||actionDepth>0)return;
+      const info=manualInputInfo(target.id);if(!info||!info.item)return;
+      const current=directInputQty(info),previous=manualBaselines.has(info.item)?manualBaselines.get(info.item):current,delta=current-previous;
+      if(delta>0)addLot(info.item,delta,'직접 보유량 입력');else if(delta<0)consumeLots(info.item,-delta);
+      if(DISH_NAMES.has(info.item))dishStockMap()[info.item]=current;
+      manualBaselines.set(info.item,current);saveQuiet();
+    },true));
   }
   function bindActionTracker(){
-    if(document.body && document.body.dataset.shelfLifeActionTrackerV710 === '1') return;
-    if(document.body) document.body.dataset.shelfLifeActionTrackerV710 = '1';
-    document.addEventListener('click', function(e){
-      const target = e.target && e.target.closest ? e.target.closest('button') : null;
-      if(!target) return;
-      const id = target.id || '';
-      let action='';
-      if(id === 'farmHarvestApplyBtnV113') action='harvest';
-      else if(id === 'farmGatherApplyBtnV117') action='gather';
-      else if(id === 'farmCropToBaseBtnV410') action='cropToBase';
-      else if(id === 'farmBaseToDishBtnV410') action='baseToDish';
-      else if(id === 'farmRegularToGoldenBtnV911') action='regularToGolden';
-      if(!action) return;
-      checkExpired();
-      const before=snapshot();
-      actionDepth++;
-      setTimeout(function(){
-        try{ recordAfter(action, before); }
-        catch(err){ console.error('shelf life action tracking failed', err); }
-        finally{ actionDepth=Math.max(0, actionDepth-1); }
-      }, 80);
-    }, true);
+    if(document.body&&document.body.dataset.shelfLifeActionTrackerV922==='1')return;
+    if(document.body)document.body.dataset.shelfLifeActionTrackerV922='1';
+    document.addEventListener('click',e=>{
+      const target=e.target&&e.target.closest?e.target.closest('button'):null;if(!target)return;
+      const actions={farmHarvestApplyBtnV113:'harvest',farmGatherApplyBtnV117:'gather',farmCropToBaseBtnV410:'cropToBase',farmBaseToDishBtnV410:'baseToDish',farmRegularToGoldenBtnV911:'regularToGolden'};
+      const action=actions[target.id];if(!action)return;
+      checkExpired();const before=snapshot();actionDepth++;
+      setTimeout(()=>{try{recordAfter(action,before);}catch(err){console.error('shelf life action tracking failed',err);}finally{actionDepth=Math.max(0,actionDepth-1);}},80);
+    },true);
   }
   function wrapCompleteSale(){
-    const original=window.completeLinkedCalcSaleV480;
-    if(typeof original !== 'function' || original.__shelfLifeSafeV710) return;
-    const wrapped=function(name){
-      checkExpired();
-      const golden=String(name||'').startsWith('황금 ');
-      const before = readSaleTotal(golden);
-      const ret = original.apply(this, arguments);
-      setTimeout(function(){
-        try{
-          const after = readSaleTotal(golden);
-          const sold = Math.max(0, before - after);
-          if(sold > 0 && name) consumeLots(name, sold);
-          if(name && DISH_NAMES.has(name)) setDishStockQtyV737(name, 0);
-          saveQuiet();
-        }catch(e){ console.error('shelf life sale consume failed', e); }
-      }, 0);
-      return ret;
-    };
-    wrapped.__shelfLifeSafeV710 = true;
-    window.completeLinkedCalcSaleV480 = wrapped;
+    const original=window.completeLinkedCalcSaleV480;if(typeof original!=='function'||original.__shelfLifeSafeV922)return;
+    const wrapped=function(name){checkExpired();const golden=String(name||'').startsWith('황금 '),before=readSaleTotal(golden),ret=original.apply(this,arguments);setTimeout(()=>{try{const sold=Math.max(0,before-readSaleTotal(golden));if(sold>0&&name)consumeLots(name,sold);if(name&&DISH_NAMES.has(name))setDishStockQty(name,0);syncBaselines();saveQuiet();}catch(e){console.error('shelf life sale consume failed',e);}},0);return ret;};
+    wrapped.__shelfLifeSafeV922=true;window.completeLinkedCalcSaleV480=wrapped;
   }
-  function wrapOpenTab(){
-    const original=window.openTab;
-    if(typeof original !== 'function' || original.__shelfLifeSafeV710) return;
-    const wrapped=function(tabName){
-      const ret=original.apply(this, arguments);
-      if(tabName === 'seedplan' || tabName === 'calc') setTimeout(checkExpired,0);
-      return ret;
-    };
-    wrapped.__shelfLifeSafeV710 = true;
-    window.openTab = wrapped;
-  }
-  function boot(){
-    ensureStore();
-    bindManualProtect();
-    bindActionTracker();
-    wrapCompleteSale();
-    wrapOpenTab();
-    checkExpired();
-  }
-  window.farmShelfLifeV710 = {check:checkExpired, addLot:addLot, consumeLot:consumeLots, clearItem:clearLotsForItem, store:ensureStore};
-  window.farmShelfLifeCheckV710 = checkExpired;
-  window.addEventListener('load', boot);
-  document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkExpired(); });
+  function wrapOpenTab(){const original=window.openTab;if(typeof original!=='function'||original.__shelfLifeSafeV922)return;const wrapped=function(tabName){const ret=original.apply(this,arguments);if(tabName==='seedplan'||tabName==='calc')setTimeout(checkExpired,0);return ret;};wrapped.__shelfLifeSafeV922=true;window.openTab=wrapped;}
+  function bindSerenity(){['input','change'].forEach(evt=>document.addEventListener(evt,e=>{if(e.target&&e.target.id==='skillSerenitySparkle')renderSummary();},true));}
+  function boot(){ensureStore();bindManualTracking();bindActionTracker();bindSerenity();wrapCompleteSale();wrapOpenTab();checkExpired();syncBaselines();renderSummary();}
+  const api={check:checkExpired,addLot,consumeLot:consumeLots,clearItem:clearLotsForItem,store:ensureStore,shelfDays:shelfDaysFor,syncInventory:ensureInventoryCoverage,render:renderSummary};
+  window.farmShelfLifeV710=api;window.farmShelfLifeV922=api;window.farmShelfLifeCheckV710=checkExpired;
+  window.addEventListener('load',boot);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkExpired();});
 })();
 </script>
 
